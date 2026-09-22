@@ -111,7 +111,7 @@ export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
   return (
     <div
       ref={hostRef}
-      className="relative flex-1 overflow-hidden bg-surface-0"
+      className="relative flex-1 overflow-hidden"
       onWheel={onWheel}
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -143,7 +143,7 @@ export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
 
       {empty && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <p className="text-text-3">{emptyHint ?? "Chưa có ảnh"}</p>
+          <p className="text-[13px] text-[color:var(--muted-foreground)]">{emptyHint ?? "Chưa có ảnh"}</p>
         </div>
       )}
 
@@ -153,7 +153,7 @@ export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
         <button
           type="button"
           onClick={() => setViewport(IDENTITY)}
-          className="absolute right-3 bottom-3 rounded-md border border-line bg-surface-2/90 px-2 py-1 font-mono text-[11px] text-text-2 backdrop-blur transition-colors hover:text-text-1"
+          className="absolute right-3 bottom-3 rounded-lg border border-[color:var(--border)] bg-[color:color-mix(in_oklab,var(--popover)_85%,transparent)] px-2 py-1 font-mono text-2xs text-[color:var(--muted-foreground)] backdrop-blur transition-colors hover:text-[color:var(--foreground)]"
         >
           {Math.round(viewport.scale * 100)}% · reset
         </button>

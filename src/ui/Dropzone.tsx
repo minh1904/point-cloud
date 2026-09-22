@@ -43,25 +43,25 @@ export function Dropzone({ fileName, onFile, onClear }: Props) {
 
   if (fileName) {
     return (
-      <div className="flex h-7 items-center gap-2 rounded-md border border-line bg-surface-2 px-2">
+      <div className="flex h-7 items-center gap-2 rounded-lg border border-[color:var(--border)] px-2 text-[13px] leading-[1.125rem]">
         <svg
           aria-hidden
           viewBox="0 0 16 16"
-          className="size-3.5 shrink-0 fill-none stroke-text-3 stroke-[1.5]"
+          className="size-3.5 shrink-0 fill-none stroke-[color:var(--muted-foreground)] stroke-[1.5]"
         >
           <rect x="2" y="3" width="12" height="10" rx="1.5" />
           <circle cx="6" cy="6.5" r="1" />
           <path d="M2.5 11l3.5-3 3 2.5 2-1.5 2.5 2" />
         </svg>
         {/* truncate + title: tên file dài không được đẩy nút xoá ra khỏi ô */}
-        <span className="flex-1 truncate text-text-2" title={fileName}>
+        <span className="flex-1 truncate text-[color:var(--muted-foreground)]" title={fileName}>
           {fileName}
         </span>
         <button
           type="button"
           onClick={onClear}
           aria-label="Bỏ ảnh"
-          className="shrink-0 rounded px-1 text-text-3 transition-colors hover:bg-surface-3 hover:text-danger"
+          className="shrink-0 rounded-[0.25rem] px-1 text-[color:var(--muted-foreground)] transition-colors hover:bg-[color:var(--muted)] hover:text-[color:var(--destructive)]"
         >
           ✕
         </button>
@@ -84,14 +84,14 @@ export function Dropzone({ fileName, onFile, onClear }: Props) {
           setOver(false);
           accept(event.dataTransfer.files);
         }}
-        className={`flex h-20 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed transition-colors ${
+        className={`flex h-20 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-[13px] leading-[1.125rem] transition-colors ${
           over
-            ? "border-accent bg-accent-soft text-text-1"
-            : "border-line-strong bg-surface-2 text-text-3 hover:border-accent/60 hover:text-text-2"
+            ? "border-[color:var(--accent)] bg-[color:color-mix(in_oklab,var(--accent)_10%,transparent)] text-[color:var(--foreground)]"
+            : "border-[color:var(--border)] text-[color:var(--muted-foreground)] hover:border-[color:color-mix(in_oklab,var(--foreground)_28%,transparent)] hover:text-[color:var(--foreground)]"
         }`}
       >
         <span>Kéo ảnh vào đây</span>
-        <span className="text-[11px] text-text-3">
+        <span className="text-2xs text-[color:color-mix(in_oklab,var(--muted-foreground)_70%,transparent)]">
           hoặc bấm để chọn · Ctrl+V để dán
         </span>
       </button>

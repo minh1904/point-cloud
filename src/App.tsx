@@ -137,9 +137,9 @@ export default function App() {
       <ControlsPanel onFile={onFile} onClear={onClear} />
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-10 shrink-0 items-center justify-between border-b border-line bg-surface-1 px-3">
-          <h1 className="font-medium">Point Cloud Studio</h1>
-          <span className="font-mono text-[11px] text-text-3">
+        <header className="flex h-9 shrink-0 items-center justify-between border-b border-[color:var(--border)] px-3">
+          <h1 className="m-0 text-[13px] leading-[1.125rem] font-semibold">Point Cloud Studio</h1>
+          <span className="font-mono text-2xs text-[color:var(--muted-foreground)]">
             {pixels
               ? `${pixels.width}×${pixels.height}`
               : "chưa có ảnh"}
@@ -155,7 +155,7 @@ export default function App() {
         />
 
         {viewMode === "particles" && (
-          <div className="border-t border-line bg-surface-1 px-3 py-2 text-[12px] text-text-3">
+          <div className="border-t border-[color:var(--border)] px-3 py-2 text-2xs text-[color:var(--muted-foreground)]">
             Chế độ 3D particles sẽ được nối ở P2.
           </div>
         )}

@@ -10,7 +10,20 @@
 
 Dự án từng dùng [Toolcraft](https://github.com/pixel-point/toolcraft) cho toàn bộ phần này — nó cho sẵn panel, slider, canvas pan/zoom, persistence. Ta đã bỏ vì hai tính năng cốt lõi của app (Web Worker cho AI, export JSON) bị framework chặn bằng gate không lách được. Lý do đầy đủ ở [03-why-these-choices.md](../03-why-these-choices.md#q11--bỏ-toolcraft).
 
-Nhưng **các luật thiết kế của Toolcraft thì giữ**, vì chúng đúng và đã được kiểm nghiệm bằng ~80 test acceptance:
+Nhưng **hệ thống thị giác của Toolcraft thì giữ nguyên** (MIT, © 2026 Pixel Point — xem [NOTICE.md](../../../NOTICE.md)). Token và kích thước không phải tự nghĩ ra mà lấy từ source của nó:
+
+| | Giá trị |
+|---|---|
+| Nền | `oklch(0 0 0)` — **đen tuyệt đối**, không phải xám đậm |
+| Chữ | Inter Variable, control 13px/1.125rem, nhãn section 11px |
+| Accent | `#0c8ce9` · primary `oklch(0.546 0.215 262.88)` |
+| Button | `h-7` · `px-2` · `rounded-lg` |
+| Khoảng cách control | 14px |
+| Slider | track **1px**, thumb **9px vuông** bo 2px, cả hai màu `--foreground` |
+
+Chi tiết cuối dễ làm sai nhất: trực giác bảo "track 4px, thumb tròn, tô màu accent". Toolcraft làm ngược lại — hairline trắng — và kết quả nhìn tĩnh hơn hẳn khi panel có nhiều slider xếp dọc. Tôi đã làm theo trực giác ở bản đầu và phải sửa lại.
+
+Các luật bố cục cũng giữ:
 
 1. **Control cao 28px, đồng nhất.** Chiều cao khác nhau làm panel nhìn lộn xộn ngay cả khi không nói được vì sao.
 2. **Nhãn ở trên, giá trị hiện bên phải nhãn — không phải tooltip.** Người dùng cần thấy số hiện tại mà không phải trỏ chuột.

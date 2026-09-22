@@ -1,101 +1,151 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
 
 /**
  * Design tokens.
  *
- * Bảng màu tối vì app là công cụ xem ảnh và point cloud — nền sáng làm mắt
- * không đánh giá được màu và độ sâu của nội dung. Đây cũng là lý do mọi editor
- * đồ hoạ (Figma, Blender, DaVinci) mặc định tối.
+ * Chép từ Toolcraft (MIT, © 2026 Pixel Point) — xem NOTICE.md. Dự án từng dùng
+ * Toolcraft rồi bỏ vì gate của nó chặn Web Worker và export JSON, nhưng hệ thống
+ * thị giác thì giữ nguyên: nó đã được kiểm nghiệm bằng ~80 test acceptance và
+ * tốt hơn thứ tôi tự nghĩ ra.
  *
- * Quy ước đặt tên: `surface-*` đi từ sâu ra ngoài (0 là nền sâu nhất),
- * `text-*` đi từ rõ đến mờ.
+ * Đặc điểm nhận dạng của bảng màu này: nền **đen tuyệt đối**, không phải xám
+ * đậm. Với công cụ xem ảnh, nền đen tuyệt đối cho tương phản cao nhất và không
+ * ám màu lên nội dung.
  */
 @theme {
-  --color-surface-0: #0b0b0f;
-  --color-surface-1: #12121a;
-  --color-surface-2: #1a1a25;
-  --color-surface-3: #23232f;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 
-  --color-line: #2c2c3a;
-  --color-line-strong: #3d3d4f;
+  /* Hai bậc chữ riêng của Toolcraft: 2xs cho nhãn section, xs-plus cho control */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs-plus: 0.8125rem;
+  --text-xs-plus--line-height: 1.125rem;
 
-  --color-text-1: #ececf2;
-  --color-text-2: #a2a2b4;
-  --color-text-3: #6b6b80;
-
-  --color-accent: #7c5cff;
-  --color-accent-soft: #2a2145;
-  --color-danger: #ff5c5c;
-  --color-ok: #4ade80;
-
-  /* Badge của model picker — mỗi loại một màu để nhận ra ngay khi chọn. */
-  --color-badge-default: #4ade80;
-  --color-badge-experimental: #fbbf24;
-  --color-badge-quality: #60a5fa;
-  --color-badge-metric: #f472b6;
-
-  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 
   /* Panel rộng 280px: đủ cho một slider có nhãn và số mà không lấn canvas. */
   --spacing-panel: 280px;
 }
 
+:root {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.977 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --link: #70b0fa;
+  --primary: oklch(0.546 0.215 262.88);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.249 0.07 263.47);
+  --secondary-foreground: oklch(0.977 0 0);
+  --muted: #262626;
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: #0c8ce9;
+  --accent-foreground: oklch(0.985 0 0);
+  --inspect: #9149f5;
+  --attention: #ea733a;
+  --attention-foreground: oklch(0.145 0 0);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: var(--foreground);
+  --border: oklch(0.311 0.013 279.19);
+  --input: oklch(0.311 0.013 279.19);
+  --ring: oklch(0.556 0 0);
+  --radius: 0.375rem;
+  color-scheme: dark;
+
+  /* Badge model picker — dùng token có sẵn để không sinh bảng màu thứ hai. */
+  --badge-default: oklch(0.72 0.19 145);
+  --badge-experimental: var(--attention);
+  --badge-quality: var(--accent);
+  --badge-metric: var(--inspect);
+}
+
 @layer base {
   * {
+    border-color: var(--border);
+    box-sizing: border-box;
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
     min-width: 0;
   }
 
-  html,
-  body,
-  #root {
-    height: 100%;
+  html {
+    font-family: var(--font-sans);
   }
 
   body {
-    margin: 0;
-    background: var(--color-surface-0);
-    color: var(--color-text-1);
-    font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.45;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
-    overscroll-behavior: none;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+}
 
-  /* Canvas là vùng tương tác chính; chọn text trong đó chỉ gây nhiễu khi kéo. */
-  canvas {
-    display: block;
-    user-select: none;
-  }
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  min-height: 100%;
+}
 
-  /* Tắt focus ring mặc định nhưng GIỮ cho bàn phím — :focus-visible chứ không
-     :focus. Bỏ hẳn outline là lỗi accessibility phổ biến nhất trong app đồ hoạ. */
-  :focus {
-    outline: none;
-  }
+#root {
+  overflow: clip;
+}
 
-  :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
+input,
+button,
+select {
+  font-family: inherit;
+}
 
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
+canvas {
+  display: block;
+  user-select: none;
+}
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+/* Bỏ outline mặc định nhưng GIỮ cho bàn phím. Bỏ hẳn là lỗi accessibility
+   phổ biến nhất trong app đồ hoạ. */
+:focus {
+  outline: none;
+}
 
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-line);
-    border: 3px solid var(--color-surface-1);
-    border-radius: 999px;
-  }
+:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 50%, transparent);
+  outline-offset: 1px;
+}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-line-strong);
-  }
+/* Scrollbar 4px, gần như vô hình — nội dung mới là thứ đáng nhìn. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 10%, transparent)
+    transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 2.75rem;
+  border: 0 solid transparent;
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+  background-clip: padding-box;
 }

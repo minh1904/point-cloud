@@ -1,30 +1,35 @@
 /**
- * UI kit: các primitive thay thế control của Toolcraft.
+ * UI kit.
  *
- * Vì sao gom vào một file thay vì một file mỗi component: chúng dùng chung một
- * ngôn ngữ thị giác (cùng chiều cao 28px, cùng bán kính, cùng trạng thái hover),
- * và giữ cạnh nhau làm việc lệch nhau khó xảy ra hơn. Khi file vượt ~400 dòng
- * thì tách theo nhóm, không tách theo component.
+ * Hình thức chép sát Toolcraft (MIT, © 2026 Pixel Point — xem NOTICE.md). Các
+ * con số ở đây không phải tôi nghĩ ra mà lấy từ source của nó:
  *
- * Ba luật lấy từ design system của Toolcraft (`core/layout.md`,
- * `core/control-selection.md`) vì chúng đúng và đã được kiểm nghiệm:
+ * - Button mặc định: `h-7` · `px-2` · `text-[13px]` · `leading-[1.125rem]` ·
+ *   `rounded-lg`
+ * - Nhãn section: `text-2xs` (11px) · `leading-none` · `font-semibold` ·
+ *   `uppercase` · màu = foreground 75%
+ * - Header section: `h-9` · `px-3`
+ * - Khoảng cách giữa các control trong một section: **14px**
+ * - Slider: track cao **1px**, thumb **9px vuông** bo `2px`, cả hai màu
+ *   `--foreground` (trắng), vùng bấm ẩn 18px
  *
- * 1. Control cao 28px, đồng nhất. Cao thấp khác nhau làm panel nhìn lộn xộn.
- * 2. Nhãn ở trên, giá trị hiện bên phải nhãn — không phải tooltip. Người dùng
- *    cần thấy số hiện tại mà không phải trỏ chuột vào.
- * 3. Nhãn nút là động từ, nhãn control là ngữ cảnh. Không trùng nhau.
+ * Chi tiết cuối là thứ dễ làm sai nhất: trực giác bảo "track 4px, thumb tròn,
+ * tô màu accent". Toolcraft làm ngược lại — hairline trắng — và kết quả nhìn
+ * tĩnh hơn hẳn khi panel có nhiều slider xếp dọc.
  */
 
 import type { ReactNode } from "react";
 
-const CONTROL = "h-7 rounded-md border border-line bg-surface-2 text-text-1";
-const HOVER = "hover:border-line-strong hover:bg-surface-3";
+const FIELD =
+  "h-7 rounded-lg border border-[color:var(--border)] bg-transparent text-[13px] leading-[1.125rem]";
+const FIELD_HOVER =
+  "hover:border-[color:color-mix(in_oklab,var(--foreground)_28%,transparent)]";
 
 /* ── Panel & Section ──────────────────────────────────────────────────── */
 
 export function Panel({ children }: { children: ReactNode }) {
   return (
-    <aside className="flex w-panel shrink-0 flex-col overflow-y-auto border-r border-line bg-surface-1">
+    <aside className="flex w-panel shrink-0 flex-col overflow-y-auto border-r border-[color:var(--border)]">
       {children}
     </aside>
   );
@@ -33,32 +38,31 @@ export function Panel({ children }: { children: ReactNode }) {
 export function Section({
   title,
   children,
-  action,
 }: {
   title: string;
   children: ReactNode;
-  action?: ReactNode;
 }) {
   return (
-    <section className="border-b border-line px-3 py-3 last:border-b-0">
-      <header className="mb-2.5 flex items-center justify-between">
-        <h2 className="text-[11px] font-semibold tracking-wide text-text-3 uppercase">
+    <section className="border-b border-[color:var(--border)] pb-3.5 last:border-b-0">
+      <header className="flex h-9 items-center justify-between gap-2 px-3">
+        <h2 className="m-0 text-2xs leading-none font-semibold whitespace-nowrap text-[color:color-mix(in_oklab,var(--foreground)_75%,transparent)] uppercase">
           {title}
         </h2>
-        {action}
       </header>
-      <div className="flex flex-col gap-2.5">{children}</div>
+      {/* 14px là khoảng cách control của Toolcraft (--control-list-gap) */}
+      <div className="flex flex-col gap-[14px] px-3">{children}</div>
     </section>
   );
 }
 
-/** Nhãn + giá trị hiện tại trên cùng một dòng, giá trị canh phải. */
 function Label({ text, value }: { text: string; value?: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <span className="text-text-2">{text}</span>
+      <span className="text-[13px] leading-[1.125rem] text-[color:var(--muted-foreground)]">
+        {text}
+      </span>
       {value !== undefined && (
-        <span className="font-mono text-[11px] text-text-3 tabular-nums">
+        <span className="font-mono text-2xs text-[color:var(--foreground)] tabular-nums">
           {value}
         </span>
       )}
@@ -88,21 +92,23 @@ export function Slider({
   const ratio = max === min ? 0 : (value - min) / (max - min);
 
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-4">
       <Label text={label} value={format ? format(value) : value.toFixed(2)} />
-      <div className="relative flex h-7 items-center">
-        {/* Track vẽ bằng div để tô được phần đã đi qua; input range thật nằm
-            trên, trong suốt, để giữ toàn bộ hành vi bàn phím và kéo chuột. */}
-        <div className="pointer-events-none absolute inset-x-0 h-1 rounded-full bg-surface-3">
+      <div className="relative -mt-2.5 flex h-[18px] items-center">
+        {/* Track 1px. Phần đã đi qua tô trắng, phần còn lại là muted 38%. */}
+        <div className="pointer-events-none absolute inset-x-0 h-px rounded-full bg-[color:color-mix(in_oklab,var(--muted-foreground)_38%,transparent)]">
           <div
-            className="h-full rounded-full bg-accent"
+            className="h-full rounded-full bg-[color:var(--foreground)]"
             style={{ width: `${ratio * 100}%` }}
           />
         </div>
+        {/* Thumb 9px VUÔNG bo 2px — không phải hình tròn. */}
         <div
-          className="pointer-events-none absolute size-3 -translate-x-1/2 rounded-full border-2 border-surface-1 bg-text-1"
+          className="pointer-events-none absolute size-[9px] -translate-x-1/2 rounded-[2px] bg-[color:var(--foreground)]"
           style={{ left: `${ratio * 100}%` }}
         />
+        {/* input thật nằm đè, trong suốt: giữ nguyên hành vi bàn phím và kéo
+            chuột của native mà vẫn tự do tạo hình. */}
         <input
           type="range"
           className="absolute inset-0 w-full cursor-pointer opacity-0"
@@ -122,7 +128,6 @@ export function Slider({
 export type SelectOption<T extends string> = {
   readonly value: T;
   readonly label: string;
-  /** Hậu tố mờ hơn, ví dụ dung lượng model. */
   readonly hint?: string;
 };
 
@@ -138,11 +143,11 @@ export function Select<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-2">
       <Label text={label} />
       <div className="relative">
         <select
-          className={`w-full appearance-none ${CONTROL} ${HOVER} cursor-pointer pr-7 pl-2 transition-colors`}
+          className={`w-full appearance-none ${FIELD} ${FIELD_HOVER} cursor-pointer pr-7 pl-2 transition-colors`}
           value={value}
           onChange={(event) => onChange(event.target.value as T)}
         >
@@ -156,7 +161,7 @@ export function Select<T extends string>({
         <svg
           aria-hidden
           viewBox="0 0 10 6"
-          className="pointer-events-none absolute top-1/2 right-2.5 w-2.5 -translate-y-1/2 fill-none stroke-text-3 stroke-[1.5]"
+          className="pointer-events-none absolute top-1/2 right-2.5 w-2.5 -translate-y-1/2 fill-none stroke-[color:var(--muted-foreground)] stroke-[1.5]"
         >
           <path d="M1 1l4 4 4-4" />
         </svg>
@@ -179,11 +184,11 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {label && <Label text={label} />}
       <div
         role="tablist"
-        className="flex gap-0.5 rounded-md border border-line bg-surface-2 p-0.5"
+        className="flex gap-0.5 rounded-lg border border-[color:var(--border)] p-0.5"
       >
         {options.map((option) => {
           const active = option.value === value;
@@ -194,10 +199,10 @@ export function Segmented<T extends string>({
               role="tab"
               aria-selected={active}
               onClick={() => onChange(option.value)}
-              className={`h-6 flex-1 rounded transition-colors ${
+              className={`h-6 flex-1 rounded-[0.375rem] text-[13px] leading-[1.125rem] transition-colors ${
                 active
-                  ? "bg-accent text-white"
-                  : "text-text-2 hover:bg-surface-3"
+                  ? "bg-[color:var(--primary)] text-[color:var(--primary-foreground)]"
+                  : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)] hover:text-[color:var(--foreground)]"
               }`}
             >
               {option.label}
@@ -226,17 +231,15 @@ export function Button({
 }) {
   const style =
     variant === "primary"
-      ? "bg-accent text-white hover:bg-accent/85 border-transparent"
-      : `${CONTROL} ${HOVER}`;
+      ? "bg-[color:var(--primary)] text-[color:var(--primary-foreground)] border-transparent hover:opacity-90"
+      : `${FIELD} ${FIELD_HOVER}`;
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      // Giữ nguyên chiều rộng khi loading để panel không nhảy — nút đổi kích
-      // thước lúc bấm là lỗi hay gặp nhất ở trạng thái async.
-      className={`h-7 rounded-md border px-3 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${style}`}
+      className={`h-7 rounded-lg border px-2 text-[13px] leading-[1.125rem] transition-colors disabled:pointer-events-none disabled:opacity-50 ${style}`}
     >
       {loading ? "…" : children}
     </button>
@@ -245,17 +248,21 @@ export function Button({
 
 /* ── Badge ────────────────────────────────────────────────────────────── */
 
-const BADGE_COLOR = {
-  default: "text-badge-default",
-  experimental: "text-badge-experimental",
-  quality: "text-badge-quality",
-  metric: "text-badge-metric",
+const BADGE_VAR = {
+  default: "--badge-default",
+  experimental: "--badge-experimental",
+  quality: "--badge-quality",
+  metric: "--badge-metric",
 } as const;
 
-export function Badge({ kind }: { kind: keyof typeof BADGE_COLOR }) {
+export function Badge({ kind }: { kind: keyof typeof BADGE_VAR }) {
   return (
     <span
-      className={`rounded border border-current/25 px-1.5 py-px text-[10px] font-medium tracking-wide uppercase ${BADGE_COLOR[kind]}`}
+      className="rounded-[0.25rem] border px-1.5 py-px text-2xs font-semibold tracking-wide uppercase"
+      style={{
+        color: `var(${BADGE_VAR[kind]})`,
+        borderColor: `color-mix(in oklab, var(${BADGE_VAR[kind]}) 35%, transparent)`,
+      }}
     >
       {kind}
     </span>
@@ -269,21 +276,21 @@ export function Progress({
   ratio,
 }: {
   label: string;
-  /** undefined = không xác định được tiến độ → hiện thanh trôi vô định. */
+  /** undefined = không xác định được tiến độ → thanh trôi vô định. */
   ratio?: number;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <Label
         text={label}
         value={ratio === undefined ? "" : `${Math.round(ratio * 100)}%`}
       />
-      <div className="h-1 overflow-hidden rounded-full bg-surface-3">
+      <div className="h-px overflow-hidden rounded-full bg-[color:color-mix(in_oklab,var(--muted-foreground)_38%,transparent)]">
         {ratio === undefined ? (
-          <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+          <div className="h-full w-1/3 animate-pulse rounded-full bg-[color:var(--foreground)]" />
         ) : (
           <div
-            className="h-full rounded-full bg-accent transition-[width] duration-150"
+            className="h-full rounded-full bg-[color:var(--foreground)] transition-[width] duration-150"
             style={{ width: `${Math.max(0, Math.min(1, ratio)) * 100}%` }}
           />
         )}
@@ -301,14 +308,21 @@ export function Notice({
   tone: "info" | "warn" | "error";
   children: ReactNode;
 }) {
-  const style = {
-    info: "border-line bg-surface-2 text-text-2",
-    warn: "border-badge-experimental/30 bg-badge-experimental/10 text-badge-experimental",
-    error: "border-danger/30 bg-danger/10 text-danger",
+  const color = {
+    info: "var(--muted-foreground)",
+    warn: "var(--attention)",
+    error: "var(--destructive)",
   }[tone];
 
   return (
-    <p className={`rounded-md border px-2 py-1.5 text-[12px] ${style}`}>
+    <p
+      className="m-0 rounded-md border px-2 py-1.5 text-2xs"
+      style={{
+        color,
+        borderColor: `color-mix(in oklab, ${color} 30%, transparent)`,
+        backgroundColor: `color-mix(in oklab, ${color} 8%, transparent)`,
+      }}
+    >
       {children}
     </p>
   );

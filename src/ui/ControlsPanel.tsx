@@ -88,7 +88,7 @@ export function ControlsPanel({
 
         <div className="flex items-center gap-2">
           <Badge kind={model.badge} />
-          <span className="text-[11px] text-text-3">
+          <span className="text-2xs text-[color:var(--muted-foreground)]">
             {model.kind === "metric" ? "mét thật" : "tương đối"} ·{" "}
             {model.inputSize}px · {model.dtype}
           </span>
@@ -180,7 +180,7 @@ export function ControlsPanel({
         />
 
         {model.kind !== "metric" && (
-          <p className="text-[11px] text-text-3">
+          <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
             Perspective cần model metric (có focal length). Model relative chỉ
             dựng được relief.
           </p>

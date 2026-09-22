@@ -53,6 +53,7 @@ export function ControlsPanel({
   const params = useStudio();
   const model = useActiveModel();
   const setParam = useStudio((state) => state.setParam);
+  const reset = useStudio((state) => state.reset);
 
   const modelOptions: readonly SelectOption<string>[] = DEPTH_MODELS.map(
     (entry) => ({
@@ -71,7 +72,7 @@ export function ControlsPanel({
       : [{ value: "relief", label: "Relief" }];
 
   return (
-    <Panel>
+    <Panel title="Point Cloud Studio" onReset={reset}>
       <Section title="Source">
         <Dropzone
           fileName={params.fileName}

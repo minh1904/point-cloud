@@ -20,6 +20,10 @@ Nhưng **hệ thống thị giác của Toolcraft thì giữ nguyên** (MIT, © 
 | Button | `h-7` · `px-2` · `rounded-lg` |
 | Khoảng cách control | 14px |
 | Slider | track **1px**, thumb **9px vuông** bo 2px, cả hai màu `--foreground` |
+| Bố cục | canvas `inset-0` trải kín, panel + toolbar **nổi** lên trên |
+| Bề mặt nổi | `popover` 75% + `backdrop-blur(40px) saturate(1.5)`, viền `border` 12% |
+| Vách ngăn section | `border` **8%** — gần như chỉ gợi ý |
+| Panel | `w-[300px]`, `rounded-lg`, `max-h-[calc(100dvh-1.25rem)]` |
 
 Chi tiết cuối dễ làm sai nhất: trực giác bảo "track 4px, thumb tròn, tô màu accent". Toolcraft làm ngược lại — hairline trắng — và kết quả nhìn tĩnh hơn hẳn khi panel có nhiều slider xếp dọc. Tôi đã làm theo trực giác ở bản đầu và phải sửa lại.
 
@@ -76,6 +80,17 @@ Dùng `exp()` chứ không cộng/trừ tuyến tính, nếu không zoom sẽ nh
 **Clamp DPR ở 2.** Màn 3x làm số pixel phải tô tăng 2.25 lần so với 2x mà mắt gần như không thấy khác. Với particle system, fill rate mới là bottleneck — đây là tối ưu đáng giá nhất và tốn đúng một dòng.
 
 **ResizeObserver chứ không `window.resize`:** panel có thể đổi rộng mà window thì không.
+
+### Bố cục nổi
+
+Điểm khác biệt lớn nhất so với bản đầu: Toolcraft **không dùng sidebar phẳng**.
+Canvas là `absolute inset-0` trải kín cửa sổ; panel và toolbar là những tấm nổi
+lên trên với backdrop blur. Lớp phủ chứa chúng để `pointer-events-none` để kéo
+và zoom xuyên xuống canvas, từng tấm tự bật lại `pointer-events-auto`.
+
+Một cạm bẫy khi đổi sang bố cục này: `CanvasStage` dùng `flex-1`, nên vùng bọc
+nó phải là flex container. Bọc bằng `absolute inset-0` thuần thì canvas cao 0 và
+màn hình trắng trơn — mọi thứ khác vẫn chạy nên rất khó đoán.
 
 ### `ui/ControlsPanel.tsx` — lắp ráp
 

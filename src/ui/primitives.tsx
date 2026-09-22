@@ -18,40 +18,190 @@
  * tĩnh hơn hẳn khi panel có nhiều slider xếp dọc.
  */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 const FIELD =
   "h-7 rounded-lg border border-[color:var(--border)] bg-transparent text-[13px] leading-[1.125rem]";
 const FIELD_HOVER =
   "hover:border-[color:color-mix(in_oklab,var(--foreground)_28%,transparent)]";
 
-/* ── Panel & Section ──────────────────────────────────────────────────── */
+/* ── Icon button ──────────────────────────────────────────────────────── */
 
-export function Panel({ children }: { children: ReactNode }) {
-  return (
-    <aside className="flex w-panel shrink-0 flex-col overflow-y-auto border-r border-[color:var(--border)]">
-      {children}
-    </aside>
-  );
-}
-
-export function Section({
-  title,
+/** Nút icon 22px cho header panel/section. Kích thước `xs` của Toolcraft. */
+export function IconButton({
+  label,
+  onClick,
   children,
 }: {
-  title: string;
+  label: string;
+  onClick: () => void;
   children: ReactNode;
 }) {
   return (
-    <section className="border-b border-[color:var(--border)] pb-3.5 last:border-b-0">
-      <header className="flex h-9 items-center justify-between gap-2 px-3">
-        <h2 className="m-0 text-2xs leading-none font-semibold whitespace-nowrap text-[color:color-mix(in_oklab,var(--foreground)_75%,transparent)] uppercase">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-[0.25rem] text-[color:var(--muted-foreground)] transition-colors hover:bg-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 10 6"
+      className={`w-2.5 fill-none stroke-current stroke-[1.5] transition-transform duration-150 ${open ? "" : "-rotate-90"}`}
+    >
+      <path d="M1 1l4 4 4-4" />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      className="size-3 fill-none stroke-current stroke-[1.5]"
+    >
+      <path d="M13 8a5 5 0 1 1-1.6-3.7M13 2v3h-3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────── */
+
+/**
+ * Tấm nổi chứa control.
+ *
+ * Toolcraft không dùng sidebar phẳng: canvas trải kín màn hình, panel nổi lên
+ * trên với backdrop blur. `max-h-[calc(100dvh-1.25rem)]` để panel dài vẫn chừa
+ * 10px mép trên dưới thay vì dính cạnh màn hình.
+ */
+export function Panel({
+  title,
+  onReset,
+  children,
+}: {
+  title: string;
+  onReset?: () => void;
+  children: ReactNode;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className="floating-surface pointer-events-auto flex max-h-[calc(100dvh-1.25rem)] w-panel flex-col overflow-hidden rounded-lg">
+      <header className="flex h-9 shrink-0 items-center justify-between gap-3 pr-1 pl-3">
+        <p className="m-0 min-w-0 truncate text-xs-plus font-medium text-[color:var(--foreground)]">
           {title}
-        </h2>
+        </p>
+        <div className="inline-flex shrink-0 items-center gap-1">
+          {onReset && (
+            <IconButton label="Đặt lại tất cả" onClick={onReset}>
+              <ResetIcon />
+            </IconButton>
+          )}
+          <IconButton
+            label={collapsed ? "Mở panel" : "Thu gọn panel"}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            <Chevron open={!collapsed} />
+          </IconButton>
+        </div>
       </header>
-      {/* 14px là khoảng cách control của Toolcraft (--control-list-gap) */}
-      <div className="flex flex-col gap-[14px] px-3">{children}</div>
+
+      {!collapsed && (
+        <div className="flex min-h-0 flex-col overflow-y-auto pb-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Section ──────────────────────────────────────────────────────────── */
+
+export function Section({
+  title,
+  onReset,
+  children,
+}: {
+  title: string;
+  onReset?: () => void;
+  children: ReactNode;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <section className="surface-divider first:border-t-0">
+      <header className="flex h-9 items-center justify-between gap-2 pr-1 pl-3">
+        <button
+          type="button"
+          onClick={() => setCollapsed((value) => !value)}
+          aria-expanded={!collapsed}
+          className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left text-[color:color-mix(in_oklab,var(--foreground)_75%,transparent)] transition-colors hover:text-[color:var(--foreground)]"
+        >
+          <Chevron open={!collapsed} />
+          <h2 className="m-0 text-2xs leading-none font-semibold whitespace-nowrap uppercase">
+            {title}
+          </h2>
+        </button>
+        {onReset && (
+          <IconButton label={`Đặt lại ${title}`} onClick={onReset}>
+            <ResetIcon />
+          </IconButton>
+        )}
+      </header>
+
+      {!collapsed && (
+        // 14px là --control-list-gap của Toolcraft.
+        <div className="flex flex-col gap-[14px] px-3 pb-3.5">{children}</div>
+      )}
     </section>
+  );
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+
+/** Thanh công cụ nổi. Cùng ngôn ngữ bề mặt với Panel. */
+export function Toolbar({ children }: { children: ReactNode }) {
+  return (
+    <div className="floating-surface pointer-events-auto flex w-auto items-center justify-start gap-1.5 rounded-lg p-1">
+      {children}
+    </div>
+  );
+}
+
+export function ToolbarDivider() {
+  return (
+    <span
+      aria-hidden
+      className="block h-5 w-px shrink-0 rounded-full bg-[color:color-mix(in_oklab,var(--border)_30%,transparent)]"
+    />
+  );
+}
+
+/** Một ô chữ trong toolbar. `mono` cho số để chúng không nhảy khi đổi giá trị. */
+export function ToolbarCell({
+  children,
+  mono,
+}: {
+  children: ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-flex h-7 shrink-0 cursor-default items-center px-1.5 text-[12px] leading-[1.125rem] text-[color:color-mix(in_oklab,var(--foreground)_90%,transparent)] select-none ${
+        mono ? "font-mono tabular-nums" : ""
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 

@@ -31,8 +31,8 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
 
-  /* Panel rộng 280px: đủ cho một slider có nhãn và số mà không lấn canvas. */
-  --spacing-panel: 280px;
+  /* 300px là bề rộng panel của Toolcraft. */
+  --spacing-panel: 300px;
 }
 
 :root {
@@ -148,4 +148,29 @@ canvas {
   border-radius: 999px;
   background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
   background-clip: padding-box;
+}
+
+/**
+ * Bề mặt nổi.
+ *
+ * Toolcraft không dùng sidebar phẳng: canvas trải kín `inset-0`, còn panel và
+ * toolbar là những tấm nổi lên trên, nền popover 75% + backdrop blur. Nhờ vậy
+ * nội dung luôn chiếm trọn màn hình và chrome chỉ là lớp phủ.
+ *
+ * Viền 12% chứ không phải 100%: ở nền đen tuyệt đối, viền đủ rõ là đã quá rõ.
+ */
+.floating-surface {
+  border: 1px solid color-mix(in oklab, var(--border) 12%, transparent);
+  background-color: color-mix(in oklab, var(--popover) 75%, transparent);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .floating-surface {
+    backdrop-filter: blur(40px) saturate(1.5);
+  }
+}
+
+/* Vách ngăn giữa các section bên trong panel: 8%, gần như chỉ gợi ý. */
+.surface-divider {
+  border-top: 1px solid color-mix(in oklab, var(--border) 8%, transparent);
 }

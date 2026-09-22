@@ -30,6 +30,7 @@ import { useActiveModel, useStudio } from "@/store/studio";
 
 import { CanvasStage, type StageFrame } from "@/ui/CanvasStage";
 import { ControlsPanel } from "@/ui/ControlsPanel";
+import { Toolbar, ToolbarCell, ToolbarDivider } from "@/ui/primitives";
 
 /**
  * Giải mã file ảnh thành pixel thô.
@@ -133,33 +134,36 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-full">
-      <ControlsPanel onFile={onFile} onClear={onClear} />
-
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-9 shrink-0 items-center justify-between border-b border-[color:var(--border)] px-3">
-          <h1 className="m-0 text-[13px] leading-[1.125rem] font-semibold">Point Cloud Studio</h1>
-          <span className="font-mono text-2xs text-[color:var(--muted-foreground)]">
-            {pixels
-              ? `${pixels.width}×${pixels.height}`
-              : "chưa có ảnh"}
-            {depth ? ` · depth ${depth.width}×${depth.height}` : ""}
-            {` · ${modelId.split("/")[1] ?? modelId}`}
-          </span>
-        </header>
-
+    // Canvas trải kín, panel và toolbar nổi lên trên — bố cục của Toolcraft.
+    // `pointer-events-none` ở lớp phủ để kéo/zoom xuyên qua được xuống canvas;
+    // từng tấm nổi tự bật lại `pointer-events-auto`.
+    <div className="relative h-full overflow-clip">
+      {/* flex để `flex-1` của CanvasStage có tác dụng — nếu không nó cao 0. */}
+      <div className="absolute inset-0 flex">
         <CanvasStage
           onFrame={onFrame}
           empty={!pixels}
-          emptyHint="Kéo ảnh vào panel bên trái để bắt đầu"
+          emptyHint="Kéo ảnh vào panel để bắt đầu"
         />
+      </div>
 
-        {viewMode === "particles" && (
-          <div className="border-t border-[color:var(--border)] px-3 py-2 text-2xs text-[color:var(--muted-foreground)]">
-            Chế độ 3D particles sẽ được nối ở P2.
-          </div>
-        )}
-      </main>
+      <div className="pointer-events-none absolute inset-0 flex items-start justify-between gap-2.5 p-2.5">
+        <ControlsPanel onFile={onFile} onClear={onClear} />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center">
+        <Toolbar>
+          <ToolbarCell mono>
+            {pixels ? `${pixels.width}×${pixels.height}` : "chưa có ảnh"}
+          </ToolbarCell>
+          <ToolbarDivider />
+          <ToolbarCell mono>
+            {depth ? `depth ${depth.width}×${depth.height}` : "chưa có depth"}
+          </ToolbarCell>
+          <ToolbarDivider />
+          <ToolbarCell>{modelId.split("/")[1] ?? modelId}</ToolbarCell>
+        </Toolbar>
+      </div>
     </div>
   );
 }

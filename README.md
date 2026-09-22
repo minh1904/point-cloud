@@ -8,7 +8,7 @@ Inspired by the particle hero of [UntilLabs](https://www.untillabs.com/) ([Codro
 2. **Tweak it like a design tool** — inspector panel, presets, undo/redo, live preview.
 3. **Export** metadata JSON + data textures and load them in another app with a small drop-in component.
 
-> **Status:** early. The particle renderer is being built step by step — **P1 is complete** in the [roadmap](docs/roadmap.md): 60k GPU-drifting soft points in one draw call, live controls and an orbit camera. Photo upload, depth and export come in later phases.
+> **Status:** early. **P1 is complete and P2 is in progress** in the [roadmap](docs/roadmap.md): 60k GPU-drifting soft points, live controls and an orbit camera now render through a HalfFloat off-screen target. Photo upload, depth and export come in later phases.
 
 ## Stack
 

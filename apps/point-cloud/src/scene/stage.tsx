@@ -6,6 +6,7 @@ import type { ComponentRef, Ref } from "react";
 
 import { ParticleField, type ParticleParams } from "./particle-field";
 import { RenderInfo, type RenderStats } from "./render-info";
+import { ScenePass } from "./scene-pass";
 
 /** Imperative handle of the orbit controls (e.g. `.reset()`). */
 export type OrbitControlsHandle = ComponentRef<typeof OrbitControls>;
@@ -22,9 +23,15 @@ export function Stage({ params, playing, onStats, controlsRef }: StageProps) {
     // R3F sizes the canvas to its parent and sets its own inline styles on the
     // wrapper, so position this element instead of styling <Canvas> itself.
     <div className="absolute inset-0">
-      <Canvas dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 45 }} gl={{ antialias: true }}>
-        <color attach="background" args={["#000000"]} />
-        <ParticleField {...params} playing={playing} />
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 4], fov: 45 }}
+        gl={{ antialias: true }}
+      >
+        <ScenePass>
+          <color attach="background" args={["#000000"]} />
+          <ParticleField {...params} playing={playing} />
+        </ScenePass>
         {/*
           P1.6 — the controls move the camera, never the particles: left-drag
           orbits around the target, right-drag (or shift) pans, wheel dollies.

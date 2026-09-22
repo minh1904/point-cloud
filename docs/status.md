@@ -1,26 +1,26 @@
 # Status & handoff
 
-_Last updated: 2026-09-22 · last commit on `main`: `b817088`_
+_Last updated: 2026-09-22 · last commit on `main`: `d4b77fe`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 and P1 are complete.** The app renders 60,000 soft round points uniformly inside a sphere in one draw call, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view.
+**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.1 now renders that scene into a HalfFloat FBO, then copies the texture to the screen unchanged in a second draw call.
 
 | Phase | Status |
 |---|---|
 | P0 Scaffold (monorepo, Next.js, Atelier tokens + Button, Storybook) | ✅ done |
 | P1 Particle field (1.1 → 1.6) | ✅ done |
 | P-UI Atelier | Button, Slider, Panel done · Section, PropertyRow, NumberField pending (pulled in by P2) |
-| P2 FBO + post-processing | ⏭ **next** |
+| P2 FBO + post-processing | 2.1 done · ⏭ **2.2 next** |
 | P3–P9 | not started |
 
-## Next step: P2.1
+## Next step: P2.2
 
-Render the particle scene into an off-screen render target (`useFBO`, HalfFloat) through `createPortal`, then draw it on a fullscreen quad. Nothing should look different yet — same approach as P1.2 (swap the plumbing, verify identical output). See the P2 table in the roadmap for 2.1 → 2.5 and their "done when" checks.
+Move the inline copy shader into dedicated fullscreen vertex/fragment shader files, then add a temporary colour-invert path as the sanity check that every pixel is passing through the post stage. Return the default output to an unchanged copy before finishing the step.
 
-Per the project rules, P2.1 also needs a learning note `docs/learn/p2-1-....md` (Vietnamese) and an entry in `docs/learn/README.md`.
+Per the project rules, P2.2 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
 ## Open decisions
 

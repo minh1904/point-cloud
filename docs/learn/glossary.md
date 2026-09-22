@@ -27,6 +27,10 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Stateless animation** | Chuyển động tính lại từ đầu mỗi frame chỉ từ dữ liệu gốc + thời gian; không nhớ frame trước. | [P1.5](p1-5-gpu-drift.md) |
 | **Amplitude / Frequency / Phase** | Biên độ (lắc xa bao nhiêu) / tần số (nhanh chậm) / pha (đang ở đâu trong chu kỳ) của một dao động `sin`. | [P1.5](p1-5-gpu-drift.md) |
 | **`ALIASED_POINT_SIZE_RANGE`** | Khoảng `gl_PointSize` mà GPU hỗ trợ; mỗi máy khác nhau. | [P1.4](p1-4-point-size.md) |
+| **FBO / Framebuffer** | Vùng bộ nhớ GPU nhận màu và độ sâu khi render. Framebuffer mặc định thuộc canvas; FBO cho phép vẽ ngoài màn hình. | [P2.1](p2-1-offscreen-render-target.md) |
+| **Render target** | Đích render ngoài màn hình có texture để pass sau đọc lại. | [P2.1](p2-1-offscreen-render-target.md) |
+| **Half float** | Số thực 16-bit; chính xác và có khoảng giá trị rộng hơn kênh màu 8-bit, phù hợp cho texture hậu kỳ. | [P2.1](p2-1-offscreen-render-target.md) |
+| **Fullscreen triangle** | Một tam giác clip-space quá khổ phủ toàn màn hình, dùng để chạy fragment shader một lần cho mỗi pixel. | [P2.1](p2-1-offscreen-render-target.md) |
 
 ## Không gian toạ độ
 
@@ -67,3 +71,4 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Accessible name** | Tên mà trình đọc màn hình đọc cho một control (ví dụ slider "Size"), thường lấy từ `aria-label` hoặc `<label>`. | [P1.5](p1-5-gpu-drift.md) |
 | **Base UI** | Thư viện component không kèm style (unstyled) lo phần hành vi và truy cập; Atelier dựng style lên trên. | [P1.5](p1-5-gpu-drift.md) |
 | **Monorepo** | Một repo chứa nhiều package/app dùng chung công cụ. | [P0](p0-scaffold.md) |
+| **Portal (R3F)** | Gắn một React subtree vào `THREE.Scene` khác nhưng vẫn dùng chung renderer và render loop. | [P2.1](p2-1-offscreen-render-target.md) |

@@ -10,7 +10,7 @@ bun run dev          # http://localhost:3000
 | Path | Contents |
 |---|---|
 | `src/app/` | Root layout (Inter font, tokens), page, `Studio` shell with the controls panel |
-| `src/scene/` | R3F scene: `Stage` (canvas), `ParticleField`, point generators, render stats |
+| `src/scene/` | R3F scene: `Stage` (canvas), `ParticleField`, off-screen `ScenePass`, point generators, render stats |
 | `src/shaders/` | GLSL shaders, imported as strings via the `*.glsl` rule in `next.config.ts` |
 
 The canvas is loaded client-only (`next/dynamic` with `ssr: false`) because WebGL has nothing to render on the server.

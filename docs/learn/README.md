@@ -32,8 +32,11 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P1.5 · Hạt tự trôi trên GPU (và slider đầu tiên)](p1-5-gpu-drift.md)
 - [P1.6 · Camera: xoay, pan, zoom](p1-6-orbit-camera.md)
 
+### P2 — Render pipeline
+- [P2.1 · Render scene vào FBO](p2-1-offscreen-render-target.md)
+
 ### Tiếp theo
-- P2 · Render vào FBO và hậu kỳ (vignette, quang sai màu) *(sắp tới)*
+- P2.2 · Fullscreen post-processing shader *(sắp tới)*
 
 ## Bức tranh tổng thể
 

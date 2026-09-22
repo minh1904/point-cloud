@@ -101,7 +101,7 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 2.1 | `createPortal` content scene rendered into `useFBO` (HalfFloat) | Render targets: drawing into a texture instead of the screen | Scene still visible, now via texture |
+| ✅ 2.1 | `createPortal` content scene rendered into `useFBO` (HalfFloat) | Render targets: drawing into a texture instead of the screen | Scene still visible, now via texture |
 | 2.2 | Fullscreen quad shader that samples the FBO | Post-processing = a 2D shader over the frame | Can invert colours as a sanity test |
 | 2.3 | `useFrame` priorities (-1 render, 1 quad) | Ordering passes in R3F; `gl.autoClear` pitfalls | No flicker, no double render |
 | 2.4 | Vignette + chromatic aberration + grain | Per-pixel effects and why they're cheap | Controls change them live |

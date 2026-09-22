@@ -34,6 +34,9 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Post-processing** | Xử lý ảnh sau khi scene đã được render: fragment shader đọc texture của cả khung hình rồi biến đổi từng pixel. | [P2.2](p2-2-fullscreen-post-shader.md) |
 | **Texture sampling** | Đọc giá trị màu/dữ liệu từ texture tại một toạ độ UV bằng hàm như `texture2D`. | [P2.2](p2-2-fullscreen-post-shader.md) |
 | **UV** | Toạ độ 2D chuẩn hoá trên texture; thường `(0,0)` ở một góc và `(1,1)` ở góc đối diện. | [P2.2](p2-2-fullscreen-post-shader.md) |
+| **Render priority (R3F)** | Số quyết định thứ tự callback `useFrame`: số thấp chạy trước; priority dương đồng thời tắt automatic render để callback tự vẽ. | [P2.3](p2-3-render-pass-order.md) |
+| **`autoClear`** | Cờ của `WebGLRenderer` cho phép tự xoá color/depth/stencil buffer của render target hiện tại trước mỗi lần `render()`. | [P2.3](p2-3-render-pass-order.md) |
+| **Manual render** | Khi app tự gọi `gl.render(scene, camera)` và chịu trách nhiệm về thứ tự pass thay vì để R3F vẽ scene gốc tự động. | [P2.3](p2-3-render-pass-order.md) |
 
 ## Không gian toạ độ
 

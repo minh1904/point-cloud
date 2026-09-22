@@ -8,6 +8,9 @@ import { HalfFloatType, Scene, type ShaderMaterial } from "three";
 import postFragmentShader from "@/shaders/post.frag.glsl";
 import postVertexShader from "@/shaders/post.vert.glsl";
 
+const OFFSCREEN_RENDER_PRIORITY = -1;
+const SCREEN_RENDER_PRIORITY = 1;
+
 interface ScenePassProps {
   children: ReactNode;
   invert?: boolean;
@@ -41,15 +44,20 @@ export function ScenePass({ children, invert = false }: ScenePassProps) {
     if (invertUniform) invertUniform.value = invert ? 1 : 0;
   }, [invert]);
 
-  // WebGLRenderer normally resets stats on every render call. This frame now
-  // has two calls to render() (content + screen), so reset once ourselves and
-  // let RenderInfo report the combined result on the following frame.
+  // The pipeline owns both render calls. Keep automatic clearing enabled so
+  // each pass clears its own target, but reset renderer stats only once so the
+  // HUD reports the combined offscreen + screen work.
   useLayoutEffect(() => {
-    const info = renderer.current.info;
+    const currentRenderer = renderer.current;
+    const info = currentRenderer.info;
+    const previousAutoClear = currentRenderer.autoClear;
     const previousAutoReset = info.autoReset;
+
+    currentRenderer.autoClear = true;
     info.autoReset = false;
 
     return () => {
+      currentRenderer.autoClear = previousAutoClear;
       info.autoReset = previousAutoReset;
       info.reset();
     };
@@ -61,7 +69,14 @@ export function ScenePass({ children, invert = false }: ScenePassProps) {
     gl.setRenderTarget(target);
     gl.render(contentScene, camera);
     gl.setRenderTarget(previousTarget);
-  });
+  }, OFFSCREEN_RENDER_PRIORITY);
+
+  // A positive priority disables R3F's automatic render. This is the only
+  // screen render for the frame, so the quad is not drawn a second time.
+  useFrame(({ camera, scene }) => {
+    gl.setRenderTarget(null);
+    gl.render(scene, camera);
+  }, SCREEN_RENDER_PRIORITY);
 
   return (
     <>

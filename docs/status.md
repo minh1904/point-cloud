@@ -1,26 +1,26 @@
 # Status & handoff
 
-_Last updated: 2026-09-22 · last commit on `main`: `ec370bb`_
+_Last updated: 2026-09-22 · last commit on `main`: `cf8a842`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.2 now samples the HalfFloat FBO through dedicated fullscreen vertex/fragment shaders. The post shader has an opt-in colour-invert sanity path, while the default output remains an unchanged copy.
+**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.3 now owns the render loop explicitly: priority `-1` renders the content scene into the HalfFloat FBO, then priority `1` renders the fullscreen post triangle to the canvas. The HUD remains stable at two draw calls.
 
 | Phase | Status |
 |---|---|
 | P0 Scaffold (monorepo, Next.js, Atelier tokens + Button, Storybook) | ✅ done |
 | P1 Particle field (1.1 → 1.6) | ✅ done |
 | P-UI Atelier | Button, Slider, Panel done · Section, PropertyRow, NumberField pending (pulled in by P2) |
-| P2 FBO + post-processing | 2.1–2.2 done · ⏭ **2.3 next** |
+| P2 FBO + post-processing | 2.1–2.3 done · ⏭ **2.4 next** |
 | P3–P9 | not started |
 
-## Next step: P2.3
+## Next step: P2.4
 
-Make the two passes' order explicit with `useFrame` priorities: render the content scene into the FBO first, then render the root scene containing the fullscreen triangle. Handle `gl.autoClear` deliberately so neither pass erases the other and there is no flicker or duplicate render.
+Add the first visible post effects to the fullscreen shader: vignette, chromatic aberration and grain. Pull in the Atelier controls needed to tune them live, keeping shader uniforms updated without rebuilding the material.
 
-Per the project rules, P2.3 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
+Per the project rules, P2.4 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
 ## Open decisions
 

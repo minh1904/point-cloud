@@ -35,9 +35,10 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 ### P2 — Render pipeline
 - [P2.1 · Render scene vào FBO](p2-1-offscreen-render-target.md)
 - [P2.2 · Fullscreen post-processing shader](p2-2-fullscreen-post-shader.md)
+- [P2.3 · Thứ tự các render pass](p2-3-render-pass-order.md)
 
 ### Tiếp theo
-- P2.3 · Thứ tự các render pass *(sắp tới)*
+- P2.4 · Vignette, chromatic aberration và grain *(sắp tới)*
 
 ## Bức tranh tổng thể
 

@@ -28,16 +28,16 @@ export function Stage({ params, playing, onStats, controlsRef }: StageProps) {
         camera={{ position: [0, 0, 4], fov: 45 }}
         gl={{ antialias: true }}
       >
-        <ScenePass>
-          <color attach="background" args={["#000000"]} />
-          <ParticleField {...params} playing={playing} />
-        </ScenePass>
         {/*
           P1.6 — the controls move the camera, never the particles: left-drag
           orbits around the target, right-drag (or shift) pans, wheel dollies.
           Damping eases the camera toward where the input points instead of
           stopping dead, which reads as weight. Zoom goes toward the target,
           not the cursor, so the subject stays framed.
+
+          P2.3 — OrbitControls and the offscreen pass both use priority -1.
+          Mounting controls first registers its camera update before the FBO
+          render at that priority, so damping never appears one frame late.
         */}
         <OrbitControls
           ref={controlsRef}
@@ -48,6 +48,10 @@ export function Stage({ params, playing, onStats, controlsRef }: StageProps) {
           minDistance={0.6}
           maxDistance={12}
         />
+        <ScenePass>
+          <color attach="background" args={["#000000"]} />
+          <ParticleField {...params} playing={playing} />
+        </ScenePass>
         <RenderInfo onStats={onStats} />
       </Canvas>
     </div>

@@ -14,7 +14,7 @@ import { create } from "zustand";
 
 import { DEFAULT_DEPTH_MODEL_ID, resolveDepthModel } from "@/depth/registry";
 import type { RawPixels } from "@/depth/protocol";
-import { DEPTH, PARTICLE } from "@/shared/config";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE } from "@/shared/config";
 import type {
   Colormap,
   DepthMap,
@@ -34,6 +34,12 @@ export type Params = {
   gridSize: number;
   projection: Projection;
   pointSize: number;
+  fbmAmp: number;
+  fbmFreq: number;
+  fbmSpeed: number;
+  curlStrength: number;
+  breathAmp: number;
+  breathSpeed: number;
   gzip: boolean;
 };
 
@@ -66,6 +72,12 @@ const INITIAL_PARAMS: Params = {
   gridSize: PARTICLE.defaultGrid,
   projection: "relief",
   pointSize: PARTICLE.pointSizeDefault,
+  fbmAmp: FBM.amplitudeDefault,
+  fbmFreq: FBM.frequencyDefault,
+  fbmSpeed: FBM.speedDefault,
+  curlStrength: CURL.strengthDefault,
+  breathAmp: BREATHING.amplitudeDefault,
+  breathSpeed: BREATHING.speedDefault,
   gzip: true,
 };
 

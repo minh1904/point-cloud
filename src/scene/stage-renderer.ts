@@ -18,7 +18,7 @@ import * as THREE from "three";
 
 import { sampleColormap } from "@/depth/colormap";
 import type { RawPixels } from "@/depth/protocol";
-import { EDGE, NOISE } from "@/shared/config";
+import { BREATHING, CURL, EDGE, FBM } from "@/shared/config";
 import type { Colormap, DepthMap } from "@/shared/types";
 
 import depthFragment from "./shaders/depth-preview.frag.glsl";
@@ -35,6 +35,12 @@ export type StageInput = {
   readonly depthScale: number;
   readonly gridSize: number;
   readonly pointSize: number;
+  readonly fbmAmp: number;
+  readonly fbmFreq: number;
+  readonly fbmSpeed: number;
+  readonly curlStrength: number;
+  readonly breathAmp: number;
+  readonly breathSpeed: number;
   readonly dpr: number;
   readonly time: number;
   readonly viewport: {
@@ -213,10 +219,14 @@ function createStage(canvas: HTMLCanvasElement): Stage {
       uTime: { value: 0 },
       uEdgeLo: { value: EDGE.lo },
       uEdgeHi: { value: EDGE.hi },
-      uNoiseFreq: { value: NOISE.frequency },
-      uNoiseAmp: { value: NOISE.amplitude },
-      uNoiseOctaves: { value: NOISE.octaves },
-      uNoiseEps: { value: NOISE.epsilon },
+      uFbmAmp: { value: FBM.amplitudeDefault },
+      uFbmFreq: { value: FBM.frequencyDefault },
+      uFbmSpeed: { value: FBM.speedDefault },
+      uCurlStrength: { value: CURL.strengthDefault },
+      uBreathAmp: { value: BREATHING.amplitudeDefault },
+      uBreathSpeed: { value: BREATHING.speedDefault },
+      uOctaves: { value: FBM.octaves },
+      uEps: { value: FBM.epsilon },
       uDpr: { value: 1 },
       uRefDistance: { value: 3.2 },
     },
@@ -342,6 +352,12 @@ export function renderStage(
   u.uPointSize.value = input.pointSize;
   u.uTime.value = input.time;
   u.uDpr.value = dpr;
+  u.uFbmAmp.value = input.fbmAmp;
+  u.uFbmFreq.value = input.fbmFreq;
+  u.uFbmSpeed.value = input.fbmSpeed;
+  u.uCurlStrength.value = input.curlStrength;
+  u.uBreathAmp.value = input.breathAmp;
+  u.uBreathSpeed.value = input.breathSpeed;
 
   // Dùng lại đúng cử chỉ pan/zoom của CanvasStage nhưng diễn giải thành orbit:
   // kéo ngang → phương vị, kéo dọc → độ cao, cuộn → khoảng cách. Không cần thêm

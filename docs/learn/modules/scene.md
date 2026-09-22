@@ -248,7 +248,17 @@ Module này **không** tạo file, không gọi AI, không biết JSON schema.
 
 **`gl_PointSize` có giới hạn.** `ALIASED_POINT_SIZE_RANGE` cap ở ~64 px trên Safari và một số GPU. Muốn hạt to hơn phải chuyển sang instanced quads. Đừng ngạc nhiên khi hạt không to thêm dù tăng `uPointSize`.
 
-**Bottleneck là fill rate, không phải vertex.** 262 k `GL_POINTS` rất nhẹ về vertex. Cái đắt là overdraw do alpha blending với point to. Tối ưu quan trọng nhất: render ở resolution thấp hơn màn hình rồi upscale (bài Codrops làm đúng chỗ này), cộng `depthWrite: false` và clamp DPR.
+**Bottleneck là fill rate, không phải vertex.** Đo thực tế trên máy dev, cỡ hạt 11px:
+
+| Lưới | Hạt | fps |
+|---|---|---|
+| 256² | 66k | 100 (chạm trần màn hình) |
+| 384² | 147k | 54 |
+| 512² | 262k | 32 |
+
+Cùng 262k hạt nhưng cỡ 3px thì đạt 100 fps. Số hạt tăng 4 lần chỉ làm fps giảm ~3 lần, còn cỡ hạt tăng 3.7 lần làm fps giảm 3 lần — chi phí nằm ở số **pixel phải tô**, không phải số đỉnh.
+
+ 262 k `GL_POINTS` rất nhẹ về vertex. Cái đắt là overdraw do alpha blending với point to. Tối ưu quan trọng nhất: render ở resolution thấp hơn màn hình rồi upscale (bài Codrops làm đúng chỗ này), cộng `depthWrite: false` và clamp DPR.
 
 **Tạo tài nguyên GPU trong thân React component.** Mỗi lần kéo slider sẽ upload lại texture. Tài nguyên phải sống trong `useRef`, ngoài render.
 

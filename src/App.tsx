@@ -68,6 +68,12 @@ export default function App() {
   const depthScale = useStudio((state) => state.depthScale);
   const gridSize = useStudio((state) => state.gridSize);
   const pointSize = useStudio((state) => state.pointSize);
+  const fbmAmp = useStudio((state) => state.fbmAmp);
+  const fbmFreq = useStudio((state) => state.fbmFreq);
+  const fbmSpeed = useStudio((state) => state.fbmSpeed);
+  const curlStrength = useStudio((state) => state.curlStrength);
+  const breathAmp = useStudio((state) => state.breathAmp);
+  const breathSpeed = useStudio((state) => state.breathSpeed);
   const modelId = useStudio((state) => state.modelId);
   const model = useActiveModel();
 
@@ -156,6 +162,12 @@ export default function App() {
         depthScale,
         gridSize,
         pointSize,
+        fbmAmp,
+        fbmFreq,
+        fbmSpeed,
+        curlStrength,
+        breathAmp,
+        breathSpeed,
         dpr: frame.dpr,
         time: frame.time,
         viewport: frame.viewport,
@@ -170,6 +182,12 @@ export default function App() {
       depthScale,
       gridSize,
       pointSize,
+      fbmAmp,
+      fbmFreq,
+      fbmSpeed,
+      curlStrength,
+      breathAmp,
+      breathSpeed,
     ],
   );
 

@@ -9,10 +9,14 @@ uniform float uPointSize;
 uniform float uTime;
 uniform float uEdgeLo;       // từ shared/config.ts — KHÔNG hardcode
 uniform float uEdgeHi;
-uniform float uNoiseFreq;
-uniform float uNoiseAmp;
-uniform int   uNoiseOctaves;
-uniform float uNoiseEps;
+uniform float uFbmAmp;        // biên độ gợn theo trục z
+uniform float uFbmFreq;       // tần số không gian
+uniform float uFbmSpeed;      // tốc độ trôi theo thời gian
+uniform float uCurlStrength;  // độ xoáy trong mặt phẳng xy
+uniform float uBreathAmp;
+uniform float uBreathSpeed;
+uniform int   uOctaves;
+uniform float uEps;
 uniform float uDpr;
 uniform float uRefDistance;  // khoảng cách camera hiện tại
 
@@ -44,7 +48,23 @@ void main() {
 
   // Chuyển động analytic: position = f(uv, time). Không có velocity buffer,
   // không ping-pong FBO — nên không tích luỹ sai số và scrub được theo thời gian.
-  p.xy += curlNoise(p.xy * uNoiseFreq, uTime, uNoiseOctaves, uNoiseEps) * uNoiseAmp;
+  //
+  // fBM và curl làm hai việc khác nhau nên tách riêng: fBM đẩy hạt ra/vào theo
+  // trục z (địa hình gợn sóng), curl xoáy hạt trong mặt phẳng xy (dòng chảy).
+  vec2 domain = p.xy * uFbmFreq;
+  float t = uTime * uFbmSpeed;
+
+  p.xy += curlNoise(domain, t, uOctaves, uEps) * uCurlStrength;
+  p.z += (fbm(domain + vec2(t), uOctaves) - 0.5) * uFbmAmp * 0.2;
+
+  // Thở: phình/co theo chu kỳ.
+  //
+  // Pha biến thiên MƯỢT theo không gian, không phải ngẫu nhiên từng hạt. Dùng
+  // hash per-particle thì hai hạt cạnh nhau co giãn ngược pha và bề mặt tan
+  // thành nhiễu — đã thử và nhìn hỏng hẳn. Sóng theo khoảng cách tới tâm giữ
+  // các hạt lân cận đồng pha, nên cả đám phồng lên như một cơ thể.
+  float phase = length(p.xy) * 1.5;
+  p *= 1.0 + sin(uTime * uBreathSpeed - phase) * uBreathAmp;
 
   vColor = texture2D(uColor, st).rgb;
 

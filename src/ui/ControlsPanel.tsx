@@ -7,7 +7,7 @@
  */
 
 import { DEPTH_MODELS } from "@/depth/registry";
-import { DEPTH, PARTICLE } from "@/shared/config";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE } from "@/shared/config";
 import { useActiveModel, useStudio, type ViewMode } from "@/store/studio";
 import type { Colormap, Projection } from "@/shared/types";
 
@@ -162,7 +162,66 @@ export function ControlsPanel({
             format={(value) => value.toFixed(1)}
           />
         )}
+
+        {params.viewMode === "particles" && params.pointSize > 8 && (
+          <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
+            Hạt to làm hạt chồng nhau thành mảng màu, nhưng chi phí là fill rate
+            — đo thực tế với cỡ 11: lưới 256² đạt 100 fps, 384² còn 54, 512² còn
+            32. Giảm lưới nếu thấy giật.
+          </p>
+        )}
       </Section>
+
+      {params.viewMode === "particles" && (
+        <Section title="Motion">
+          <Slider
+            label="fBM — biên độ"
+            value={params.fbmAmp}
+            min={FBM.amplitudeMin}
+            max={FBM.amplitudeMax}
+            onChange={(value) => setParam("fbmAmp", value)}
+          />
+          <Slider
+            label="fBM — tần số"
+            value={params.fbmFreq}
+            min={FBM.frequencyMin}
+            max={FBM.frequencyMax}
+            onChange={(value) => setParam("fbmFreq", value)}
+          />
+          <Slider
+            label="fBM — tốc độ"
+            value={params.fbmSpeed}
+            min={FBM.speedMin}
+            max={FBM.speedMax}
+            onChange={(value) => setParam("fbmSpeed", value)}
+          />
+          <Slider
+            label="Curl — độ xoáy"
+            value={params.curlStrength}
+            min={CURL.strengthMin}
+            max={CURL.strengthMax}
+            step={0.005}
+            onChange={(value) => setParam("curlStrength", value)}
+            format={(value) => value.toFixed(3)}
+          />
+          <Slider
+            label="Thở — biên độ"
+            value={params.breathAmp}
+            min={BREATHING.amplitudeMin}
+            max={BREATHING.amplitudeMax}
+            step={0.005}
+            onChange={(value) => setParam("breathAmp", value)}
+            format={(value) => value.toFixed(3)}
+          />
+          <Slider
+            label="Thở — tốc độ"
+            value={params.breathSpeed}
+            min={BREATHING.speedMin}
+            max={BREATHING.speedMax}
+            onChange={(value) => setParam("breathSpeed", value)}
+          />
+        </Section>
+      )}
 
       <Section title="Geometry">
         <Slider

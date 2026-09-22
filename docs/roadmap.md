@@ -6,7 +6,7 @@ Goal: a **demo tool** in the spirit of [creative-art-points](https://creative-ar
 2. **Tweak it like a design tool** — inspector panel, presets, undo/redo, live preview.
 3. **Export the lightweight bundle** (metadata JSON + data PNGs, as in the article) and **import it into a real project** with a small drop-in component.
 
-Stack (decided): pnpm monorepo · Vite · React · TypeScript · React Three Fiber · drei · Zustand · Vitest · Base UI + Tailwind v4 for our own component kit (**Atelier**, `@atelier/*`).
+Stack (decided): pnpm monorepo · Next.js 16 (App Router, Turbopack) · React 19.2 · TypeScript · React Three Fiber · drei · Zustand · Vitest · Base UI + Tailwind v4 for our own component kit (**Atelier**, `@atelier/*`).
 Open decisions are marked **🔶 DECISION** — each one blocks only the steps after it.
 
 **Priority:** the point-cloud app comes first. Atelier grows *out of* it — a component is only built when a point-cloud step needs it, then extracted into the kit (see P-UI).
@@ -38,7 +38,7 @@ P6 writes into the same texture format that P3 reads, so the renderer never know
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 0.1 | pnpm workspace: `apps/point-cloud` (Vite + React + TS) + `packages/*`, shared strict tsconfig, ESLint, Prettier, Vitest | Monorepo wiring: workspace protocol, shared config, one command runs everything | `pnpm dev`, `pnpm lint`, `pnpm test`, `pnpm typecheck` pass from the root |
+| 0.1 | pnpm workspace: `apps/point-cloud` (Next.js via `create-next-app`) + `packages/*`, shared strict tsconfig, ESLint, Prettier, Vitest | Monorepo wiring: workspace protocol, shared config, one command runs everything | `pnpm dev`, `pnpm lint`, `pnpm test`, `pnpm typecheck` pass from the root |
 | 0.2 | App folder layout (below), path alias `@/`; empty `@atelier/tokens` + `@atelier/ui` consumed by the app | Separating renderer, pipeline, UI, export so each can be tested alone | App imports a component from `@atelier/ui` |
 | 0.3 | Full-screen `<Canvas>` with a spinning cube, `dpr={[1,2]}` | R3F's render loop, `useFrame`, `useThree` | Cube spins at 60 fps; resizing keeps aspect |
 | 0.4 | 🔶 **DECISION: visual style** (you are researching this) — only changes token *values*, never blocks component work | Theming through CSS variables | Style chosen, tokens filled in `@atelier/tokens` |
@@ -47,7 +47,7 @@ P6 writes into the same texture format that P3 reads, so the renderer never know
 apps/point-cloud/src/
   app/          App composition
   scene/        R3F: Canvas, camera, particles, post
-  shaders/      .glsl files (?raw imports)
+  shaders/      .glsl files (raw import via a Turbopack loader rule)
   pipeline/     photo → depth → sampling → textures (pure TS + worker)
   bundle/       encode / decode / zip the export format
   store/        Zustand: params, history, pipeline state

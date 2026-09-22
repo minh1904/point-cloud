@@ -21,9 +21,12 @@ import type { RawPixels } from "@/depth/protocol";
 import { BREATHING, CURL, EDGE, FBM, SPREAD } from "@/shared/config";
 import type { Colormap, DepthMap } from "@/shared/types";
 
+import { createLutTexture, type LutPreset } from "./lut";
+
 import depthFragment from "./shaders/depth-preview.frag.glsl";
 import particleFragment from "./shaders/particles.frag.glsl";
 import particleVertex from "./shaders/particles.vert.glsl";
+import postFragment from "./shaders/post.frag.glsl";
 import quadVertex from "./shaders/quad.vert.glsl";
 
 export type StageInput = {
@@ -40,6 +43,12 @@ export type StageInput = {
   readonly fbmSpeed: number;
   readonly curlStrength: number;
   readonly spread: number;
+  readonly vignette: number;
+  readonly aberration: number;
+  readonly lutIntensity: number;
+  readonly lutPreset: LutPreset;
+  /** 0.5–1. Render ở độ phân giải thấp hơn rồi upscale để cứu fill rate. */
+  readonly renderScale: number;
   readonly breathAmp: number;
   readonly breathSpeed: number;
   readonly dpr: number;
@@ -68,6 +77,13 @@ type Stage = {
   depthTexture: THREE.DataTexture | null;
   colormapTexture: THREE.DataTexture;
   colormapName: Colormap | null;
+
+  /** Scene vẽ vào đây trước, rồi một pass toàn màn hình mới đưa lên canvas. */
+  target: THREE.WebGLRenderTarget;
+  postScene: THREE.Scene;
+  postMaterial: THREE.ShaderMaterial;
+  lutTexture: THREE.DataTexture;
+  lutName: LutPreset | null;
 
   sourceKey: string;
   depthKey: string;
@@ -246,6 +262,39 @@ function createStage(canvas: HTMLCanvasElement): Stage {
   const pointScene = new THREE.Scene();
   const pointCamera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
 
+  // UnsignedByte, KHÔNG phải HalfFloat.
+  //
+  // Bài Codrops dùng HalfFloat "cho khoảng dư HDR". Ở đây không cần: màu nguồn
+  // đến từ ảnh 8-bit và LUT cũng là bảng tra 8-bit, nên không có dải động nào
+  // để giữ. Đổi lại, target 8-bit tốn nửa băng thông bộ nhớ và blend alpha vào
+  // nó được hỗ trợ tốt hơn trên GPU cũ.
+  //
+  // Nếu sau này thêm bloom hoặc tone mapping thật thì HalfFloat mới có nghĩa.
+  const target = new THREE.WebGLRenderTarget(1, 1, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+  });
+
+  const lutTexture = createLutTexture("neutral");
+
+  const postMaterial = new THREE.ShaderMaterial({
+    vertexShader: quadVertex,
+    fragmentShader: postFragment,
+    uniforms: {
+      uScene: { value: target.texture },
+      uLut: { value: lutTexture },
+      uLutIntensity: { value: 0 },
+      uVignette: { value: 0 },
+      uAberration: { value: 0 },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+    },
+  });
+
+  const postScene = new THREE.Scene();
+  postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(1, 1), postMaterial));
+
   return {
     renderer,
     quadScene,
@@ -260,6 +309,11 @@ function createStage(canvas: HTMLCanvasElement): Stage {
     depthTexture: null,
     colormapTexture,
     colormapName: null,
+    target,
+    postScene,
+    postMaterial,
+    lutTexture,
+    lutName: "neutral",
     sourceKey: "",
     depthKey: "",
   };
@@ -316,6 +370,25 @@ export function renderStage(
 
   s.renderer.setSize(canvas.width, canvas.height, false);
 
+  // Render target nhỏ hơn canvas khi renderScale < 1. Đây là thủ thuật của bài
+  // Codrops và là cách rẻ nhất để cứu fill rate: tô ít pixel hơn rồi phóng to.
+  const scale = Math.max(0.25, Math.min(1, input.renderScale));
+  const targetWidth = Math.max(1, Math.round(canvas.width * scale));
+  const targetHeight = Math.max(1, Math.round(canvas.height * scale));
+  if (
+    s.target.width !== targetWidth ||
+    s.target.height !== targetHeight
+  ) {
+    s.target.setSize(targetWidth, targetHeight);
+  }
+
+  if (input.lutPreset !== s.lutName) {
+    s.lutTexture.dispose();
+    s.lutTexture = createLutTexture(input.lutPreset);
+    s.postMaterial.uniforms.uLut.value = s.lutTexture;
+    s.lutName = input.lutPreset;
+  }
+
   // Texture nguồn chỉ dựng lại khi ảnh thật sự đổi.
   const sourceKey = `${pixels.width}x${pixels.height}:${pixels.data.length}`;
   if (sourceKey !== s.sourceKey) {
@@ -368,7 +441,7 @@ export function renderStage(
       0,
     );
 
-    s.renderer.render(s.quadScene, s.quadCamera);
+    renderThroughPost(s, s.quadScene, s.quadCamera, input, canvas);
     return;
   }
 
@@ -423,7 +496,38 @@ export function renderStage(
   s.pointCamera.aspect = canvas.width / canvas.height;
   s.pointCamera.updateProjectionMatrix();
 
-  s.renderer.render(s.pointScene, s.pointCamera);
+  renderThroughPost(s, s.pointScene, s.pointCamera, input, canvas);
+}
+
+/**
+ * Vẽ scene vào render target rồi chạy một pass toàn màn hình lên canvas.
+ *
+ * Tách hai bước như vậy để hiệu ứng ảnh (vignette, quang sai, LUT) không phải
+ * chen vào shader hạt — đổi màu hay đổi cường độ vignette không cần biên dịch
+ * lại shader hạt, và pass 2D lẫn pass 3D dùng chung đúng một đường hậu kỳ.
+ */
+function renderThroughPost(
+  s: Stage,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  input: StageInput,
+  canvas: HTMLCanvasElement,
+): void {
+  const u = s.postMaterial.uniforms;
+  u.uScene.value = s.target.texture;
+  u.uVignette.value = input.vignette;
+  u.uAberration.value = input.aberration;
+  u.uLutIntensity.value = input.lutIntensity;
+  u.uResolution.value.set(canvas.width, canvas.height);
+
+  s.renderer.setRenderTarget(s.target);
+  s.renderer.clear();
+  s.renderer.render(scene, camera);
+  s.renderer.setRenderTarget(null);
+
+  // Quad phủ kín khung nhìn: camera trực giao 1×1 và mesh 1×1 nên không cần
+  // tính toán tỉ lệ gì thêm.
+  s.renderer.render(s.postScene, s.quadCamera);
 }
 
 /** Giải phóng mọi tài nguyên GPU. Gọi khi unmount hoặc đổi canvas. */
@@ -433,6 +537,10 @@ export function disposeStage(): void {
   stage.depthTexture?.dispose();
   stage.colormapTexture.dispose();
   stage.quadMaterial.dispose();
+  stage.postMaterial.dispose();
+  stage.lutTexture.dispose();
+  stage.target.dispose();
+  (stage.postScene.children[0] as THREE.Mesh).geometry.dispose();
   stage.pointMaterial.dispose();
   stage.points?.geometry.dispose();
   (stage.quadScene.children[0] as THREE.Mesh).geometry.dispose();

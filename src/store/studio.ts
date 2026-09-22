@@ -14,7 +14,8 @@ import { create } from "zustand";
 
 import { DEFAULT_DEPTH_MODEL_ID, resolveDepthModel } from "@/depth/registry";
 import type { RawPixels } from "@/depth/protocol";
-import { BREATHING, CURL, DEPTH, FBM, PARTICLE, SPREAD } from "@/shared/config";
+import type { LutPreset } from "@/scene/lut";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE, POST, SPREAD } from "@/shared/config";
 import type {
   Colormap,
   DepthMap,
@@ -41,6 +42,11 @@ export type Params = {
   spread: number;
   breathAmp: number;
   breathSpeed: number;
+  vignette: number;
+  aberration: number;
+  lutIntensity: number;
+  lutPreset: LutPreset;
+  renderScale: number;
   gzip: boolean;
 };
 
@@ -80,6 +86,11 @@ const INITIAL_PARAMS: Params = {
   spread: SPREAD.default,
   breathAmp: BREATHING.amplitudeDefault,
   breathSpeed: BREATHING.speedDefault,
+  vignette: POST.vignetteDefault,
+  aberration: POST.aberrationDefault,
+  lutIntensity: POST.lutIntensityDefault,
+  lutPreset: "filmic",
+  renderScale: POST.renderScaleDefault,
   gzip: true,
 };
 

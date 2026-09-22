@@ -137,3 +137,34 @@ export const QUANT = {
    */
   positionMax: 65535,
 } as const;
+
+/**
+ * Hậu kỳ.
+ *
+ * Giá trị mặc định lấy từ demo gốc (đọc trực tiếp từ panel của nó):
+ * vignette 2.2 · quang sai 1.5 · LUT 0.5.
+ */
+export const POST = {
+  vignetteMin: 0,
+  vignetteMax: 4,
+  vignetteDefault: 2.2,
+
+  aberrationMin: 0,
+  aberrationMax: 5,
+  aberrationDefault: 1.5,
+
+  lutIntensityMin: 0,
+  lutIntensityMax: 1,
+  lutIntensityDefault: 0.5,
+
+  /**
+   * Độ phân giải render so với canvas.
+   *
+   * Thủ thuật của bài Codrops: tô ít pixel hơn rồi phóng to. Với particle
+   * system mà bottleneck là fill rate, giảm xuống 0.75 cắt được ~44% số pixel
+   * phải tô mà mắt gần như không thấy khác — hạt vốn đã là những đốm mềm.
+   */
+  renderScaleMin: 0.4,
+  renderScaleMax: 1,
+  renderScaleDefault: 1,
+} as const;

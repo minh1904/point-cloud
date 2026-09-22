@@ -7,8 +7,9 @@
  */
 
 import { DEPTH_MODELS } from "@/depth/registry";
+import { LUT_PRESETS, type LutPreset } from "@/scene/lut";
 import { clampPointSize } from "@/scene/stage-renderer";
-import { BREATHING, CURL, DEPTH, FBM, PARTICLE, SPREAD } from "@/shared/config";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE, POST, SPREAD } from "@/shared/config";
 import { useActiveModel, useStudio, type ViewMode } from "@/store/studio";
 import type { Colormap, Projection } from "@/shared/types";
 
@@ -36,6 +37,18 @@ const COLORMAP_OPTIONS: readonly SelectOption<Colormap>[] = [
   { value: "turbo", label: "Turbo" },
   { value: "inferno", label: "Inferno" },
 ];
+
+const LUT_OPTIONS: readonly SelectOption<LutPreset>[] = LUT_PRESETS.map(
+  (preset) => ({
+    value: preset,
+    label: {
+      neutral: "Neutral — không đổi màu",
+      warm: "Warm — ấm, nắng chiều",
+      cool: "Cool — lạnh, xanh lam",
+      filmic: "Filmic — tương phản cao",
+    }[preset],
+  }),
+);
 
 const GRID_OPTIONS: readonly SelectOption<string>[] = PARTICLE.gridSizes.map(
   (size) => ({
@@ -265,6 +278,52 @@ export function ControlsPanel({
           <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
             Perspective cần model metric (có focal length). Model relative chỉ
             dựng được relief.
+          </p>
+        )}
+      </Section>
+
+      <Section title="Post Processing">
+        <Slider
+          label="Vignette"
+          value={params.vignette}
+          min={POST.vignetteMin}
+          max={POST.vignetteMax}
+          onChange={(value) => setParam("vignette", value)}
+        />
+        <Slider
+          label="Quang sai màu"
+          value={params.aberration}
+          min={POST.aberrationMin}
+          max={POST.aberrationMax}
+          onChange={(value) => setParam("aberration", value)}
+        />
+        <Select
+          label="LUT"
+          value={params.lutPreset}
+          options={LUT_OPTIONS}
+          onChange={(value) => setParam("lutPreset", value)}
+        />
+        <Slider
+          label="LUT — cường độ"
+          value={params.lutIntensity}
+          min={POST.lutIntensityMin}
+          max={POST.lutIntensityMax}
+          onChange={(value) => setParam("lutIntensity", value)}
+        />
+        <Slider
+          label="Độ phân giải render"
+          value={params.renderScale}
+          min={POST.renderScaleMin}
+          max={POST.renderScaleMax}
+          step={0.05}
+          onChange={(value) => setParam("renderScale", value)}
+          format={(value) => `${Math.round(value * 100)}%`}
+        />
+        {params.renderScale < 1 && (
+          <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
+            Tô {Math.round(params.renderScale ** 2 * 100)}% số pixel rồi phóng
+            to. Với particle system mà nghẽn ở fill rate, đây là cách rẻ nhất để
+            lấy lại fps.
           </p>
         )}
       </Section>

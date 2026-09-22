@@ -73,6 +73,11 @@ export default function App() {
   const fbmSpeed = useStudio((state) => state.fbmSpeed);
   const curlStrength = useStudio((state) => state.curlStrength);
   const spread = useStudio((state) => state.spread);
+  const vignette = useStudio((state) => state.vignette);
+  const aberration = useStudio((state) => state.aberration);
+  const lutIntensity = useStudio((state) => state.lutIntensity);
+  const lutPreset = useStudio((state) => state.lutPreset);
+  const renderScale = useStudio((state) => state.renderScale);
   const breathAmp = useStudio((state) => state.breathAmp);
   const breathSpeed = useStudio((state) => state.breathSpeed);
   const modelId = useStudio((state) => state.modelId);
@@ -168,6 +173,11 @@ export default function App() {
         fbmSpeed,
         curlStrength,
         spread,
+        vignette,
+        aberration,
+        lutIntensity,
+        lutPreset,
+        renderScale,
         breathAmp,
         breathSpeed,
         dpr: frame.dpr,
@@ -189,6 +199,11 @@ export default function App() {
       fbmSpeed,
       curlStrength,
       spread,
+      vignette,
+      aberration,
+      lutIntensity,
+      lutPreset,
+      renderScale,
       breathAmp,
       breathSpeed,
     ],

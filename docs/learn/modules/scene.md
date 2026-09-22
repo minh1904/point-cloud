@@ -14,7 +14,9 @@ Nó chịu ba loại phức tạp cùng lúc:
 2. **Vòng đời tài nguyên GPU** — texture, buffer, program phải dispose đúng lúc
 3. **Hợp đồng Toolcraft** — phải khai báo render plan trước khi viết shader, và không được tự sở hữu canvas
 
-Hiện tại module này mới có pass 2D (`depth-preview.ts`, Canvas 2D). Phần WebGL/particles mô tả bên dưới là thiết kế cho P2, chưa cài đặt.
+**Một canvas chỉ có được một loại context.** Không thể vừa `getContext("2d")` cho preview depth vừa `getContext("webgl")` cho particles. Nên cả hai pass đều chạy WebGL qua một `stage-renderer.ts` duy nhất — pass 2D là một fullscreen quad với shader lo split và colormap.
+
+Hoá ra lại tốt hơn: tra colormap trên GPU nghĩa là đổi bảng màu hay kéo thanh split là tức thì, không phải duyệt hàng triệu pixel trên CPU rồi dựng `ImageBitmap`.
 
 ---
 

@@ -1,12 +1,12 @@
 /**
  * Ô nhận ảnh. Thay cho `fileDrop` của Toolcraft.
  *
- * Nhận ảnh theo ba đường vì người dùng mong đợi cả ba: bấm để chọn file, kéo
- * thả vào ô, và dán từ clipboard (Ctrl+V). Đường thứ ba hay bị bỏ qua nhưng là
- * cách nhanh nhất khi ảnh vừa được chụp hoặc copy từ web.
+ * Xử lý hai đường: bấm để chọn file và kéo thả. Đường thứ ba — dán Ctrl+V —
+ * nằm ở `use-image-paste.ts` vì nó phải sống cả khi section SOURCE bị thu gọn
+ * và component này unmount.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 type Props = {
   fileName: string | null;
@@ -29,17 +29,6 @@ export function Dropzone({ fileName, onFile, onClear }: Props) {
     },
     [onFile],
   );
-
-  // Dán từ clipboard. Gắn ở window vì người dùng bấm Ctrl+V khi focus đang ở bất
-  // kỳ đâu, không nhất thiết trong ô này.
-  useEffect(() => {
-    const onPaste = (event: ClipboardEvent) => {
-      const items = event.clipboardData?.files;
-      if (items?.length) accept(items);
-    };
-    window.addEventListener("paste", onPaste);
-    return () => window.removeEventListener("paste", onPaste);
-  }, [accept]);
 
   if (fileName) {
     return (

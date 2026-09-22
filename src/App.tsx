@@ -22,14 +22,12 @@ import { useCallback, useEffect } from "react";
 
 import { estimateDepth, releaseDepthWorker } from "@/depth/depth-client";
 import type { RawPixels } from "@/depth/protocol";
-import {
-  disposeDepthPreview,
-  drawDepthPreview,
-} from "@/scene/depth-preview";
+import { disposeStage, renderStage } from "@/scene/stage-renderer";
 import { useActiveModel, useStudio } from "@/store/studio";
 
 import { CanvasStage, type StageFrame } from "@/ui/CanvasStage";
 import { ControlsPanel } from "@/ui/ControlsPanel";
+import { useImagePaste } from "@/ui/use-image-paste";
 import { Toolbar, ToolbarCell, ToolbarDivider } from "@/ui/primitives";
 
 /**
@@ -63,6 +61,9 @@ export default function App() {
   const viewMode = useStudio((state) => state.viewMode);
   const colormap = useStudio((state) => state.colormap);
   const splitPosition = useStudio((state) => state.splitPosition);
+  const depthScale = useStudio((state) => state.depthScale);
+  const gridSize = useStudio((state) => state.gridSize);
+  const pointSize = useStudio((state) => state.pointSize);
   const modelId = useStudio((state) => state.modelId);
   const model = useActiveModel();
 
@@ -74,7 +75,7 @@ export default function App() {
 
   const onFile = useCallback(
     (file: File) => {
-      disposeDepthPreview();
+      disposeStage();
       void decodeImage(file)
         .then((decoded) => setSource(file.name, decoded))
         .catch((error: unknown) =>
@@ -86,8 +87,9 @@ export default function App() {
     [setSource, setError],
   );
 
+  useImagePaste(onFile);
+
   const onClear = useCallback(() => {
-    disposeDepthPreview();
     clearSource();
   }, [clearSource]);
 
@@ -107,30 +109,37 @@ export default function App() {
   useEffect(() => {
     return () => {
       releaseDepthWorker();
-      disposeDepthPreview();
+      disposeStage();
     };
   }, []);
 
   const onFrame = useCallback(
     (canvas: HTMLCanvasElement, frame: StageFrame) => {
-      if (!pixels) {
-        const context = canvas.getContext("2d");
-        context?.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-      if (viewMode === "depth") {
-        void drawDepthPreview(canvas, {
-          pixels,
-          depth,
-          colormap,
-          split: splitPosition,
-          dpr: frame.dpr,
-          viewport: frame.viewport,
-        });
-      }
-      // viewMode === "particles" sẽ được nối ở P2.
+      if (!pixels) return;
+      renderStage(canvas, {
+        pixels,
+        depth,
+        mode: viewMode,
+        colormap,
+        split: splitPosition,
+        depthScale,
+        gridSize,
+        pointSize,
+        dpr: frame.dpr,
+        time: frame.time,
+        viewport: frame.viewport,
+      });
     },
-    [pixels, depth, colormap, splitPosition, viewMode],
+    [
+      pixels,
+      depth,
+      viewMode,
+      colormap,
+      splitPosition,
+      depthScale,
+      gridSize,
+      pointSize,
+    ],
   );
 
   return (
@@ -142,6 +151,7 @@ export default function App() {
       <div className="absolute inset-0 flex">
         <CanvasStage
           onFrame={onFrame}
+          animate={viewMode === "particles"}
           empty={!pixels}
           emptyHint="Kéo ảnh vào panel để bắt đầu"
         />

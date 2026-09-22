@@ -28,6 +28,8 @@ export type StageFrame = {
   readonly height: number;
   readonly dpr: number;
   readonly viewport: Viewport;
+  /** Giây kể từ lúc mount. Dùng cho chuyển động analytic của particles. */
+  readonly time: number;
 };
 
 const IDENTITY: Viewport = { scale: 1, x: 0, y: 0 };
@@ -35,14 +37,21 @@ const MIN_SCALE = 0.1;
 const MAX_SCALE = 20;
 
 type Props = {
-  /** Gọi mỗi khi cần vẽ lại. Trả về hàm dọn nếu pass cần giải phóng tài nguyên. */
+  /** Gọi mỗi khi cần vẽ lại. */
   onFrame: (canvas: HTMLCanvasElement, frame: StageFrame) => void;
+  /**
+   * Bật vòng lặp requestAnimationFrame.
+   *
+   * Chỉ bật khi nội dung thật sự động (particles). Pass tĩnh như preview depth
+   * vẽ theo sự kiện — chạy rAF cho nó là đốt pin và giữ GPU bận vô ích.
+   */
+  animate?: boolean;
   /** Hiện khi chưa có nội dung. Giữ trung tính — không CTA, không artwork giả. */
   empty?: boolean;
   emptyHint?: string;
 };
 
-export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
+export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [viewport, setViewport] = useState<Viewport>(IDENTITY);
@@ -67,6 +76,10 @@ export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
   // mới là bottleneck, nên đây là tối ưu đáng giá nhất.
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+  // Mốc thời gian giữ nguyên qua các lần vẽ lại để chuyển động không giật khi
+  // một tham số khác đổi.
+  const startRef = useRef(performance.now());
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return;
@@ -76,8 +89,29 @@ export function CanvasStage({ onFrame, empty, emptyHint }: Props) {
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
 
-    onFrame(canvas, { width, height, dpr, viewport });
-  }, [onFrame, size, dpr, viewport]);
+    const draw = () => {
+      onFrame(canvas, {
+        width,
+        height,
+        dpr,
+        viewport,
+        time: (performance.now() - startRef.current) / 1000,
+      });
+    };
+
+    if (!animate) {
+      draw();
+      return;
+    }
+
+    let raf = 0;
+    const loop = () => {
+      draw();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [onFrame, size, dpr, viewport, animate]);
 
   const onWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();

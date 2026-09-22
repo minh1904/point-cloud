@@ -17,9 +17,10 @@
 export const PARTICLE = {
   gridSizes: [256, 384, 512],
   defaultGrid: 256,
+  /** Tính bằng pixel ở khoảng cách camera chuẩn. */
   pointSizeMin: 0.5,
-  pointSizeMax: 8,
-  pointSizeDefault: 2,
+  pointSizeMax: 12,
+  pointSizeDefault: 3,
 } as const;
 
 /** Độ dày phù điêu ở chế độ relief. Không có đơn vị — depth là tương đối. */

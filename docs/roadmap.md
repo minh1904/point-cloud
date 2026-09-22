@@ -71,6 +71,8 @@ tokens  →  ui (primitives + controls)  →  params (schema binding)  →  shel
 
 Rule: **no component without a consumer.** Each entry below is pulled in by the phase that needs it, built in the app first if unsure, then moved to the package.
 
+Every component ships with a story (`*.stories.tsx` next to it) showing all variants in both themes — `pnpm storybook` from the root. The a11y addon flags contrast and labelling issues as components are built.
+
 | Needed by | Components | Behind the scenes |
 |---|---|---|
 | P0 | Tokens skeleton, `Button` | CSS variables + Tailwind v4 `@theme`; a package consumed via `workspace:*` |

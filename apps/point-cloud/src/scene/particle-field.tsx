@@ -14,6 +14,8 @@ interface ParticleFieldProps {
   radius?: number;
   size?: number;
   color?: string;
+  /** 0 = hard-edged disc, 1 = fades from the center out. */
+  softness?: number;
   spinning: boolean;
 }
 
@@ -25,8 +27,9 @@ interface ParticleFieldProps {
 export function ParticleField({
   count = 60_000,
   radius = 1.3,
-  size = 0.012,
+  size = 0.02,
   color = "#dfe6ff",
+  softness = 0.5,
   spinning,
 }: ParticleFieldProps) {
   const points = useRef<Points>(null);
@@ -44,7 +47,13 @@ export function ParticleField({
             uSize: { value: 0 },
             uScale: { value: 1 },
             uColor: { value: new Color() },
+            uSoftness: { value: 0 },
           },
+          // Soft rims need alpha blending. Not writing depth keeps a faded rim
+          // from hiding the points behind it; with thousands of small
+          // overlapping points, skipping back-to-front sorting is acceptable.
+          transparent: true,
+          depthWrite: false,
         },
       ] as const,
     [],
@@ -60,7 +69,8 @@ export function ParticleField({
     uniforms.uSize!.value = size;
     uniforms.uScale!.value = height * dpr * 0.5;
     (uniforms.uColor!.value as Color).set(color);
-  }, [size, color, height, dpr]);
+    uniforms.uSoftness!.value = softness;
+  }, [size, color, softness, height, dpr]);
 
   useFrame((_, delta) => {
     if (!spinning || !points.current) return;

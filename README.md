@@ -65,6 +65,7 @@ Run from the repository root.
 
 ## Documentation
 
+- **[Status & handoff](docs/status.md)** — what is done, what is next, open decisions, setup and known gotchas. Start here.
 - **[Roadmap](docs/roadmap.md)** — phases P0–P9, each split into small steps with what they teach and how to verify them.
 - **[Research: the UntilLabs method](docs/research/01-untillabs-method.md)** — what the article says versus what the production shaders and data actually do. *(Vietnamese)*
 - **[Learning notes](docs/learn/README.md)** — one note per roadmap step: concepts, a walk through the real code, mistakes made, exercises, further reading. *(Vietnamese)*

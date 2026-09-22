@@ -38,9 +38,9 @@ P6 writes into the same texture format that P3 reads, so the renderer never know
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 0.1 | pnpm workspace: `apps/point-cloud` (Next.js via `create-next-app`) + `packages/*`, shared strict tsconfig, ESLint, Prettier, Vitest | Monorepo wiring: workspace protocol, shared config, one command runs everything | `pnpm dev`, `pnpm lint`, `pnpm test`, `pnpm typecheck` pass from the root |
-| 0.2 | App folder layout (below), path alias `@/`; empty `@atelier/tokens` + `@atelier/ui` consumed by the app | Separating renderer, pipeline, UI, export so each can be tested alone | App imports a component from `@atelier/ui` |
-| 0.3 | Full-screen `<Canvas>` with a spinning cube, `dpr={[1,2]}` | R3F's render loop, `useFrame`, `useThree` | Cube spins at 60 fps; resizing keeps aspect |
+| ✅ 0.1 | pnpm workspace: `apps/point-cloud` (Next.js via `create-next-app`) + `packages/*`, shared strict tsconfig, ESLint, Prettier, Vitest | Monorepo wiring: workspace protocol, shared config, one command runs everything | `pnpm dev`, `pnpm lint`, `pnpm test`, `pnpm typecheck` pass from the root |
+| ✅ 0.2 | App folder layout (below), path alias `@/`; empty `@atelier/tokens` + `@atelier/ui` consumed by the app | Separating renderer, pipeline, UI, export so each can be tested alone | App imports a component from `@atelier/ui` |
+| ✅ 0.3 | Full-screen `<Canvas>` with a spinning cube, `dpr={[1,2]}` | R3F's render loop, `useFrame`, `useThree` | Cube spins at 60 fps; resizing keeps aspect |
 | 0.4 | 🔶 **DECISION: visual style** (you are researching this) — only changes token *values*, never blocks component work | Theming through CSS variables | Style chosen, tokens filled in `@atelier/tokens` |
 
 ```
@@ -75,8 +75,8 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 
 | Needed by | Components | Behind the scenes |
 |---|---|---|
-| P0 | Tokens skeleton, `Button` | CSS variables + Tailwind v4 `@theme`; a package consumed via `workspace:*` |
-| P1–P2 | `Panel`, `Section`, `PropertyRow`, `Slider` (inline value), `NumberField` (scrub) | Base UI composition, pointer capture for scrubbing, controlled vs uncontrolled |
+| ✅ P0 | Tokens skeleton, `Button` | CSS variables + Tailwind v4 `@theme`; a package consumed via `workspace:*` |
+| P1–P2 | ✅ `Panel`, ✅ `Slider` (inline value) · `Section`, `PropertyRow`, `NumberField` (scrub) | Base UI composition, pointer capture for scrubbing, controlled vs uncontrolled |
 | P4–P5 | `Toggle`, `Select`, `SegmentedControl`, `Tooltip` | Keyboard and focus handling that Base UI gives for free |
 | P6 | `FileDrop`, `Progress`, stage `Tabs` | File input a11y, drag-and-drop events |
 | P7 | `@atelier/params` (`useParams(schema)`, history, presets, persistence), `@atelier/shell` (viewport + inspector + toolbar + status bar), `Toolbar`, `Kbd` | One schema driving UI, uniforms, presets and export; transient updates at 60 fps |
@@ -88,12 +88,12 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 1.1 | 60k points uniformly inside a sphere, `THREE.Points` + `PointsMaterial` | `GL_POINTS`: one draw call for all particles; why `cbrt(random)` gives uniform volume | Sphere visible, 1 draw call in `renderer.info` |
-| 1.2 | Swap to a custom `ShaderMaterial` | Vertex vs fragment shader, attributes vs uniforms, `gl_PointSize` | Same picture, own shader |
-| 1.3 | Round soft sprite in fragment (`gl_PointCoord`, `discard`) | Point sprites are squares; shape comes from the fragment | Round dots with soft edge |
-| 1.4 | Size attenuation `size / -viewPos.z` + screen scale `1920/height/dpr` | Why points need manual perspective and DPR compensation | Dots keep apparent size on resize / retina |
-| 1.5 | `uTime` + per-particle `aRandomness` wobble (sin/cos) | GPU-side animation with zero CPU cost per particle | Field drifts; CPU idle in profiler |
-| 1.6 | Orbit/pan/zoom camera (drei `OrbitControls`, zoom to centre) | Camera vs object transforms | Navigation feels stable |
+| ✅ 1.1 | 60k points uniformly inside a sphere, `THREE.Points` + `PointsMaterial` | `GL_POINTS`: one draw call for all particles; why `cbrt(random)` gives uniform volume | Sphere visible, 1 draw call in `renderer.info` |
+| ✅ 1.2 | Swap to a custom `ShaderMaterial` | Vertex vs fragment shader, attributes vs uniforms, `gl_PointSize` | Same picture, own shader |
+| ✅ 1.3 | Round soft sprite in fragment (`gl_PointCoord`, `discard`) | Point sprites are squares; shape comes from the fragment | Round dots with soft edge |
+| ✅ 1.4 | Per-point `aScale`, sub-pixel dimming, clamp to `ALIASED_POINT_SIZE_RANGE` (attenuation + DPR already correct since 1.2) | Device vs CSS pixels, why sub-pixel points look too bright, varyings | Dots keep apparent size on resize / retina |
+| ✅ 1.5 | `uTime` + per-particle `aRandomness` wobble (sin/cos) | GPU-side animation with zero CPU cost per particle | Field drifts; CPU idle in profiler |
+| ✅ 1.6 | Orbit/pan/zoom camera (drei `OrbitControls`, zoom to centre) | Camera vs object transforms | Navigation feels stable |
 
 ---
 

@@ -1,5 +1,7 @@
 # point-cloud
 
+**Start here:** read [`docs/status.md`](docs/status.md) for where the project stands, the next step, open decisions and environment gotchas. Update it (date, last commit, phase table, next step) whenever a roadmap step is finished, and mark the step ✅ in `docs/roadmap.md`.
+
 ## Learning docs
 
 The owner is learning 3D graphics through this project. Every roadmap step ships with a learning note in `docs/learn/`, **written in Vietnamese**:

@@ -1,16 +1,6 @@
 @import "tailwindcss";
 @import "@atelier/tokens/theme.css";
+@import "@atelier/tokens/base.css";
 
 /* Workspace packages live outside the app, so point Tailwind at their source. */
 @source "../../../../packages/ui/src";
-
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-body {
-  background: var(--color-canvas);
-  color: var(--color-fg);
-  font-size: var(--text-base);
-}

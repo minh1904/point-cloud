@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Exposes --font-inter, which @atelier/tokens maps to font-sans.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -21,12 +17,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // Browser extensions inject attributes into <html>/<body> before hydration;
     // suppressHydrationWarning only ignores attribute diffs on these two elements.
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
       </body>
     </html>

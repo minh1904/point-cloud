@@ -11,8 +11,21 @@ import postVertexShader from "@/shaders/post.vert.glsl";
 const OFFSCREEN_RENDER_PRIORITY = -1;
 const SCREEN_RENDER_PRIORITY = 1;
 
+export interface PostParams {
+  vignette: number;
+  chromaticAberration: number;
+  grain: number;
+}
+
+export const defaultPostParams: PostParams = {
+  vignette: 0.35,
+  chromaticAberration: 0.002,
+  grain: 0.025,
+};
+
 interface ScenePassProps {
   children: ReactNode;
+  params: PostParams;
   invert?: boolean;
 }
 
@@ -21,7 +34,11 @@ interface ScenePassProps {
  * texture over a fullscreen triangle. Inversion is an opt-in P2.2 sanity check;
  * the production path copies the scene unchanged.
  */
-export function ScenePass({ children, invert = false }: ScenePassProps) {
+export function ScenePass({
+  children,
+  params,
+  invert = false,
+}: ScenePassProps) {
   const gl = useThree((state) => state.gl);
   const renderer = useRef(gl);
   const postMaterial = useRef<ShaderMaterial>(null);
@@ -34,15 +51,24 @@ export function ScenePass({ children, invert = false }: ScenePassProps) {
   const uniforms = useMemo(
     () => ({
       uScene: { value: target.texture },
+      uTime: { value: 0 },
       uInvert: { value: 0 },
+      uVignette: { value: 0 },
+      uChromaticAberration: { value: 0 },
+      uGrain: { value: 0 },
     }),
     [target.texture],
   );
 
   useLayoutEffect(() => {
-    const invertUniform = postMaterial.current?.uniforms.uInvert;
-    if (invertUniform) invertUniform.value = invert ? 1 : 0;
-  }, [invert]);
+    const postUniforms = postMaterial.current?.uniforms;
+    if (!postUniforms) return;
+
+    postUniforms.uInvert!.value = invert ? 1 : 0;
+    postUniforms.uVignette!.value = params.vignette;
+    postUniforms.uChromaticAberration!.value = params.chromaticAberration;
+    postUniforms.uGrain!.value = params.grain;
+  }, [invert, params.vignette, params.chromaticAberration, params.grain]);
 
   // The pipeline owns both render calls. Keep automatic clearing enabled so
   // each pass clears its own target, but reset renderer stats only once so the
@@ -73,7 +99,11 @@ export function ScenePass({ children, invert = false }: ScenePassProps) {
 
   // A positive priority disables R3F's automatic render. This is the only
   // screen render for the frame, so the quad is not drawn a second time.
-  useFrame(({ camera, scene }) => {
+  useFrame(({ camera, clock, scene }) => {
+    if (postMaterial.current) {
+      postMaterial.current.uniforms.uTime!.value = clock.elapsedTime;
+    }
+
     gl.setRenderTarget(null);
     gl.render(scene, camera);
   }, SCREEN_RENDER_PRIORITY);

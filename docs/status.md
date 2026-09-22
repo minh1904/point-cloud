@@ -1,26 +1,26 @@
 # Status & handoff
 
-_Last updated: 2026-09-22 · last commit on `main`: `cf8a842`_
+_Last updated: 2026-09-22 · last commit on `main`: `027686c`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.3 now owns the render loop explicitly: priority `-1` renders the content scene into the HalfFloat FBO, then priority `1` renders the fullscreen post triangle to the canvas. The HUD remains stable at two draw calls.
+**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.4 adds classic per-pixel post effects (vignette, chromatic aberration, animated 24fps film grain) with an interactive Atelier controls panel, updating uniforms live without shader recompilation. The HUD remains stable at two draw calls.
 
 | Phase | Status |
 |---|---|
 | P0 Scaffold (monorepo, Next.js, Atelier tokens + Button, Storybook) | ✅ done |
 | P1 Particle field (1.1 → 1.6) | ✅ done |
 | P-UI Atelier | Button, Slider, Panel done · Section, PropertyRow, NumberField pending (pulled in by P2) |
-| P2 FBO + post-processing | 2.1–2.3 done · ⏭ **2.4 next** |
+| P2 FBO + post-processing | 2.1–2.4 done · ⏭ **2.5 next** |
 | P3–P9 | not started |
 
-## Next step: P2.4
+## Next step: P2.5
 
-Add the first visible post effects to the fullscreen shader: vignette, chromatic aberration and grain. Pull in the Atelier controls needed to tune them live, keeping shader uniforms updated without rebuilding the material.
+Implement render scale (FBO at 0.5–1× canvas resolution) to explore the fill-rate vs quality trade-off and confirm performance scaling on high-DPR displays when render resolution drops.
 
-Per the project rules, P2.4 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
+Per the project rules, P2.5 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
 ## Open decisions
 

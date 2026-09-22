@@ -37,6 +37,10 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Render priority (R3F)** | Số quyết định thứ tự callback `useFrame`: số thấp chạy trước; priority dương đồng thời tắt automatic render để callback tự vẽ. | [P2.3](p2-3-render-pass-order.md) |
 | **`autoClear`** | Cờ của `WebGLRenderer` cho phép tự xoá color/depth/stencil buffer của render target hiện tại trước mỗi lần `render()`. | [P2.3](p2-3-render-pass-order.md) |
 | **Manual render** | Khi app tự gọi `gl.render(scene, camera)` và chịu trách nhiệm về thứ tự pass thay vì để R3F vẽ scene gốc tự động. | [P2.3](p2-3-render-pass-order.md) |
+| **Per-pixel effect** | Hiệu ứng hậu kỳ xử lý độc lập từng pixel từ toạ độ hoặc mẫu màu cục bộ, chi phí tính toán rất thấp. | [P2.4](p2-4-post-effects.md) |
+| **Vignette** | Hiệu ứng làm tối dần rìa và bốn góc khung hình nhằm tập trung tầm nhìn vào vùng trung tâm. | [P2.4](p2-4-post-effects.md) |
+| **Chromatic aberration** | Hiện tượng sắc sai quang học: dải màu đỏ và xanh lam bị tách lệch khỏi tâm thấu kính. | [P2.4](p2-4-post-effects.md) |
+| **Film grain** | Hạt nhiễu giả ngẫu nhiên mô phỏng phim nhựa cổ điển, giúp ảnh sống động và giảm bệt màu (banding). | [P2.4](p2-4-post-effects.md) |
 
 ## Không gian toạ độ
 

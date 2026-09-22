@@ -6,19 +6,26 @@ import type { ComponentRef, Ref } from "react";
 
 import { ParticleField, type ParticleParams } from "./particle-field";
 import { RenderInfo, type RenderStats } from "./render-info";
-import { ScenePass } from "./scene-pass";
+import { ScenePass, type PostParams } from "./scene-pass";
 
 /** Imperative handle of the orbit controls (e.g. `.reset()`). */
 export type OrbitControlsHandle = ComponentRef<typeof OrbitControls>;
 
 interface StageProps {
   params: ParticleParams;
+  postParams: PostParams;
   playing: boolean;
   onStats: (stats: RenderStats) => void;
   controlsRef?: Ref<OrbitControlsHandle>;
 }
 
-export function Stage({ params, playing, onStats, controlsRef }: StageProps) {
+export function Stage({
+  params,
+  postParams,
+  playing,
+  onStats,
+  controlsRef,
+}: StageProps) {
   return (
     // R3F sizes the canvas to its parent and sets its own inline styles on the
     // wrapper, so position this element instead of styling <Canvas> itself.
@@ -48,7 +55,7 @@ export function Stage({ params, playing, onStats, controlsRef }: StageProps) {
           minDistance={0.6}
           maxDistance={12}
         />
-        <ScenePass>
+        <ScenePass params={postParams}>
           <color attach="background" args={["#000000"]} />
           <ParticleField {...params} playing={playing} />
         </ScenePass>

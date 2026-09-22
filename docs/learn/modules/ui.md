@@ -87,6 +87,16 @@ listener ở root container và trình duyệt coi `wheel` ở đó là *passive
 cảnh báo. Hậu quả: lăn chuột vừa zoom canvas vừa cuộn trang, Ctrl+lăn (pinch
 trackpad) zoom luôn cả trình duyệt. Đây là lỗi im lặng nhất trong cả module này.
 
+**Zoom quanh TÂM khung, không quanh con trỏ.** Công cụ thiết kế thường zoom theo
+con trỏ, nhưng ở đây nó sai: `viewport.x/y` mang **hai nghĩa** — chế độ 2D là độ
+dịch ảnh, chế độ 3D là **góc orbit**. Zoom theo con trỏ buộc phải sửa x/y, nên
+mỗi lần lăn chuột ở chế độ 3D camera lại tự xoay một chút. `zoomBy` chỉ đổi
+`scale` và không đụng x/y: ảnh 2D phóng to quanh tâm (pass vẽ đã căn giữa sẵn),
+camera 3D chỉ tiến/lùi.
+
+Test bất biến: zoom vào N nấc ở một góc, rồi zoom ra N nấc ở **góc đối diện**,
+phải quay về đúng 100%. Đo thật: 100% → 212% → 100% (1.1618⁵ = 2.117 ✓).
+
 **Chuẩn hoá `deltaMode`.** Firefox gửi `deltaMode = 1` (đơn vị DÒNG, ~3 mỗi nấc),
 Chrome gửi `0` (pixel, ~100). Không quy đổi thì zoom trên Firefox chậm hơn hàng
 chục lần — lỗi chỉ lộ ra trên một trình duyệt.
@@ -161,6 +171,7 @@ Chưa có test tự động cho phần này — nó là UI, và ở giai đoạn
 | `deltaMode = 1` → zoom đáng kể | Quên chuẩn hoá đơn vị Firefox |
 | `pointercancel` giữa lúc kéo → hết kéo | Trạng thái kéo kẹt lại |
 | `Tab` vẫn chuyển focus được | Chặn phím quá tay |
+| Zoom N nấc ở góc này, N nấc ngược ở góc kia → về 100% | Zoom bị lệ thuộc vị trí con trỏ |
 
 Kiểm tay bắt buộc trước khi commit UI: `crossOriginIsolated === true` trong console. Thiếu nó thì fallback WASM chậm 3–4 lần mà không báo gì.
 

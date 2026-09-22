@@ -102,7 +102,12 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
 
   // Mốc thời gian giữ nguyên qua các lần vẽ lại để chuyển động không giật khi
   // một tham số khác đổi.
-  const startRef = useRef(performance.now());
+  //
+  // Khởi tạo lười (null rồi gán) chứ không `useRef(performance.now())`: dạng
+  // sau gọi performance.now() ở MỌI lần render rồi vứt kết quả đi — React coi
+  // đó là hàm không thuần trong thân render.
+  const startRef = useRef<number | null>(null);
+  startRef.current ??= performance.now();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -119,7 +124,7 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
         height,
         dpr,
         viewport,
-        time: (performance.now() - startRef.current) / 1000,
+        time: (performance.now() - (startRef.current ?? 0)) / 1000,
       });
     };
 
@@ -137,23 +142,24 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [onFrame, size, dpr, viewport, animate]);
 
-  /** Zoom quanh một điểm trong khung (pixel CSS, gốc ở góc trên trái). */
-  const zoomAt = useCallback(
-    (factor: number, pointerX: number, pointerY: number) => {
-      setViewport((current) => {
-        const scale = clampScale(current.scale * factor);
-        const applied = scale / current.scale;
-        // Giữ điểm dưới con trỏ đứng yên khi zoom — nếu không, zoom sâu sẽ đẩy
-        // vùng đang xem ra khỏi khung.
-        return {
-          scale,
-          x: pointerX - (pointerX - current.x) * applied,
-          y: pointerY - (pointerY - current.y) * applied,
-        };
-      });
-    },
-    [],
-  );
+  /**
+   * Zoom quanh tâm khung: chỉ đổi `scale`, giữ nguyên `x` và `y`.
+   *
+   * Bản trước zoom quanh con trỏ (chuẩn của công cụ thiết kế) nhưng ở đây nó
+   * sai, vì `viewport.x/y` mang HAI nghĩa: ở chế độ 2D là độ dịch ảnh, còn ở
+   * chế độ 3D là GÓC ORBIT. Zoom theo con trỏ phải sửa x/y, nên mỗi lần lăn
+   * chuột trong chế độ 3D camera lại tự xoay một chút.
+   *
+   * Không đụng tới x/y thì ảnh 2D phóng to quanh tâm khung (vì pass vẽ căn giữa
+   * ảnh rồi mới cộng offset), và camera 3D chỉ tiến/lùi. Cả hai đều đoán trước
+   * được.
+   */
+  const zoomBy = useCallback((factor: number) => {
+    setViewport((current) => ({
+      ...current,
+      scale: clampScale(current.scale * factor),
+    }));
+  }, []);
 
   /**
    * Wheel phải gắn bằng addEventListener với `passive: false`.
@@ -171,10 +177,6 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
     const handle = (event: WheelEvent) => {
       event.preventDefault();
 
-      const box = host.getBoundingClientRect();
-      const pointerX = event.clientX - box.left;
-      const pointerY = event.clientY - box.top;
-
       // Pinch trackpad đến dưới dạng wheel kèm ctrlKey, với delta lớn hơn
       // nhiều. Giảm độ nhạy để pinch không nhảy vọt.
       const delta = normalizeWheelDelta(event);
@@ -182,18 +184,15 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
 
       // exp() cho cảm giác zoom đều: mỗi nấc đổi cùng một TỈ LỆ, không phải
       // cùng một lượng tuyệt đối.
-      zoomAt(Math.exp(-delta * sensitivity), pointerX, pointerY);
+      zoomBy(Math.exp(-delta * sensitivity));
     };
 
     host.addEventListener("wheel", handle, { passive: false });
     return () => host.removeEventListener("wheel", handle);
-  }, [zoomAt]);
+  }, [zoomBy]);
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      const host = hostRef.current;
-      if (!host) return;
-      const box = host.getBoundingClientRect();
       const step = event.shiftKey ? KEY_PAN_STEP * 4 : KEY_PAN_STEP;
 
       const pan = (dx: number, dy: number) =>
@@ -203,11 +202,11 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
         // Nhận cả `=` vì `+` cần giữ Shift trên hầu hết bàn phím.
         case "+":
         case "=":
-          zoomAt(KEY_ZOOM_STEP, box.width / 2, box.height / 2);
+          zoomBy(KEY_ZOOM_STEP);
           break;
         case "-":
         case "_":
-          zoomAt(1 / KEY_ZOOM_STEP, box.width / 2, box.height / 2);
+          zoomBy(1 / KEY_ZOOM_STEP);
           break;
         case "0":
           setViewport(IDENTITY);
@@ -231,7 +230,7 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
       // phím điều hướng của trình duyệt cũng chết theo.
       event.preventDefault();
     },
-    [zoomAt],
+    [zoomBy],
   );
 
   const endDrag = useCallback((event: React.PointerEvent) => {

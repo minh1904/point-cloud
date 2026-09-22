@@ -227,6 +227,12 @@ export default function App() {
           </ToolbarCell>
           <ToolbarDivider />
           <ToolbarCell>{modelId.split("/")[1] ?? modelId}</ToolbarCell>
+          <ToolbarDivider />
+          {/* Phím tắt vô hình thì coi như không tồn tại — liệt kê ngay tại chỗ. */}
+          <ToolbarCell>
+            lăn: zoom · kéo: {viewMode === "particles" ? "orbit" : "pan"} ·
+            {" +/- 0"} · mũi tên
+          </ToolbarCell>
         </Toolbar>
       </div>
     </div>

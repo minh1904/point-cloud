@@ -1,5 +1,5 @@
 /**
- * Khung canvas có pan/zoom, thay cho canvas của Toolcraft.
+ * Khung canvas có pan/zoom, và là chỗ duy nhất xử lý tương tác của canvas.
  *
  * Nó không vẽ gì — nó cấp một `<canvas>` đã khớp devicePixelRatio và một
  * transform (pan/zoom) cho pass vẽ ở trên. Tách như vậy để pass 2D (depth
@@ -7,9 +7,11 @@
  * canvas.
  *
  * Quy ước tương tác lấy theo công cụ thiết kế, vì người dùng đã có sẵn phản xạ:
- * - lăn chuột / trackpad pinch → zoom quanh con trỏ
- * - kéo chuột hoặc Space+kéo    → pan
- * - nháy đúp                    → fit lại
+ * - lăn chuột / pinch trackpad → zoom quanh con trỏ
+ * - kéo chuột trái              → pan (ở chế độ 3D: orbit)
+ * - nháy đúp hoặc phím 0        → đặt lại
+ * - `+` `-`                     → zoom quanh tâm khung
+ * - mũi tên                     → pan từng bước (Shift = bước lớn)
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -35,6 +37,25 @@ export type StageFrame = {
 const IDENTITY: Viewport = { scale: 1, x: 0, y: 0 };
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 20;
+const KEY_ZOOM_STEP = 1.15;
+const KEY_PAN_STEP = 40;
+
+/**
+ * Chuẩn hoá `deltaY` về pixel.
+ *
+ * Firefox gửi `deltaMode = 1` (đơn vị DÒNG, ~3 mỗi nấc) còn Chrome gửi
+ * `deltaMode = 0` (pixel, ~100 mỗi nấc). Không quy đổi thì zoom trên Firefox
+ * chậm hơn hàng chục lần — đúng kiểu lỗi chỉ lộ ra trên một trình duyệt.
+ */
+function normalizeWheelDelta(event: WheelEvent): number {
+  if (event.deltaMode === 1) return event.deltaY * 16;
+  if (event.deltaMode === 2) return event.deltaY * 400;
+  return event.deltaY;
+}
+
+function clampScale(value: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
+}
 
 type Props = {
   /** Gọi mỗi khi cần vẽ lại. */
@@ -56,7 +77,10 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [viewport, setViewport] = useState<Viewport>(IDENTITY);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const dragging = useRef<{ x: number; y: number } | null>(null);
+  // State chứ không phải ref: con trỏ phải đổi hình khi đang kéo, mà ref thì
+  // không kích hoạt render nên hình con trỏ sẽ đứng yên mãi.
+  const [dragging, setDragging] = useState(false);
+  const dragFrom = useRef<{ x: number; y: number } | null>(null);
 
   // Theo dõi kích thước khung bằng ResizeObserver chứ không phải window resize:
   // panel có thể đổi rộng mà window thì không.
@@ -113,61 +137,156 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [onFrame, size, dpr, viewport, animate]);
 
-  const onWheel = useCallback((event: React.WheelEvent) => {
-    event.preventDefault();
+  /** Zoom quanh một điểm trong khung (pixel CSS, gốc ở góc trên trái). */
+  const zoomAt = useCallback(
+    (factor: number, pointerX: number, pointerY: number) => {
+      setViewport((current) => {
+        const scale = clampScale(current.scale * factor);
+        const applied = scale / current.scale;
+        // Giữ điểm dưới con trỏ đứng yên khi zoom — nếu không, zoom sâu sẽ đẩy
+        // vùng đang xem ra khỏi khung.
+        return {
+          scale,
+          x: pointerX - (pointerX - current.x) * applied,
+          y: pointerY - (pointerY - current.y) * applied,
+        };
+      });
+    },
+    [],
+  );
+
+  /**
+   * Wheel phải gắn bằng addEventListener với `passive: false`.
+   *
+   * React 17+ gắn listener ở root container, và trình duyệt coi `wheel` ở đó là
+   * **passive** — `event.preventDefault()` bên trong `onWheel` của React là vô
+   * tác dụng, chỉ in cảnh báo ra console. Hậu quả: lăn chuột vừa zoom canvas
+   * vừa cuộn trang, và Ctrl+lăn (pinch trackpad) zoom luôn cả trình duyệt.
+   * Đây là nguyên nhân gốc của việc zoom "lỗi".
+   */
+  useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
-    const box = host.getBoundingClientRect();
-    const pointerX = event.clientX - box.left;
-    const pointerY = event.clientY - box.top;
+    const handle = (event: WheelEvent) => {
+      event.preventDefault();
 
-    setViewport((current) => {
-      // exp() cho cảm giác zoom đều: mỗi notch đổi cùng một TỈ LỆ, không phải
+      const box = host.getBoundingClientRect();
+      const pointerX = event.clientX - box.left;
+      const pointerY = event.clientY - box.top;
+
+      // Pinch trackpad đến dưới dạng wheel kèm ctrlKey, với delta lớn hơn
+      // nhiều. Giảm độ nhạy để pinch không nhảy vọt.
+      const delta = normalizeWheelDelta(event);
+      const sensitivity = event.ctrlKey ? 0.0008 : 0.0015;
+
+      // exp() cho cảm giác zoom đều: mỗi nấc đổi cùng một TỈ LỆ, không phải
       // cùng một lượng tuyệt đối.
-      const factor = Math.exp(-event.deltaY * 0.0015);
-      const scale = Math.min(
-        MAX_SCALE,
-        Math.max(MIN_SCALE, current.scale * factor),
-      );
-      const applied = scale / current.scale;
+      zoomAt(Math.exp(-delta * sensitivity), pointerX, pointerY);
+    };
 
-      // Giữ điểm dưới con trỏ đứng yên khi zoom — nếu không, zoom sâu sẽ đẩy
-      // vùng đang xem ra khỏi khung.
-      return {
-        scale,
-        x: pointerX - (pointerX - current.x) * applied,
-        y: pointerY - (pointerY - current.y) * applied,
-      };
-    });
+    host.addEventListener("wheel", handle, { passive: false });
+    return () => host.removeEventListener("wheel", handle);
+  }, [zoomAt]);
+
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const host = hostRef.current;
+      if (!host) return;
+      const box = host.getBoundingClientRect();
+      const step = event.shiftKey ? KEY_PAN_STEP * 4 : KEY_PAN_STEP;
+
+      const pan = (dx: number, dy: number) =>
+        setViewport((c) => ({ ...c, x: c.x + dx, y: c.y + dy }));
+
+      switch (event.key) {
+        // Nhận cả `=` vì `+` cần giữ Shift trên hầu hết bàn phím.
+        case "+":
+        case "=":
+          zoomAt(KEY_ZOOM_STEP, box.width / 2, box.height / 2);
+          break;
+        case "-":
+        case "_":
+          zoomAt(1 / KEY_ZOOM_STEP, box.width / 2, box.height / 2);
+          break;
+        case "0":
+          setViewport(IDENTITY);
+          break;
+        case "ArrowLeft":
+          pan(step, 0);
+          break;
+        case "ArrowRight":
+          pan(-step, 0);
+          break;
+        case "ArrowUp":
+          pan(0, step);
+          break;
+        case "ArrowDown":
+          pan(0, -step);
+          break;
+        default:
+          return;
+      }
+      // Chỉ chặn mặc định cho phím ta thật sự xử lý. Chặn hết thì Tab và các
+      // phím điều hướng của trình duyệt cũng chết theo.
+      event.preventDefault();
+    },
+    [zoomAt],
+  );
+
+  const endDrag = useCallback((event: React.PointerEvent) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    dragFrom.current = null;
+    setDragging(false);
   }, []);
 
   return (
     <div
       ref={hostRef}
-      className="relative flex-1 overflow-hidden"
-      onWheel={onWheel}
+      // tabIndex để nhận sự kiện bàn phím. Không có nó thì mọi phím tắt đều chết.
+      tabIndex={0}
+      role="application"
+      aria-label="Khung xem point cloud"
+      className="relative flex-1 overflow-hidden outline-none"
+      // touchAction none: trên thiết bị cảm ứng, trình duyệt sẽ tự cuộn/pinch
+      // trang và nuốt mất cử chỉ trước khi ta nhận được.
+      style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
+      onKeyDown={onKeyDown}
       onPointerDown={(event) => {
+        // Chỉ chuột trái. Chuột phải mở menu ngữ cảnh, chuột giữa cuộn — cướp
+        // hai nút đó làm người dùng mất chức năng quen thuộc.
+        if (event.button !== 0) return;
+        // Bấm vào nút nổi trên canvas (ví dụ nút reset zoom) thì không kéo.
+        if ((event.target as HTMLElement).closest("button")) return;
+
         event.currentTarget.setPointerCapture(event.pointerId);
-        dragging.current = { x: event.clientX, y: event.clientY };
+        event.currentTarget.focus();
+        dragFrom.current = { x: event.clientX, y: event.clientY };
+        setDragging(true);
       }}
       onPointerMove={(event) => {
-        const from = dragging.current;
+        const from = dragFrom.current;
         if (!from) return;
         const dx = event.clientX - from.x;
         const dy = event.clientY - from.y;
-        dragging.current = { x: event.clientX, y: event.clientY };
+        dragFrom.current = { x: event.clientX, y: event.clientY };
         setViewport((current) => ({
           ...current,
           x: current.x + dx,
           y: current.y + dy,
         }));
       }}
-      onPointerUp={() => {
-        dragging.current = null;
+      onPointerUp={endDrag}
+      // Thiếu hai handler dưới thì thả chuột ngoài khung sẽ làm trạng thái kéo
+      // kẹt lại, và canvas tiếp tục pan dù không bấm giữ gì.
+      onPointerCancel={endDrag}
+      onLostPointerCapture={() => {
+        dragFrom.current = null;
+        setDragging(false);
       }}
       onDoubleClick={() => setViewport(IDENTITY)}
-      style={{ cursor: dragging.current ? "grabbing" : "grab" }}
     >
       <canvas
         ref={canvasRef}
@@ -177,7 +296,9 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
 
       {empty && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <p className="text-[13px] text-[color:var(--muted-foreground)]">{emptyHint ?? "Chưa có ảnh"}</p>
+          <p className="text-[13px] text-[color:var(--muted-foreground)]">
+            {emptyHint ?? "Chưa có ảnh"}
+          </p>
         </div>
       )}
 
@@ -187,6 +308,7 @@ export function CanvasStage({ onFrame, animate, empty, emptyHint }: Props) {
         <button
           type="button"
           onClick={() => setViewport(IDENTITY)}
+          title="Đặt lại — phím 0 hoặc nháy đúp"
           className="absolute right-3 bottom-3 rounded-lg border border-[color:var(--border)] bg-[color:color-mix(in_oklab,var(--popover)_85%,transparent)] px-2 py-1 font-mono text-2xs text-[color:var(--muted-foreground)] backdrop-blur transition-colors hover:text-[color:var(--foreground)]"
         >
           {Math.round(viewport.scale * 100)}% · reset

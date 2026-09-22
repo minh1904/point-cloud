@@ -81,6 +81,29 @@ Dùng `exp()` chứ không cộng/trừ tuyến tính, nếu không zoom sẽ nh
 
 **ResizeObserver chứ không `window.resize`:** panel có thể đổi rộng mà window thì không.
 
+**Wheel phải gắn bằng `addEventListener(..., { passive: false })`.** React 17+ gắn
+listener ở root container và trình duyệt coi `wheel` ở đó là *passive*, nên
+`event.preventDefault()` trong `onWheel` của React là **vô tác dụng** — chỉ in
+cảnh báo. Hậu quả: lăn chuột vừa zoom canvas vừa cuộn trang, Ctrl+lăn (pinch
+trackpad) zoom luôn cả trình duyệt. Đây là lỗi im lặng nhất trong cả module này.
+
+**Chuẩn hoá `deltaMode`.** Firefox gửi `deltaMode = 1` (đơn vị DÒNG, ~3 mỗi nấc),
+Chrome gửi `0` (pixel, ~100). Không quy đổi thì zoom trên Firefox chậm hơn hàng
+chục lần — lỗi chỉ lộ ra trên một trình duyệt.
+
+### Phím tắt
+
+| Phím | Việc |
+|---|---|
+| lăn chuột / pinch | zoom quanh con trỏ |
+| kéo chuột trái | pan (3D: orbit) |
+| nháy đúp hoặc `0` | đặt lại |
+| `+` `-` | zoom quanh tâm khung |
+| mũi tên | pan (Shift = bước lớn) |
+
+Khung cần `tabIndex={0}` mới nhận được phím. Và chỉ `preventDefault()` cho phím
+thật sự xử lý — chặn hết thì `Tab` chết theo, mất điều hướng bàn phím.
+
 ### Bố cục nổi
 
 Điểm khác biệt lớn nhất so với bản đầu: Toolcraft **không dùng sidebar phẳng**.
@@ -134,6 +157,10 @@ Chưa có test tự động cho phần này — nó là UI, và ở giai đoạn
 | Đổi model giữa lúc inference → chỉ kết quả mới thắng | Race condition |
 | Model metric → relative → `projection` tự về `relief` | State vô nghĩa |
 | Zoom rồi pan → điểm dưới chuột đứng yên | Sai công thức zoom |
+| Lăn chuột trên canvas → trang KHÔNG cuộn | `preventDefault` không ăn (listener passive) |
+| `deltaMode = 1` → zoom đáng kể | Quên chuẩn hoá đơn vị Firefox |
+| `pointercancel` giữa lúc kéo → hết kéo | Trạng thái kéo kẹt lại |
+| `Tab` vẫn chuyển focus được | Chặn phím quá tay |
 
 Kiểm tay bắt buộc trước khi commit UI: `crossOriginIsolated === true` trong console. Thiếu nó thì fallback WASM chậm 3–4 lần mà không báo gì.
 

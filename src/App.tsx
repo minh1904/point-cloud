@@ -18,11 +18,15 @@
  * Điểm quan trọng: kéo slider KHÔNG chạy lại AI. Nếu có, app không dùng được.
  */
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { estimateDepth, releaseDepthWorker } from "@/depth/depth-client";
 import type { RawPixels } from "@/depth/protocol";
 import { disposeStage, renderStage } from "@/scene/stage-renderer";
+import {
+  downloadBlob,
+  exportPointCloud,
+} from "@/pointcloud/export-client";
 import { useActiveModel, useStudio } from "@/store/studio";
 
 import { CanvasStage, type StageFrame } from "@/ui/CanvasStage";
@@ -88,6 +92,33 @@ export default function App() {
   );
 
   useImagePaste(onFile);
+
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+
+  const onExport = useCallback(() => {
+    const state = useStudio.getState();
+    if (!state.depth || !state.pixels) return;
+
+    setExporting(true);
+    setExportProgress(0);
+    exportPointCloud({
+      depth: state.depth,
+      pixels: state.pixels,
+      grid: state.gridSize,
+      depthScale: state.depthScale,
+      projection: state.projection,
+      sourceName: state.fileName ?? "pointcloud",
+      modelId: state.modelId,
+      gzip: state.gzip,
+      onProgress: setExportProgress,
+    })
+      .then((result) => downloadBlob(result.blob, result.fileName))
+      .catch((error: unknown) =>
+        setError(error instanceof Error ? error.message : "Export thất bại."),
+      )
+      .finally(() => setExporting(false));
+  }, [setError]);
 
   const onClear = useCallback(() => {
     clearSource();
@@ -158,7 +189,13 @@ export default function App() {
       </div>
 
       <div className="pointer-events-none absolute inset-0 flex items-start justify-between gap-2.5 p-2.5">
-        <ControlsPanel onFile={onFile} onClear={onClear} />
+        <ControlsPanel
+          onFile={onFile}
+          onClear={onClear}
+          onExport={onExport}
+          exporting={exporting}
+          exportProgress={exportProgress}
+        />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center">

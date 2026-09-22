@@ -34,6 +34,7 @@ export type Params = {
   gridSize: number;
   projection: Projection;
   pointSize: number;
+  gzip: boolean;
 };
 
 /** Dữ liệu dẫn xuất. Không persist — tính lại được từ ảnh. */
@@ -65,6 +66,7 @@ const INITIAL_PARAMS: Params = {
   gridSize: PARTICLE.defaultGrid,
   projection: "relief",
   pointSize: PARTICLE.pointSizeDefault,
+  gzip: true,
 };
 
 const INITIAL_DERIVED: Derived = {

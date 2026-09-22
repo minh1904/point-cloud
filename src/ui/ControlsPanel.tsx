@@ -14,6 +14,7 @@ import type { Colormap, Projection } from "@/shared/types";
 import { Dropzone } from "./Dropzone";
 import {
   Badge,
+  Button,
   Notice,
   Panel,
   Progress,
@@ -46,9 +47,15 @@ const GRID_OPTIONS: readonly SelectOption<string>[] = PARTICLE.gridSizes.map(
 export function ControlsPanel({
   onFile,
   onClear,
+  onExport,
+  exporting,
+  exportProgress,
 }: {
   onFile: (file: File) => void;
   onClear: () => void;
+  onExport: () => void;
+  exporting: boolean;
+  exportProgress: number;
 }) {
   const params = useStudio();
   const model = useActiveModel();
@@ -186,6 +193,36 @@ export function ControlsPanel({
             dựng được relief.
           </p>
         )}
+      </Section>
+
+      <Section title="Export">
+        <Segmented
+          label="Nén"
+          value={params.gzip ? "gzip" : "plain"}
+          options={[
+            { value: "gzip", label: "gzip" },
+            { value: "plain", label: "JSON thường" },
+          ]}
+          onChange={(value) => setParam("gzip", value === "gzip")}
+        />
+
+        {exporting ? (
+          <Progress label="Đang dựng point cloud" ratio={exportProgress} />
+        ) : (
+          <Button
+            variant="primary"
+            onClick={onExport}
+            disabled={!params.depth}
+          >
+            Export JSON
+          </Button>
+        )}
+
+        <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
+          Xuất trạng thái gốc (chưa cộng noise). Lưới {params.gridSize}² cho
+          khoảng {Math.round((params.gridSize * params.gridSize) / 1000)}k hạt
+          trước khi lọc biên.
+        </p>
       </Section>
     </Panel>
   );

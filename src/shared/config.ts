@@ -15,8 +15,13 @@
 
 /** Lưới lấy mẫu. gridSize² là số hạt tối đa (trước edge rejection). */
 export const PARTICLE = {
-  gridSizes: [256, 384, 512],
-  defaultGrid: 256,
+  /**
+   * Thêm 128 và 192: cách trực tiếp nhất để tăng khoảng cách giữa các hạt.
+   * Lưới 128 cho khoảng cách gấp đôi lưới 256 — dùng khi muốn thấy rõ từng hạt
+   * thay vì một bề mặt liền.
+   */
+  gridSizes: [128, 192, 256, 384, 512],
+  defaultGrid: 192,
   /**
    * Tính bằng pixel ở khoảng cách camera chuẩn.
    *
@@ -88,6 +93,18 @@ export const FBM = {
   speedDefault: 1,
   /** Bước central difference khi lấy gradient cho curl noise. */
   epsilon: 0.01,
+} as const;
+
+/**
+ * Giãn point cloud ra xa nhau.
+ *
+ * Khác với đổi lưới (thay đổi SỐ hạt), spread giữ nguyên số hạt và đẩy chúng ra
+ * xa — hữu ích khi muốn giữ chi tiết của ảnh mà vẫn có khe hở giữa các hạt.
+ */
+export const SPREAD = {
+  min: 0.5,
+  max: 3,
+  default: 1,
 } as const;
 
 export const CURL = {

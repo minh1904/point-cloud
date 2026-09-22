@@ -14,7 +14,7 @@ import { create } from "zustand";
 
 import { DEFAULT_DEPTH_MODEL_ID, resolveDepthModel } from "@/depth/registry";
 import type { RawPixels } from "@/depth/protocol";
-import { BREATHING, CURL, DEPTH, FBM, PARTICLE } from "@/shared/config";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE, SPREAD } from "@/shared/config";
 import type {
   Colormap,
   DepthMap,
@@ -38,6 +38,7 @@ export type Params = {
   fbmFreq: number;
   fbmSpeed: number;
   curlStrength: number;
+  spread: number;
   breathAmp: number;
   breathSpeed: number;
   gzip: boolean;
@@ -76,6 +77,7 @@ const INITIAL_PARAMS: Params = {
   fbmFreq: FBM.frequencyDefault,
   fbmSpeed: FBM.speedDefault,
   curlStrength: CURL.strengthDefault,
+  spread: SPREAD.default,
   breathAmp: BREATHING.amplitudeDefault,
   breathSpeed: BREATHING.speedDefault,
   gzip: true,

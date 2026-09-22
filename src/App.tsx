@@ -72,6 +72,7 @@ export default function App() {
   const fbmFreq = useStudio((state) => state.fbmFreq);
   const fbmSpeed = useStudio((state) => state.fbmSpeed);
   const curlStrength = useStudio((state) => state.curlStrength);
+  const spread = useStudio((state) => state.spread);
   const breathAmp = useStudio((state) => state.breathAmp);
   const breathSpeed = useStudio((state) => state.breathSpeed);
   const modelId = useStudio((state) => state.modelId);
@@ -166,6 +167,7 @@ export default function App() {
         fbmFreq,
         fbmSpeed,
         curlStrength,
+        spread,
         breathAmp,
         breathSpeed,
         dpr: frame.dpr,
@@ -186,6 +188,7 @@ export default function App() {
       fbmFreq,
       fbmSpeed,
       curlStrength,
+      spread,
       breathAmp,
       breathSpeed,
     ],

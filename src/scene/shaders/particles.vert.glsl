@@ -13,6 +13,7 @@ uniform float uFbmAmp;
 uniform float uFbmFreq;
 uniform float uFbmSpeed;
 uniform float uCurlStrength;
+uniform float uSpread;
 uniform float uBreathAmp;
 uniform float uBreathSpeed;
 uniform float uEps;
@@ -44,9 +45,10 @@ void main() {
   vAlpha = 1.0 - smoothstep(uEdgeLo, uEdgeHi, edge);
 
   // Lật y: texture v hướng xuống, world y hướng lên.
+  // uSpread đẩy các hạt ra xa nhau mà không đổi số hạt.
   vec3 p = vec3(
-    (st.x - 0.5) * 2.0 * uAspect,
-    (0.5 - st.y) * 2.0,
+    (st.x - 0.5) * 2.0 * uAspect * uSpread,
+    (0.5 - st.y) * 2.0 * uSpread,
     (d - 0.5) * uDepthScale
   );
 
@@ -70,23 +72,42 @@ void main() {
   float organicY = ((fbmMedium - 0.5) * 0.6 + (fbmFast - 0.5) * 0.2) * uFbmAmp;
   float organicZ = ((fbmSlow - 0.5) * 0.4 + (fbmFast - 0.5) * 0.3) * uFbmAmp;
 
-  // Curl có thang thời gian RIÊNG (0.4) khác ba tầng trên — dòng chảy trôi theo
-  // nhịp của nó, không khoá pha với chuyển động gợn.
-  vec2 curl = curlNoise(scaledCoord * 1.5, uTime * 0.4 * uFbmSpeed, 4, uEps);
+  // Curl trong BA CHIỀU.
+  //
+  // curlNoise là hàm 2D nên một lần gọi chỉ xoáy được trong một mặt phẳng. Bản
+  // trước chỉ gọi một lần cho mặt phẳng xy, nên trục z gần như đứng yên và đám
+  // hạt trôi dẹt như tờ giấy.
+  //
+  // Gọi ba lần trên ba mặt phẳng trực giao rồi cộng hai đóng góp cho mỗi trục:
+  // kết quả trôi tự do theo mọi hướng. Mỗi mặt phẳng có thang thời gian và độ
+  // lệch miền riêng nên chúng không khoá pha với nhau.
+  float tc = uTime * uFbmSpeed;
+  vec2 curlXY = curlNoise(scaledCoord * 1.5, tc * 0.40, 4, uEps);
+  vec2 curlXZ = curlNoise(scaledCoord * 1.3 + vec2(31.7, 11.3), tc * 0.55, 4, uEps);
+  vec2 curlYZ = curlNoise(scaledCoord * 1.7 + vec2(-19.1, 47.9), tc * 0.31, 4, uEps);
 
-  // curlNoise chia cho (2 * eps) nên độ lớn của nó gấp ~1/(2*eps) lần chênh lệch
-  // fbm bên dưới. Nhân lại (2 * eps) để `uCurlStrength` mang đơn vị world, cùng
-  // thang với các slider khác.
-  curl *= 2.0 * uEps;
+  // curlNoise chia cho (2 * eps) nên độ lớn của nó gấp ~1/(2*eps) lần chênh
+  // lệch fbm bên dưới. Nhân lại (2 * eps) để `uCurlStrength` mang đơn vị world,
+  // cùng thang với các slider khác.
+  float k = 2.0 * uEps * uCurlStrength;
 
-  p.x += organicX * 0.5 + curl.x * uCurlStrength;
-  p.y += organicY * 0.5 + curl.y * uCurlStrength;
-  p.z += organicZ * 0.4;
+  // Mỗi trục nhận đóng góp từ hai mặt phẳng chứa nó. 0.5 để tổng hai đóng góp
+  // không mạnh gấp đôi một trục đơn.
+  p.x += organicX * 0.5 + (curlXY.x + curlXZ.x) * k * 0.5;
+  p.y += organicY * 0.5 + (curlXY.y + curlYZ.x) * k * 0.5;
+  // Trục z nhân thêm 1.6: depth chỉ trải ±depthScale/2 (mặc định ±0.3) trong khi
+  // xy trải ±2, nên cùng một biên độ tuyệt đối sẽ gần như không thấy ở z.
+  p.z += organicZ * 0.4 + (curlXZ.y + curlYZ.y) * k * 0.5 * 1.6;
+
+  // Lệch pha nhẹ theo từng hạt để chúng không trôi đồng loạt như một khối.
+  // Biên độ rất nhỏ (0.35 rad) nên hạt lân cận vẫn gần đồng pha và bề mặt không
+  // tan — khác hẳn việc lấy pha ngẫu nhiên toàn phần, thứ đã từng làm hỏng hình.
+  float jitter = sin(aIndex * 137.5 + uTime * uFbmSpeed * 0.7) * 0.35;
 
   // Thở: phình/co theo chu kỳ. Pha biến thiên MƯỢT theo khoảng cách tới tâm —
   // dùng hash per-particle thì hai hạt cạnh nhau ngược pha và bề mặt tan thành
   // nhiễu.
-  p *= 1.0 + sin(uTime * uBreathSpeed - length(p.xy) * 1.5) * uBreathAmp;
+  p *= 1.0 + sin(uTime * uBreathSpeed - length(p.xy) * 1.5 + jitter) * uBreathAmp;
 
   vColor = texture2D(uColor, st).rgb;
 
@@ -106,7 +127,15 @@ void main() {
   float sizeVariation = 1.0 + (fbmFast - 0.5) * 0.3;
   float perspectiveScale = clamp(uRefDistance / max(0.001, -mv.z), 0.3, 2.5);
 
-  gl_PointSize = uPointSize * uDpr * densityScale * sizeVariation * perspectiveScale;
+  // min(..., 64) là chặn an toàn, không phải thẩm mỹ. Tổ hợp tham số cực đại
+  // (spread lớn + fbm biên độ lớn + hạt to) đẩy một số hạt sát camera và cỡ hạt
+  // bùng lên hàng trăm pixel — nhân với hàng chục nghìn hạt là đủ treo GPU. Đã
+  // gặp thật khi thử. 64 cũng là trần của ALIASED_POINT_SIZE_RANGE trên nhiều
+  // GPU, nên vượt qua nó vốn đã không có tác dụng.
+  gl_PointSize = min(
+    uPointSize * uDpr * densityScale * sizeVariation * perspectiveScale,
+    64.0
+  );
 
   // Hạt bị loại hẳn thì đẩy ra sau camera thay vì vẽ rồi bỏ ở fragment —
   // tiết kiệm fill rate, vốn là bottleneck thật của particle system.

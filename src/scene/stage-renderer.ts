@@ -18,7 +18,7 @@ import * as THREE from "three";
 
 import { sampleColormap } from "@/depth/colormap";
 import type { RawPixels } from "@/depth/protocol";
-import { BREATHING, CURL, EDGE, FBM } from "@/shared/config";
+import { BREATHING, CURL, EDGE, FBM, SPREAD } from "@/shared/config";
 import type { Colormap, DepthMap } from "@/shared/types";
 
 import depthFragment from "./shaders/depth-preview.frag.glsl";
@@ -39,6 +39,7 @@ export type StageInput = {
   readonly fbmFreq: number;
   readonly fbmSpeed: number;
   readonly curlStrength: number;
+  readonly spread: number;
   readonly breathAmp: number;
   readonly breathSpeed: number;
   readonly dpr: number;
@@ -233,6 +234,7 @@ function createStage(canvas: HTMLCanvasElement): Stage {
       uFbmFreq: { value: FBM.frequencyDefault },
       uFbmSpeed: { value: FBM.speedDefault },
       uCurlStrength: { value: CURL.strengthDefault },
+      uSpread: { value: SPREAD.default },
       uBreathAmp: { value: BREATHING.amplitudeDefault },
       uBreathSpeed: { value: BREATHING.speedDefault },
       uEps: { value: FBM.epsilon },
@@ -269,6 +271,38 @@ function getStage(canvas: HTMLCanvasElement): Stage {
   stageCanvas = canvas;
   stage = createStage(canvas);
   return stage;
+}
+
+/* ── Ngân sách fill rate ──────────────────────────────────────────────── */
+
+/**
+ * Số pixel tối đa được phép tô mỗi khung hình.
+ *
+ * Với particle system, chi phí thật là `số hạt × cỡ hạt²`, không phải số hạt.
+ * Đo thực tế: 262k hạt ở cỡ 11px (≈31M pixel) chạy 32 fps — đó là trần dùng
+ * được. Vượt xa hơn thì GPU **treo hẳn**, không chỉ chậm: 37k hạt ở cỡ 64 là
+ * 151M pixel và làm đứng cả tab. Đã gặp thật khi thử tổ hợp tham số cực đại.
+ *
+ * 25M là mức giữ được khoảng 40 fps ở trường hợp xấu nhất.
+ */
+const FILL_BUDGET = 25_000_000;
+
+/**
+ * Giới hạn cỡ hạt theo số hạt đang vẽ.
+ *
+ * Chặn cứng một con số (kiểu `min(size, 64)`) không đủ, vì cùng một cỡ hạt an
+ * toàn với lưới 128 lại làm treo với lưới 512. Ngân sách phải chia cho số hạt.
+ */
+export function clampPointSize(
+  requested: number,
+  gridSize: number,
+  dpr: number,
+): number {
+  const count = gridSize * gridSize;
+  // Chia cho dpr vì shader còn nhân dpr vào, và nhân 1.725 là tích của hai hệ
+  // số phóng lớn nhất trong shader (densityScale 1.5 × sizeVariation 1.15).
+  const maxSize = Math.sqrt(FILL_BUDGET / count) / (dpr * 1.725);
+  return Math.min(requested, Math.max(1, maxSize));
 }
 
 /* ── Vẽ ───────────────────────────────────────────────────────────────── */
@@ -351,6 +385,7 @@ export function renderStage(
 
   const u = s.pointMaterial.uniforms;
   u.uColor.value = s.colorTexture;
+  u.uPointSize.value = clampPointSize(input.pointSize, input.gridSize, dpr);
   u.uDepth.value = s.depthTexture ?? s.colorTexture;
   u.uDepthTexel.value.set(
     1 / (depth?.width ?? pixels.width),
@@ -358,13 +393,13 @@ export function renderStage(
   );
   u.uAspect.value = aspect;
   u.uDepthScale.value = input.depthScale;
-  u.uPointSize.value = input.pointSize;
   u.uTime.value = input.time;
   u.uDpr.value = dpr;
   u.uFbmAmp.value = input.fbmAmp;
   u.uFbmFreq.value = input.fbmFreq;
   u.uFbmSpeed.value = input.fbmSpeed;
   u.uCurlStrength.value = input.curlStrength;
+  u.uSpread.value = input.spread;
   u.uBreathAmp.value = input.breathAmp;
   u.uBreathSpeed.value = input.breathSpeed;
 

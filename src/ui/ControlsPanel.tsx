@@ -7,7 +7,8 @@
  */
 
 import { DEPTH_MODELS } from "@/depth/registry";
-import { BREATHING, CURL, DEPTH, FBM, PARTICLE } from "@/shared/config";
+import { clampPointSize } from "@/scene/stage-renderer";
+import { BREATHING, CURL, DEPTH, FBM, PARTICLE, SPREAD } from "@/shared/config";
 import { useActiveModel, useStudio, type ViewMode } from "@/store/studio";
 import type { Colormap, Projection } from "@/shared/types";
 
@@ -68,6 +69,13 @@ export function ControlsPanel({
       label: entry.label,
       hint: `${entry.sizeMB} MB`,
     }),
+  );
+
+  // Cỡ thật có thể nhỏ hơn cỡ yêu cầu do ngân sách fill rate.
+  const effectiveSize = clampPointSize(
+    params.pointSize,
+    params.gridSize,
+    Math.min(window.devicePixelRatio || 1, 2),
   );
 
   const projectionOptions: readonly SelectOption<Projection>[] =
@@ -163,12 +171,12 @@ export function ControlsPanel({
           />
         )}
 
-        {params.viewMode === "particles" && params.pointSize > 8 && (
-          <p className="m-0 text-2xs text-[color:var(--muted-foreground)]">
-            Hạt to làm hạt chồng nhau thành mảng màu, nhưng chi phí là fill rate
-            — đo thực tế với cỡ 11: lưới 256² đạt 100 fps, 384² còn 54, 512² còn
-            32. Giảm lưới nếu thấy giật.
-          </p>
+        {params.viewMode === "particles" && effectiveSize < params.pointSize && (
+          <Notice tone="info">
+            Đang vẽ ở cỡ {effectiveSize.toFixed(1)} thay vì {params.pointSize}.
+            Chi phí là số hạt × cỡ², nên lưới {params.gridSize}² chỉ cho phép tới{" "}
+            {effectiveSize.toFixed(1)}px. Giảm lưới để hạt to hơn.
+          </Notice>
         )}
       </Section>
 
@@ -194,6 +202,13 @@ export function ControlsPanel({
             min={FBM.speedMin}
             max={FBM.speedMax}
             onChange={(value) => setParam("fbmSpeed", value)}
+          />
+          <Slider
+            label="Giãn cách hạt"
+            value={params.spread}
+            min={SPREAD.min}
+            max={SPREAD.max}
+            onChange={(value) => setParam("spread", value)}
           />
           <Slider
             label="Curl — độ xoáy"

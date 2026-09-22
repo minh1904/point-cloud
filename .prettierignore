@@ -1,0 +1,5 @@
+dist
+coverage
+.next
+pnpm-lock.yaml
+docs/research/img

@@ -1,0 +1,27 @@
+{
+  "name": "point-cloud-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@8.9.0",
+  "scripts": {
+    "dev": "pnpm --filter point-cloud dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter point-cloud start",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "jsdom": "^27.0.0",
+    "prettier": "^3.9.8",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

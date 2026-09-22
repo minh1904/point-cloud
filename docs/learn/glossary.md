@@ -24,6 +24,8 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Blending** | Cách màu mới trộn với màu đã có trên màn hình, dựa vào alpha. | [P1.3](p1-3-round-points.md) |
 | **Depth buffer** | Bộ nhớ lưu độ sâu mỗi pixel để vật gần che vật xa. | [P1.3](p1-3-round-points.md) |
 | **`depthWrite`** | Có ghi độ sâu của vật này vào depth buffer hay không. | [P1.3](p1-3-round-points.md) |
+| **Stateless animation** | Chuyển động tính lại từ đầu mỗi frame chỉ từ dữ liệu gốc + thời gian; không nhớ frame trước. | [P1.5](p1-5-gpu-drift.md) |
+| **Amplitude / Frequency / Phase** | Biên độ (lắc xa bao nhiêu) / tần số (nhanh chậm) / pha (đang ở đâu trong chu kỳ) của một dao động `sin`. | [P1.5](p1-5-gpu-drift.md) |
 | **`ALIASED_POINT_SIZE_RANGE`** | Khoảng `gl_PointSize` mà GPU hỗ trợ; mỗi máy khác nhau. | [P1.4](p1-4-point-size.md) |
 
 ## Không gian toạ độ
@@ -57,4 +59,6 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **`useThree`** | Hook đọc trạng thái R3F: renderer (`gl`), kích thước, camera… | [P0](p0-scaffold.md) |
 | **SSR** | Server render HTML trước khi gửi xuống trình duyệt. | [P0](p0-scaffold.md) |
 | **Hydration** | React "gắn" sự kiện vào HTML do server render; nếu HTML lệch → cảnh báo hydration. | [P0](p0-scaffold.md) |
+| **Accessible name** | Tên mà trình đọc màn hình đọc cho một control (ví dụ slider "Size"), thường lấy từ `aria-label` hoặc `<label>`. | [P1.5](p1-5-gpu-drift.md) |
+| **Base UI** | Thư viện component không kèm style (unstyled) lo phần hành vi và truy cập; Atelier dựng style lên trên. | [P1.5](p1-5-gpu-drift.md) |
 | **Monorepo** | Một repo chứa nhiều package/app dùng chung công cụ. | [P0](p0-scaffold.md) |

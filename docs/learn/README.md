@@ -29,9 +29,10 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P1.2 · Tự viết shader thay cho PointsMaterial](p1-2-shader-material.md)
 - [P1.3 · Hạt tròn, mép mềm](p1-3-round-points.md)
 - [P1.4 · Kích thước hạt: phối cảnh, DPR, dưới 1 pixel](p1-4-point-size.md)
+- [P1.5 · Hạt tự trôi trên GPU (và slider đầu tiên)](p1-5-gpu-drift.md)
 
 ### Tiếp theo
-- P1.5 · Hạt tự trôi trên GPU *(sắp tới)*
+- P1.6 · Camera: xoay, pan, zoom *(sắp tới)*
 
 ## Bức tranh tổng thể
 

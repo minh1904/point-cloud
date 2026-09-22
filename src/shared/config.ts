@@ -27,7 +27,11 @@ export const PARTICLE = {
    */
   pointSizeMin: 0.5,
   pointSizeMax: 40,
-  pointSizeDefault: 6,
+  /**
+   * Demo gốc để 4, và cỡ hiệu dụng còn được nhân thêm densityScale (0.8–1.5),
+   * sizeVariation (±15%) và perspectiveScale (kẹp 0.3–2.5) trong shader.
+   */
+  pointSizeDefault: 8,
 } as const;
 
 /** Độ dày phù điêu ở chế độ relief. Không có đơn vị — depth là tương đối. */
@@ -70,13 +74,18 @@ export const FBM = {
   octaves: 4,
   amplitudeMin: 0,
   amplitudeMax: 3,
-  amplitudeDefault: 0.35,
+  /**
+   * Demo gốc để 1.0, nhưng world của họ rộng ±75 đơn vị còn của ta ±2 — cùng
+   * một biên độ cho ra dịch chuyển tương đối lớn hơn nhiều. 0.4 là mức tương
+   * đương về mặt thị giác.
+   */
+  amplitudeDefault: 0.4,
   frequencyMin: 0.1,
   frequencyMax: 4,
-  frequencyDefault: 0.9,
+  frequencyDefault: 1,
   speedMin: 0,
   speedMax: 3,
-  speedDefault: 0.6,
+  speedDefault: 1,
   /** Bước central difference khi lấy gradient cho curl noise. */
   epsilon: 0.01,
 } as const;
@@ -94,7 +103,7 @@ export const CURL = {
 export const BREATHING = {
   amplitudeMin: 0,
   amplitudeMax: 0.5,
-  amplitudeDefault: 0.06,
+  amplitudeDefault: 0.05,
   speedMin: 0,
   speedMax: 3,
   speedDefault: 0.5,

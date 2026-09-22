@@ -150,6 +150,7 @@ function createPoints(
 ): THREE.Points {
   const count = gridSize * gridSize;
   const uvs = new Float32Array(count * 2);
+  const indices = new Float32Array(count);
   // position bắt buộc phải có với Three.js, nhưng không mang dữ liệu.
   const positions = new Float32Array(count * 3);
 
@@ -159,12 +160,17 @@ function createPoints(
       // +0.5 = lấy tâm ô. Bỏ đi thì lệch nửa pixel và mất hàng/cột cuối.
       uvs[i * 2] = (x + 0.5) / gridSize;
       uvs[i * 2 + 1] = (y + 0.5) / gridSize;
+      // CHUẨN HOÁ về 0..1, không phải chỉ số thô: shader cộng aIndex vào miền
+      // noise, nên chỉ số 65535 sẽ dịch miền đi 65 đơn vị và mỗi hạt trong một
+      // hàng lấy mẫu hoàn toàn khác nhau — ảnh bị kéo thành vệt ngang.
+      indices[i] = i / count;
     }
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("aGridUv", new THREE.BufferAttribute(uvs, 2));
+  geometry.setAttribute("aIndex", new THREE.BufferAttribute(indices, 1));
   // Frustum culling dựa vào bounding sphere của `position`, vốn toàn số 0 →
   // Three.js sẽ cull nhầm toàn bộ. Tắt đi.
   const points = new THREE.Points(geometry, material);
@@ -225,7 +231,6 @@ function createStage(canvas: HTMLCanvasElement): Stage {
       uCurlStrength: { value: CURL.strengthDefault },
       uBreathAmp: { value: BREATHING.amplitudeDefault },
       uBreathSpeed: { value: BREATHING.speedDefault },
-      uOctaves: { value: FBM.octaves },
       uEps: { value: FBM.epsilon },
       uDpr: { value: 1 },
       uRefDistance: { value: 3.2 },

@@ -166,6 +166,25 @@ vec2 curlNoise(vec2 st, float time) {
 
 **Xoay domain mỗi octave** (`mat2` với góc 0.5 rad) phá artifact axis-aligned — công thức kinh điển của Inigo Quilez. Bỏ phép xoay thì noise trông như lưới.
 
+### Tham số chuyển động: lấy từ đâu
+
+Bài Codrops **không** công bố giá trị tham số — nó chỉ đưa hàm `fbm` và
+`curlNoise`. Các con số dưới đây đọc trực tiếp từ bundle của demo sống
+(`creative-art-points.vercel.app`), nơi shader nằm nguyên trong JS:
+
+| | Demo | Ở đây | Ghi chú |
+|---|---|---|---|
+| Point Size | 4 | 8 | cỡ hiệu dụng còn nhân thêm 3 hệ số trong shader |
+| fBM Amplitude | 1.0 | 0.4 | world của họ ±75 đơn vị, của ta ±2 |
+| fBM Frequency | 1.0 | 1.0 | |
+| fBM Speed | 1.0 | 1.0 | |
+| Curl Strength | 0.15 | 0.15 | |
+| Breathing | 0.05 | 0.05 | |
+
+Hàm `fbm` và `curlNoise` của họ **giống hệt** bản đã port từ bài viết. Khác biệt
+nằm hoàn toàn ở **cách kết hợp** — ba tầng fBM với hệ số riêng cho từng trục, và
+ba hệ số nhân vào cỡ hạt.
+
 ### `shaders/particles.vert.glsl`
 
 ```glsl

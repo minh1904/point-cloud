@@ -9,21 +9,25 @@ uniform float uPointSize;
 uniform float uTime;
 uniform float uEdgeLo;       // từ shared/config.ts — KHÔNG hardcode
 uniform float uEdgeHi;
-uniform float uFbmAmp;        // biên độ gợn theo trục z
-uniform float uFbmFreq;       // tần số không gian
-uniform float uFbmSpeed;      // tốc độ trôi theo thời gian
-uniform float uCurlStrength;  // độ xoáy trong mặt phẳng xy
+uniform float uFbmAmp;
+uniform float uFbmFreq;
+uniform float uFbmSpeed;
+uniform float uCurlStrength;
 uniform float uBreathAmp;
 uniform float uBreathSpeed;
-uniform int   uOctaves;
 uniform float uEps;
 uniform float uDpr;
 uniform float uRefDistance;  // khoảng cách camera hiện tại
 
-attribute vec2 aGridUv;      // toạ độ ô trong lưới, 0..1
+attribute vec2  aGridUv;     // toạ độ ô trong lưới, 0..1
+attribute float aIndex;      // chỉ số hạt, để hai hạt cạnh nhau không đồng pha
 
 varying vec3  vColor;
 varying float vAlpha;
+
+float valueRemap(float v, float inMin, float inMax, float outMin, float outMax) {
+  return outMin + (v - inMin) * (outMax - outMin) / (inMax - inMin);
+}
 
 void main() {
   vec2 st = aGridUv;
@@ -46,38 +50,63 @@ void main() {
     (d - 0.5) * uDepthScale
   );
 
-  // Chuyển động analytic: position = f(uv, time). Không có velocity buffer,
-  // không ping-pong FBO — nên không tích luỹ sai số và scrub được theo thời gian.
+  // ─── Chuyển động hữu cơ: BA tầng fBM ───────────────────────────────────
   //
-  // fBM và curl làm hai việc khác nhau nên tách riêng: fBM đẩy hạt ra/vào theo
-  // trục z (địa hình gợn sóng), curl xoáy hạt trong mặt phẳng xy (dòng chảy).
-  vec2 domain = p.xy * uFbmFreq;
-  float t = uTime * uFbmSpeed;
-
-  p.xy += curlNoise(domain, t, uOctaves, uEps) * uCurlStrength;
-  p.z += (fbm(domain + vec2(t), uOctaves) - 0.5) * uFbmAmp * 0.2;
-
-  // Thở: phình/co theo chu kỳ.
+  // Đây là chỗ khác biệt lớn nhất so với bản một tầng trước đó. Mỗi trục nhận
+  // một HỖN HỢP KHÁC NHAU của ba tầng, nên các trục không dao động đồng pha và
+  // chuyển động đọc ra "hữu cơ" thay vì một cái lắc đều.
   //
-  // Pha biến thiên MƯỢT theo không gian, không phải ngẫu nhiên từng hạt. Dùng
-  // hash per-particle thì hai hạt cạnh nhau co giãn ngược pha và bề mặt tan
-  // thành nhiễu — đã thử và nhìn hỏng hẳn. Sóng theo khoảng cách tới tâm giữ
-  // các hạt lân cận đồng pha, nên cả đám phồng lên như một cơ thể.
-  float phase = length(p.xy) * 1.5;
-  p *= 1.0 + sin(uTime * uBreathSpeed - phase) * uBreathAmp;
+  // Miền lấy mẫu là toạ độ hạt (0..1) chứ không phải world position: nhờ vậy
+  // hành vi không đổi khi ảnh có aspect khác nhau. `aIndex` lệch nhẹ để hai hạt
+  // cạnh nhau không lấy đúng cùng một mẫu noise.
+  vec2 particleCoord = vec2(st.x + aIndex * 0.001, st.y + aIndex * 0.0005);
+  vec2 scaledCoord = particleCoord * uFbmFreq;
+
+  float fbmSlow   = fbm(scaledCoord * 0.5 + uTime * 0.1 * uFbmSpeed, 4);  // trôi lớn, chậm
+  float fbmMedium = fbm(scaledCoord * 2.0 + uTime * 0.3 * uFbmSpeed, 3);  // nhiễu động vừa
+  float fbmFast   = fbm(scaledCoord * 4.0 + uTime * 1.5 * uFbmSpeed, 2);  // chi tiết nhanh
+
+  float organicX = ((fbmSlow - 0.5) * 0.8 + (fbmMedium - 0.5) * 0.3) * uFbmAmp;
+  float organicY = ((fbmMedium - 0.5) * 0.6 + (fbmFast - 0.5) * 0.2) * uFbmAmp;
+  float organicZ = ((fbmSlow - 0.5) * 0.4 + (fbmFast - 0.5) * 0.3) * uFbmAmp;
+
+  // Curl có thang thời gian RIÊNG (0.4) khác ba tầng trên — dòng chảy trôi theo
+  // nhịp của nó, không khoá pha với chuyển động gợn.
+  vec2 curl = curlNoise(scaledCoord * 1.5, uTime * 0.4 * uFbmSpeed, 4, uEps);
+
+  // curlNoise chia cho (2 * eps) nên độ lớn của nó gấp ~1/(2*eps) lần chênh lệch
+  // fbm bên dưới. Nhân lại (2 * eps) để `uCurlStrength` mang đơn vị world, cùng
+  // thang với các slider khác.
+  curl *= 2.0 * uEps;
+
+  p.x += organicX * 0.5 + curl.x * uCurlStrength;
+  p.y += organicY * 0.5 + curl.y * uCurlStrength;
+  p.z += organicZ * 0.4;
+
+  // Thở: phình/co theo chu kỳ. Pha biến thiên MƯỢT theo khoảng cách tới tâm —
+  // dùng hash per-particle thì hai hạt cạnh nhau ngược pha và bề mặt tan thành
+  // nhiễu.
+  p *= 1.0 + sin(uTime * uBreathSpeed - length(p.xy) * 1.5) * uBreathAmp;
 
   vColor = texture2D(uColor, st).rgb;
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
 
-  // Thu nhỏ theo khoảng cách, chuẩn hoá theo khoảng cách camera: nhờ vậy
-  // `uPointSize` mang nghĩa "bao nhiêu pixel ở khoảng cách hiện tại" thay vì một
-  // số vô nghĩa phụ thuộc scale của scene.
+  // ─── Cỡ hạt ────────────────────────────────────────────────────────────
   //
-  // gl_PointSize bị cap bởi ALIASED_POINT_SIZE_RANGE (~64px trên Safari và một
-  // số GPU) — muốn hạt to hơn phải chuyển sang instanced quad.
-  gl_PointSize = uPointSize * uDpr * (uRefDistance / max(0.001, -mv.z));
+  // Ba hệ số nhân, mỗi cái sửa một vấn đề:
+  //
+  // densityScale  — hạt ở vùng "đặc" (không gần vách depth) to hơn. Biến mật độ
+  //                 thành thông tin thị giác thay vì chỉ là độ mờ.
+  // sizeVariation — dao động ±15% theo fbmFast, phá cái đều tăm tắp của lưới.
+  // perspectiveScale — thu nhỏ theo khoảng cách, CÓ KẸP BIÊN. Kẹp là phần quan
+  //                 trọng: không có nó, zoom sâu làm hạt phình ra che kín màn.
+  float densityScale = valueRemap(vAlpha, 0.0, 1.0, 0.8, 1.5);
+  float sizeVariation = 1.0 + (fbmFast - 0.5) * 0.3;
+  float perspectiveScale = clamp(uRefDistance / max(0.001, -mv.z), 0.3, 2.5);
+
+  gl_PointSize = uPointSize * uDpr * densityScale * sizeVariation * perspectiveScale;
 
   // Hạt bị loại hẳn thì đẩy ra sau camera thay vì vẽ rồi bỏ ở fragment —
   // tiết kiệm fill rate, vốn là bottleneck thật của particle system.

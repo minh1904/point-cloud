@@ -31,6 +31,9 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Render target** | Đích render ngoài màn hình có texture để pass sau đọc lại. | [P2.1](p2-1-offscreen-render-target.md) |
 | **Half float** | Số thực 16-bit; chính xác và có khoảng giá trị rộng hơn kênh màu 8-bit, phù hợp cho texture hậu kỳ. | [P2.1](p2-1-offscreen-render-target.md) |
 | **Fullscreen triangle** | Một tam giác clip-space quá khổ phủ toàn màn hình, dùng để chạy fragment shader một lần cho mỗi pixel. | [P2.1](p2-1-offscreen-render-target.md) |
+| **Post-processing** | Xử lý ảnh sau khi scene đã được render: fragment shader đọc texture của cả khung hình rồi biến đổi từng pixel. | [P2.2](p2-2-fullscreen-post-shader.md) |
+| **Texture sampling** | Đọc giá trị màu/dữ liệu từ texture tại một toạ độ UV bằng hàm như `texture2D`. | [P2.2](p2-2-fullscreen-post-shader.md) |
+| **UV** | Toạ độ 2D chuẩn hoá trên texture; thường `(0,0)` ở một góc và `(1,1)` ở góc đối diện. | [P2.2](p2-2-fullscreen-post-shader.md) |
 
 ## Không gian toạ độ
 

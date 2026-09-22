@@ -3,45 +3,25 @@
 import { ScreenQuad, useFBO } from "@react-three/drei";
 import { createPortal, useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
-import { HalfFloatType, Scene } from "three";
+import { HalfFloatType, Scene, type ShaderMaterial } from "three";
 
-const fullscreenVertexShader = /* glsl */ `
-varying vec2 vUv;
-
-void main() {
-  // ScreenQuad is one oversized triangle in clip space. Deriving UVs from
-  // those positions gives 0..1 across the visible part of the triangle.
-  vUv = position.xy * 0.5 + 0.5;
-  gl_Position = vec4(position.xy, 0.0, 1.0);
-}
-`;
-
-const copyFragmentShader = /* glsl */ `
-uniform sampler2D uScene;
-
-varying vec2 vUv;
-
-void main() {
-  gl_FragColor = texture2D(uScene, vUv);
-
-  // The FBO stores linear colour. Convert only when copying to the screen,
-  // matching the direct-to-screen output from P1.
-  #include <colorspace_fragment>
-}
-`;
+import postFragmentShader from "@/shaders/post.frag.glsl";
+import postVertexShader from "@/shaders/post.vert.glsl";
 
 interface ScenePassProps {
   children: ReactNode;
+  invert?: boolean;
 }
 
 /**
- * P2.1 — renders its children into a floating-point texture, then copies that
- * texture to the canvas unchanged. Later P2 steps replace the copy shader with
- * post-processing while the particle scene remains isolated in this portal.
+ * Renders its children into a floating-point texture, then processes that
+ * texture over a fullscreen triangle. Inversion is an opt-in P2.2 sanity check;
+ * the production path copies the scene unchanged.
  */
-export function ScenePass({ children }: ScenePassProps) {
+export function ScenePass({ children, invert = false }: ScenePassProps) {
   const gl = useThree((state) => state.gl);
   const renderer = useRef(gl);
+  const postMaterial = useRef<ShaderMaterial>(null);
   const contentScene = useMemo(() => new Scene(), []);
   const target = useFBO({
     type: HalfFloatType,
@@ -49,9 +29,17 @@ export function ScenePass({ children }: ScenePassProps) {
     stencilBuffer: false,
   });
   const uniforms = useMemo(
-    () => ({ uScene: { value: target.texture } }),
+    () => ({
+      uScene: { value: target.texture },
+      uInvert: { value: 0 },
+    }),
     [target.texture],
   );
+
+  useLayoutEffect(() => {
+    const invertUniform = postMaterial.current?.uniforms.uInvert;
+    if (invertUniform) invertUniform.value = invert ? 1 : 0;
+  }, [invert]);
 
   // WebGLRenderer normally resets stats on every render call. This frame now
   // has two calls to render() (content + screen), so reset once ourselves and
@@ -80,9 +68,10 @@ export function ScenePass({ children }: ScenePassProps) {
       {createPortal(children, contentScene)}
       <ScreenQuad>
         <shaderMaterial
+          ref={postMaterial}
           uniforms={uniforms}
-          vertexShader={fullscreenVertexShader}
-          fragmentShader={copyFragmentShader}
+          vertexShader={postVertexShader}
+          fragmentShader={postFragmentShader}
           depthTest={false}
           depthWrite={false}
           toneMapped={false}

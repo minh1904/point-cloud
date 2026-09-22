@@ -211,9 +211,13 @@ function createStage(canvas: HTMLCanvasElement): Stage {
     vertexShader: particleVertex,
     fragmentShader: particleFragment,
     transparent: true,
-    // depthWrite tắt + additive: hạt là lớp phủ sáng, không phải khối đặc. Bật
-    // depthWrite sẽ làm hạt sau bị hạt trước che thành lỗ đen.
-    depthWrite: false,
+    // Hạt giờ là đĩa ĐỤC chứ không phải quầng sáng, nên bật depthWrite để hạt
+    // gần che hạt xa. Không bật thì thứ tự vẽ (theo chỉ số trong buffer) quyết
+    // định cái nào đè lên cái nào, và mặt sau của đám mây sẽ lòi ra trước mặt.
+    //
+    // Demo gốc để depthWrite: false vì point cloud của họ gần như một mặt phẳng
+    // nhìn từ chính diện, ít tự che. Của ta quay tự do nên cần depth thật.
+    depthWrite: true,
     blending: THREE.NormalBlending,
     uniforms: {
       uColor: { value: null },

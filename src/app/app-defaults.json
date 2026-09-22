@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "appId": "point-cloud-studio",
+  "state": {
+    "values": {
+      "canvas.workspaceBackground": "dots",
+      "canvas.aspectRatio": {
+        "height": 9,
+        "mode": "preset",
+        "value": "16:9",
+        "width": 16
+      },
+      "canvas.size.width": 1920,
+      "canvas.size.height": 1080
+    },
+    "canvas": {
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "height": 1080,
+        "unit": "px",
+        "width": 1920
+      },
+      "zoom": 100,
+      "mode": "finite"
+    },
+    "panels": {
+      "controls": {
+        "collapsedSections": {},
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "layers": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "timeline": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "toolbar": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    "timeline": {
+      "currentTimeSeconds": 0,
+      "durationSeconds": 8,
+      "expanded": false,
+      "isLooping": true,
+      "isPlaying": true,
+      "selectedKeyframeId": null,
+      "keyframeGroups": []
+    },
+    "layers": [],
+    "selectedLayerId": null,
+    "mediaAssets": []
+  },
+  "resources": [],
+  "theme": "dark"
+}

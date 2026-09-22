@@ -1,9 +1,12 @@
 "use client";
 
 import { Button } from "@atelier/ui";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
-import { Stage } from "@/scene/stage";
+// WebGL only exists in the browser, so the canvas is never server-rendered:
+// no empty markup to hydrate, and scene code may touch window freely.
+const Stage = dynamic(() => import("@/scene/stage").then((m) => m.Stage), { ssr: false });
 
 export function Studio() {
   const [spinning, setSpinning] = useState(true);

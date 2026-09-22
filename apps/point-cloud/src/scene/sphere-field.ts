@@ -33,6 +33,19 @@ export function createSphereField(
 }
 
 /**
+ * Three independent random numbers in [0, 1) per point. The vertex shader
+ * uses them as each point's personal amplitude and phase, so every point
+ * drifts on its own path while the GPU runs the same code for all of them.
+ */
+export function createRandomness(count: number, random: () => number = Math.random): Float32Array {
+  const values = new Float32Array(count * 3);
+  for (let i = 0; i < values.length; i++) {
+    values[i] = random();
+  }
+  return values;
+}
+
+/**
  * One size multiplier per point, uniform in [min, max]. Identical dots read as
  * a grid; a spread of sizes reads as depth and texture.
  */

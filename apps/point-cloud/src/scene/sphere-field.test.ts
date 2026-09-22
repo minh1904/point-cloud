@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createScales, createSphereField } from "./sphere-field";
+import { createRandomness, createScales, createSphereField } from "./sphere-field";
 
 /** Small deterministic PRNG (mulberry32) so the statistics are reproducible. */
 function seeded(seed: number): () => number {
@@ -68,5 +68,15 @@ describe("createScales", () => {
     const mean = scales.reduce((sum, s) => sum + s, 0) / scales.length;
 
     expect(mean).toBeCloseTo(0.75, 2);
+  });
+});
+
+describe("createRandomness", () => {
+  it("returns three values in [0, 1) per point", () => {
+    const values = createRandomness(1000, seeded(6));
+
+    expect(values).toHaveLength(3000);
+    expect(Math.min(...values)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...values)).toBeLessThan(1);
   });
 });

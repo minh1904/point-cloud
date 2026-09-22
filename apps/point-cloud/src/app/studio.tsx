@@ -2,10 +2,11 @@
 
 import { Button, Panel, Slider } from "@atelier/ui";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { defaultParticleParams, type ParticleParams } from "@/scene/particle-field";
 import type { RenderStats } from "@/scene/render-info";
+import type { OrbitControlsHandle } from "@/scene/stage";
 
 // WebGL only exists in the browser, so the canvas is never server-rendered:
 // no empty markup to hydrate, and scene code may touch window freely.
@@ -15,6 +16,7 @@ export function Studio() {
   const [playing, setPlaying] = useState(true);
   const [stats, setStats] = useState<RenderStats | null>(null);
   const [params, setParams] = useState<ParticleParams>(defaultParticleParams);
+  const controls = useRef<OrbitControlsHandle>(null);
 
   // Each slider writes one field. For now every change re-renders the scene
   // component; roadmap step 7.3 moves this to transient store updates.
@@ -23,11 +25,15 @@ export function Studio() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
-      <Stage params={params} playing={playing} onStats={setStats} />
+      <Stage params={params} playing={playing} onStats={setStats} controlsRef={controls} />
 
-      <div className="absolute top-3 left-3 flex items-center gap-3">
+      <div className="absolute top-3 left-3 flex items-center gap-2">
         <Button variant="outline" onClick={() => setPlaying((p) => !p)}>
           {playing ? "Pause" : "Play"}
+        </Button>
+        {/* Restores the camera state the controls saved when they mounted. */}
+        <Button variant="ghost-muted" onClick={() => controls.current?.reset()}>
+          Reset view
         </Button>
         {stats && (
           <span className="font-mono text-2xs text-muted-foreground tabular-nums">

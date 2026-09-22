@@ -1,0 +1,29 @@
+{
+  "name": "@atelier/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.8.0"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "react": "~19.2.8",
+    "react-dom": "~19.2.8",
+    "typescript": "~6.0.3"
+  }
+}

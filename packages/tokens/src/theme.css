@@ -1,0 +1,42 @@
+/*
+ * Atelier design tokens.
+ *
+ * Placeholder values: a neutral dark tool theme so components can be built
+ * before the visual style (roadmap 0.4) is chosen. Changing the style means
+ * changing these values only — components reference tokens, never raw colors.
+ */
+@theme {
+  /* Surfaces, darkest to lightest */
+  --color-canvas: #0e0f11;
+  --color-surface: #16181b;
+  --color-surface-raised: #1d2024;
+  --color-surface-hover: #25292e;
+
+  /* Lines */
+  --color-border: #2a2e34;
+  --color-border-strong: #3a3f47;
+
+  /* Text */
+  --color-fg: #e8eaed;
+  --color-fg-muted: #9aa0a8;
+  --color-fg-subtle: #6b717a;
+
+  /* Accent */
+  --color-accent: #4c8dff;
+  --color-accent-hover: #6aa0ff;
+  --color-accent-fg: #ffffff;
+  --color-focus: #4c8dff;
+
+  /* Type scale for dense tool UI */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+
+  /* Shape */
+  --radius-control: 6px;
+  --radius-panel: 10px;
+
+  /* Control sizing */
+  --spacing-control: 28px;
+}

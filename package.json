@@ -7,6 +7,8 @@
     "dev": "pnpm --filter point-cloud dev",
     "build": "pnpm -r build",
     "start": "pnpm --filter point-cloud start",
+    "storybook": "pnpm --filter @atelier/ui storybook",
+    "build-storybook": "pnpm --filter @atelier/ui build-storybook",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "vitest run",

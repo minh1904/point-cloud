@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@atelier/tokens/theme.css";
+@import "@atelier/tokens/base.css";
+
+@source "../src";

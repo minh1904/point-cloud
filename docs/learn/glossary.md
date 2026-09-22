@@ -37,6 +37,11 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Clip space** | Toạ độ sau ma trận chiếu, trước khi chia cho `w`. Đây là thứ `gl_Position` nhận. | [P1.2](p1-2-shader-material.md) |
 | **`modelViewMatrix`** | Ma trận đưa điểm từ object space sang view space. | [P1.2](p1-2-shader-material.md) |
 | **`projectionMatrix`** | Ma trận chiếu phối cảnh: view space → clip space. | [P1.2](p1-2-shader-material.md) |
+| **`viewMatrix` / `modelMatrix`** | Ma trận của camera / của vật. `modelViewMatrix` là tích của hai ma trận này. | [P1.6](p1-6-orbit-camera.md) |
+| **Orbit / target** | Camera đi trên mặt cầu quanh một điểm nhìn cố định (target). | [P1.6](p1-6-orbit-camera.md) |
+| **Dolly vs zoom (fov)** | Dolly = camera tiến/lùi thật (đổi phối cảnh). Zoom fov = hẹp góc nhìn (chỉ phóng to). | [P1.6](p1-6-orbit-camera.md) |
+| **Pan** | Dời camera và target cùng lúc, song song với màn hình. | [P1.6](p1-6-orbit-camera.md) |
+| **Damping** | Mỗi frame chỉ đi một phần quãng còn lại → chuyển động chậm dần tự nhiên. | [P1.6](p1-6-orbit-camera.md) |
 | **Perspective divide** | GPU tự chia `x, y, z` cho `w` → vật xa nhỏ lại. | [P1.2](p1-2-shader-material.md) |
 | **Size attenuation** | Làm kích thước point nhỏ lại theo khoảng cách, vì point không có hình học để phép chiếu tự thu nhỏ. | [P1.2](p1-2-shader-material.md) |
 

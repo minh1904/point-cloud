@@ -1,5 +1,15 @@
 # point-cloud
 
+## Learning docs
+
+The owner is learning 3D graphics through this project. Every roadmap step ships with a learning note in `docs/learn/`, **written in Vietnamese**:
+
+- One file per step (`p1-5-....md`), using the same sections as the existing notes: Mục tiêu, Khái niệm, Đi qua code (with real file paths), Lỗi đã gặp, Tự thử, Đọc thêm.
+- Add the note to the index in `docs/learn/README.md` and new terms to `docs/learn/glossary.md`.
+- Explain from first principles, tie every concept to the actual code, and record mistakes and corrections honestly.
+- Only link sources you are sure exist.
+- Code, comments, commits and `docs/roadmap.md` stay in English.
+
 ## Commits
 
 Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) with the type set from `@commitlint/config-conventional`. Write commit messages in English.

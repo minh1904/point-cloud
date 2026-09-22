@@ -21,7 +21,7 @@ Every phase is split into small steps. Each step has:
 - **Behind the scenes** — the concept the step exists to teach.
 - **Done when** — an observable check. No step is done on "it compiles".
 
-One step ≈ one or a few commits (`feat(particles): …`, see `CLAUDE.md`). Phases 1–5 deliberately rebuild the UntilLabs renderer from zero so each mechanism is understood before the image pipeline (Phase 6) feeds it real data.
+One step ≈ one or a few commits (`feat(particles): …`, see `CLAUDE.md`), plus a Vietnamese learning note in [`docs/learn/`](learn/README.md). Phases 1–5 deliberately rebuild the UntilLabs renderer from zero so each mechanism is understood before the image pipeline (Phase 6) feeds it real data.
 
 ```
 P0 Scaffold ─▶ P1 Points ─▶ P2 FBO/Post ─▶ P3 Textures-as-data ─▶ P4 Motion ─▶ P5 Look

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createSphereField } from "./sphere-field";
+import { createScales, createSphereField } from "./sphere-field";
 
 /** Small deterministic PRNG (mulberry32) so the statistics are reproducible. */
 function seeded(seed: number): () => number {
@@ -51,5 +51,22 @@ describe("createSphereField", () => {
 
     // Uniform directions: |cos φ| > 0.9 covers 10% of the sphere's surface.
     expect(nearPole / count).toBeCloseTo(0.1, 2);
+  });
+});
+
+describe("createScales", () => {
+  it("returns one value per point inside [min, max]", () => {
+    const scales = createScales(5000, 0.5, 1, seeded(4));
+
+    expect(scales).toHaveLength(5000);
+    expect(Math.min(...scales)).toBeGreaterThanOrEqual(0.5);
+    expect(Math.max(...scales)).toBeLessThanOrEqual(1);
+  });
+
+  it("spreads values evenly across the range", () => {
+    const scales = createScales(20000, 0.5, 1, seeded(5));
+    const mean = scales.reduce((sum, s) => sum + s, 0) / scales.length;
+
+    expect(mean).toBeCloseTo(0.75, 2);
   });
 });

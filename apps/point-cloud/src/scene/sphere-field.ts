@@ -31,3 +31,20 @@ export function createSphereField(
 
   return positions;
 }
+
+/**
+ * One size multiplier per point, uniform in [min, max]. Identical dots read as
+ * a grid; a spread of sizes reads as depth and texture.
+ */
+export function createScales(
+  count: number,
+  min = 0.5,
+  max = 1,
+  random: () => number = Math.random,
+): Float32Array {
+  const scales = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    scales[i] = min + (max - min) * random();
+  }
+  return scales;
+}

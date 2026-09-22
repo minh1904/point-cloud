@@ -1,5 +1,5 @@
 dist
 coverage
 .next
-pnpm-lock.yaml
+bun.lock
 docs/research/img

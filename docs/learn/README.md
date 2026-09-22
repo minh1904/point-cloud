@@ -17,7 +17,7 @@ Mỗi bài có cùng khung:
 
 Gặp thuật ngữ lạ → tra [từ điển thuật ngữ](glossary.md).
 
-Cách học hiệu quả nhất: mở song song bài học và file code được nhắc tới, chạy `pnpm dev`, làm phần **Tự thử** trước khi đọc tiếp bài sau.
+Cách học hiệu quả nhất: mở song song bài học và file code được nhắc tới, chạy `bun run dev`, làm phần **Tự thử** trước khi đọc tiếp bài sau.
 
 ## Mục lục
 

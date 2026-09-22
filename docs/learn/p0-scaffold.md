@@ -14,7 +14,7 @@ packages/tokens/     ← @atelier/tokens: màu, cỡ chữ, bo góc (CSS variabl
 packages/ui/         ← @atelier/ui: Button... dùng chung cho nhiều demo
 ```
 
-`pnpm-workspace.yaml` khai báo các thư mục này là workspace. App dùng package nội bộ qua `"@atelier/ui": "workspace:*"` — pnpm tạo liên kết (symlink) thay vì tải từ npm, sửa code trong `packages/ui` là app thấy ngay.
+Trường `workspaces` trong `package.json` khai báo các thư mục này là workspace. App dùng package nội bộ qua `"@atelier/ui": "workspace:*"` — Bun liên kết package cục bộ thay vì tải từ npm, sửa code trong `packages/ui` là app thấy ngay.
 
 Vì package xuất **mã nguồn TypeScript** chứ không build sẵn, Next phải tự biên dịch nó: đó là lý do có `transpilePackages: ["@atelier/ui"]` trong `apps/point-cloud/next.config.ts`.
 

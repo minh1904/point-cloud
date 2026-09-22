@@ -7,9 +7,9 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "typecheck": "bun x tsc -p tsconfig.json",
+    "storybook": "bun x storybook dev -p 6006",
+    "build-storybook": "bun x storybook build"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -18,7 +18,7 @@ Inspired by the particle hero of [UntilLabs](https://www.untillabs.com/) ([Codro
 | 3D | [three.js](https://threejs.org) + [React Three Fiber](https://r3f.docs.pmnd.rs) + drei, hand-written GLSL shaders |
 | UI | **Atelier** — our own component kit on [Base UI](https://base-ui.com) + [Tailwind CSS v4](https://tailwindcss.com), documented in [Storybook](https://storybook.js.org) |
 | State | Zustand (from P7) |
-| Tooling | pnpm workspaces, Vitest, ESLint, Prettier |
+| Tooling | Bun workspaces, Vitest, ESLint, Prettier |
 
 ## Repository layout
 
@@ -39,12 +39,12 @@ docs/
 
 ## Getting started
 
-Requirements: **Node.js ≥ 22** and **pnpm**.
+Requirements: **Node.js ≥ 22** and **Bun 1.3.14+**.
 
 ```bash
-pnpm install
-pnpm dev            # app on http://localhost:3000
-pnpm storybook      # Atelier components on http://localhost:6006
+bun install
+bun run dev            # app on http://localhost:3000
+bun run storybook      # Atelier components on http://localhost:6006
 ```
 
 ## Scripts
@@ -53,15 +53,15 @@ Run from the repository root.
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Start the Next.js dev server |
-| `pnpm build` | Production build of every package that has one |
-| `pnpm start` | Serve the production build of the app |
-| `pnpm storybook` | Start Storybook for `@atelier/ui` |
-| `pnpm build-storybook` | Build the static Storybook |
-| `pnpm typecheck` | TypeScript across all packages |
-| `pnpm lint` | ESLint across all packages |
-| `pnpm test` / `pnpm test:watch` | Vitest across all projects |
-| `pnpm format` / `pnpm format:check` | Prettier |
+| `bun run dev` | Start the Next.js dev server |
+| `bun run build` | Production build of every package that has one |
+| `bun run start` | Serve the production build of the app |
+| `bun run storybook` | Start Storybook for `@atelier/ui` |
+| `bun run build-storybook` | Build the static Storybook |
+| `bun run typecheck` | TypeScript across all packages |
+| `bun run lint` | ESLint across all packages |
+| `bun run test` / `bun run test:watch` | Vitest across all projects |
+| `bun run format` / `bun run format:check` | Prettier |
 
 ## Documentation
 

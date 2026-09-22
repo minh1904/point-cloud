@@ -88,7 +88,7 @@ Không có lỗi — nhưng một điểm đáng nhớ: `renderer.info` được
 
 ## Tự thử
 
-1. Trong `sphere-field.ts`, bỏ `Math.cbrt(...)` (để `r = radius * random()`). Chạy `pnpm test` — test nào đỏ? Nhìn trên màn hình khác gì?
+1. Trong `sphere-field.ts`, bỏ `Math.cbrt(...)` (để `r = radius * random()`). Chạy `bun run test` — test nào đỏ? Nhìn trên màn hình khác gì?
 2. Đổi `phi` thành `random() * Math.PI`. Test nào đỏ? Xoay khối cầu và nhìn hai cực.
 3. Tăng `count` lên 500.000, rồi 2.000.000. Số draw call có đổi không? FPS thì sao? Điểm nghẽn bây giờ nằm ở đâu?
 

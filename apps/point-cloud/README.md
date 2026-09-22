@@ -4,7 +4,7 @@ The Next.js app of the [point-cloud](../../README.md) monorepo: the particle too
 
 ```bash
 # from the repository root
-pnpm dev          # http://localhost:3000
+bun run dev          # http://localhost:3000
 ```
 
 | Path | Contents |

@@ -2,19 +2,23 @@
   "name": "point-cloud-monorepo",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@8.9.0",
+  "packageManager": "bun@1.3.14",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "pnpm --filter point-cloud dev",
-    "build": "pnpm -r build",
-    "start": "pnpm --filter point-cloud start",
-    "storybook": "pnpm --filter @atelier/ui storybook",
-    "build-storybook": "pnpm --filter @atelier/ui build-storybook",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "dev": "bun --filter point-cloud dev",
+    "build": "bun run --workspaces --if-present build",
+    "start": "bun --filter point-cloud start",
+    "storybook": "bun --filter @atelier/ui storybook",
+    "build-storybook": "bun --filter @atelier/ui build-storybook",
+    "typecheck": "bun run --workspaces --if-present typecheck",
+    "lint": "bun run --workspaces --if-present lint",
+    "test": "bun x vitest run",
+    "test:watch": "bun x vitest",
+    "format": "bun x prettier --write .",
+    "format:check": "bun x prettier --check ."
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

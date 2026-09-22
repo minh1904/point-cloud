@@ -35,13 +35,13 @@ Per the project rules, P2.1 also needs a learning note `docs/learn/p2-1-....md` 
 ```bash
 git clone git@github.com:minh1904/point-cloud.git
 cd point-cloud
-pnpm install
-pnpm dev          # http://localhost:3000
-pnpm storybook    # http://localhost:6006
-pnpm typecheck && pnpm lint && pnpm test   # all should pass (15 tests)
+bun install
+bun run dev          # http://localhost:3000
+bun run storybook    # http://localhost:6006
+bun run typecheck && bun run lint && bun run test   # all should pass (15 tests)
 ```
 
-Requirements: Node.js ≥ 22, pnpm. The repo pins `packageManager: pnpm@8.9.0`; pnpm 8 is end-of-life and upgrading (and updating that field) is recommended.
+Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun@1.3.14` and uses Bun workspaces plus the text `bun.lock` lockfile.
 
 ## Things that will bite
 
@@ -50,7 +50,7 @@ Requirements: Node.js ≥ 22, pnpm. The repo pins `packageManager: pnpm@8.9.0`; 
 - **R3F + React lint** — don't mutate values returned by `useMemo`/hooks; update uniforms through a material `ref` (see `scene/particle-field.tsx`).
 - **First load in dev is slow** (Turbopack compiling drei/three); a black canvas for a few seconds is normal.
 - **Hydration warning `bis_skin_checked`** in dev comes from a browser extension, not the app.
-- **Windows:** `pnpm install` sometimes fails with `EPERM … rename`; rerunning works. `ERR_PNPM_TARBALL_EXTRACT` warnings for optional wasm packages are harmless.
+- **Windows:** stop the Next.js dev server before reinstalling dependencies; native `.node` files can remain locked while it is running.
 - **ESLint/Prettier for `packages/*`** are not configured yet (only the Next app lints). A local Claude Code hook (`config-protection`) blocked creating those config files on the original machine.
 - **Testing Base UI in jsdom** — query Slider inputs by label, not by role (Base UI hides the thumb until it measures layout, which jsdom never does).
 

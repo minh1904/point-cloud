@@ -1,89 +1,52 @@
+import { fileURLToPath } from "node:url";
+
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import fs from "node:fs/promises";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig } from "vitest/config";
+import glsl from "vite-plugin-glsl";
 
-import { toolcraftAppDefaultsPlugin } from "./scripts/toolcraft-app-defaults-plugin.mjs";
-import { loadToolcraftRendererVitePlugins } from "./scripts/toolcraft-renderer-vite-plugins.mjs";
+/**
+ * Header cross-origin isolation.
+ *
+ * Nhánh fallback WASM đa luồng của ONNX Runtime cần SharedArrayBuffer, mà
+ * SharedArrayBuffer cần hai header này. Thiếu chúng, ORT âm thầm rơi về
+ * single-thread và chậm 3-4 lần MÀ KHÔNG BÁO LỖI GÌ.
+ *
+ * Dùng credentialless, KHÔNG dùng require-corp: require-corp chặn mọi asset
+ * cross-origin, bao gồm việc tải model từ CDN Hugging Face.
+ *
+ * Bản prod nằm ở public/_headers (Cloudflare Pages). Hai chỗ phải khớp nhau,
+ * nếu không dev và prod sẽ hành xử khác nhau — đúng loại bug khó tìm nhất.
+ *
+ * Kiểm tra: `crossOriginIsolated === true` trong console.
+ */
+const crossOriginIsolation = {
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "credentialless",
+};
 
-const rootDir = fileURLToPath(new URL(".", import.meta.url));
-const toolcraftServerIdentityPath = "/.toolcraft/server-identity.json";
-const testDependencyRoot = process.env.TOOLCRAFT_TEST_DEPENDENCY_ROOT;
-
-function readHtmlAppTitle(source: string): string | null {
-  const appTitleMeta = source
-    .match(/<meta\b[^>]*>/gi)
-    ?.find((tag) => tag.match(/\bname\s*=\s*["']toolcraft-app-title["']/i));
-
-  return appTitleMeta?.match(/\bcontent\s*=\s*["']([^"']*)["']/i)?.[1] ?? null;
-}
-
-async function createToolcraftServerIdentity() {
-  const indexSource = await fs.readFile(path.join(rootDir, "index.html"), "utf8");
-
-  return {
-    appTitle: readHtmlAppTitle(indexSource),
-    root: await fs.realpath(rootDir),
-  };
-}
-
-function toolcraftServerIdentityPlugin(): Plugin {
-  function handleIdentityRequest(
-    request: IncomingMessage,
-    response: ServerResponse,
-    next: (error?: unknown) => void,
-  ) {
-    const requestUrl = new URL(request.url ?? "/", "http://localhost");
-
-    if (requestUrl.pathname !== toolcraftServerIdentityPath) {
-      next();
-      return;
-    }
-
-    createToolcraftServerIdentity()
-      .then((identity) => {
-        response.setHeader("content-type", "application/json; charset=utf-8");
-        response.setHeader("cache-control", "no-store");
-        response.end(JSON.stringify(identity));
-      })
-      .catch(next);
-  }
-
-  return {
-    name: "toolcraft-server-identity",
-    configurePreviewServer(server) {
-      server.middlewares.use(handleIdentityRequest);
-    },
-    configureServer(server) {
-      server.middlewares.use(handleIdentityRequest);
-    },
-  };
-}
-
-export default defineConfig(async () => ({
-  optimizeDeps: {
-    entries: ["index.html"],
-  },
+export default defineConfig({
   plugins: [
-    ...(await loadToolcraftRendererVitePlugins({ appRoot: rootDir })),
-    toolcraftServerIdentityPlugin(),
-    toolcraftAppDefaultsPlugin({ appRoot: rootDir }),
-    tailwindcss(),
     react(),
+    tailwindcss(),
+    // Cho phép #include trong .glsl — để fBM/curl noise dùng chung được giữa
+    // các shader thay vì dán chuỗi.
+    glsl({ include: ["**/*.glsl", "**/*.vert", "**/*.frag"] }),
   ],
-  server: testDependencyRoot
-    ? {
-        fs: {
-          allow: [rootDir, path.resolve(testDependencyRoot)],
-        },
-      }
-    : undefined,
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-}));
+  server: { headers: crossOriginIsolation },
+  preview: { headers: crossOriginIsolation },
+  worker: {
+    // Worker dạng ES module: cần cho import tĩnh của @huggingface/transformers
+    // bên trong depth-worker.ts.
+    format: "es",
+  },
+  test: {
+    include: ["src/**/*.test.ts"],
+    environment: "node",
+  },
+});

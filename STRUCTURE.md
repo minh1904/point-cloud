@@ -1,151 +1,112 @@
 # Cấu trúc thư mục
 
-Ba loại quyền sở hữu. Nhầm lẫn giữa chúng là nguyên nhân số một làm `npm run test` đỏ.
-
-| Ký hiệu | Nghĩa |
-|---|---|
-| 🔒 | **Bị ký số (signed).** Toolcraft kiểm tra hash. Sửa → `npm run test` fail. Không bao giờ chạm vào. |
-| 🤖 | **Do generator tạo.** Sửa được nhưng sẽ bị ghi đè khi regenerate. |
-| ✍️ | **Của chúng ta.** Toàn quyền. |
-
----
-
-## Cây đầy đủ
-
 ```
 point-cloud/
-├─ 🔒 index.html
-├─ 🔒 vite.config.ts            ← COOP/COEP header cắm ở đây (xem 01-toolcraft-constraints)
-├─ 🔒 tsconfig.json
-├─ 🔒 playwright.config.ts
-├─ 🔒 AGENTS.md                 ← hợp đồng cho AI agent, Toolcraft sở hữu
-├─ 🔒 LICENSE.md · NOTICE.md
-├─ ✍️ README.md                 ← điểm vào cho người đọc
-├─ ✍️ STRUCTURE.md              ← file này
-├─ 🤖 package.json              ← scripts bị ký, dependencies thì sửa được
+├─ index.html
+├─ vite.config.ts              ← plugin + alias + header cross-origin (dev)
+├─ tsconfig.app.json           ← strict, noUnusedLocals, alias @/
+├─ package.json
 │
-├─ docs/
-│  ├─ 🔒 toolcraft/             ← docs hợp đồng của framework. THÊM FILE VÀO ĐÂY = FAIL
-│  │                               (ngoại lệ duy nhất: agent-worklog.md, workflow-observation.md)
-│  ├─ ✍️ learn/                 ← tài liệu học của dự án  ◀── ĐỌC Ở ĐÂY
-│  │   ├─ 00-reading-order.md
-│  │   ├─ 01-toolcraft-constraints.md
-│  │   ├─ 02-data-flow.md
-│  │   ├─ 03-why-these-choices.md
-│  │   ├─ glossary.md
-│  │   └─ modules/{shared,depth,pointcloud,scene,app}.md
-│  ├─ ✍️ assets/                ← ảnh cho tài liệu (vị trí durable duy nhất cho ảnh docs)
-│  └─ 🤖 agent-journal/         ← lịch sử thao tác, text-only
+├─ public/
+│  ├─ _headers                 ← header cross-origin (prod, Cloudflare Pages)
+│  └─ models/                  ← model self-host, gitignore (npm run models:fetch)
 │
-├─ 🔒 src/toolcraft/            ← BẢN COPY RUNTIME ĐÃ KÝ. Bất khả xâm phạm.
-│  │                               Đọc để học thì rất nên; sửa thì không bao giờ.
-│  ├─ runtime/
-│  │  ├─ modules/built-ins/     ← layers, timeline, masks, media-source,
-│  │  │                            model-3d, spatial-view, image/svg/video-export
-│  │  ├─ modules/contract/      ← protocol: definition, command, persistence, surface
-│  │  ├─ composition/           ← ghép module → app
-│  │  └─ export/ · model-import/
-│  ├─ ui/                       ← control components (Slider, Select, Color, FileDrop...)
-│  │                               ⚠️ KHÔNG import trực tiếp từ đây
-│  ├─ renderer-providers/       ← three / native-webgl / vgpu(webgpu)
-│  └─ integrations/vgpu/
+├─ tools/fetch-model.mjs       ← tải model default về public/models/
 │
-├─ 🔒 src/main.tsx · router.tsx · styles.css
-├─ 🔒 src/routes/{root,index}.tsx   ← CHỈ host <ToolcraftApp/>. Không thêm route được.
+├─ docs/learn/                 ← tài liệu học  ◀── ĐỌC Ở ĐÂY
+│  ├─ 00-reading-order.md
+│  ├─ 02-data-flow.md
+│  ├─ 03-why-these-choices.md
+│  ├─ glossary.md
+│  └─ modules/{shared,depth,scene,ui,pointcloud}.md
 │
-├─ src/app/                     ← BỀ MẶT CÔNG KHAI của sản phẩm
-│  ├─ ✍️ app-schema.ts          ← khai báo MỌI control (model picker, slider, action)
-│  ├─ ✍️ app-composition.tsx    ← nối port: canvasContent, rasterFrameRenderer,
-│  │                               sceneBoundsProvider, onPanelAction
-│  ├─ 🤖 app-identity.ts        ← generator sở hữu, đặt tên bằng cờ --name
-│  ├─ 🤖 app-defaults.json      ← snapshot trạng thái mặc định
-│  ├─ 🤖 acceptance/            ← catalog capability proof
-│  └─ 🔒 app-acceptance.*.test.ts  ← ~80 test enforce design system
-│
-├─ ✍️ src/shared/               ── MODULE: hằng số + kiểu + toán thuần
-│  ├─ README.md                    (bản copy của docs/learn/modules/shared.md)
-│  ├─ config.ts                    ⭐ NGUỒN SỰ THẬT DUY NHẤT cho tham số
-│  ├─ types.ts                     hợp đồng dữ liệu giữa các module
-│  └─ math.ts                      smoothstep, clamp, remap, quantize
-│
-├─ ✍️ src/depth/                ── MODULE: AI depth estimation
-│  ├─ README.md
-│  ├─ registry.ts                  metadata 4 model (id, size, dtype, kind, inputSize)
-│  ├─ depth-worker.ts              transformers.js pipeline, chạy off main thread
-│  ├─ depth-client.ts              Comlink proxy + quản lý vòng đời worker
-│  └─ colormap.ts                  grayscale / turbo / inferno cho preview
-│
-├─ ✍️ src/pointcloud/           ── MODULE: depth map → point cloud → file
-│  ├─ README.md
-│  ├─ build.ts                     relief + perspective, edge rejection, quantize
-│  ├─ serialize.ts                 generator theo chunk → Blob (không dựng string 8MB)
-│  ├─ compress.ts                  gzip qua fflate (đã có sẵn trong deps)
-│  ├─ export-worker.ts             build + serialize off main thread
-│  └─ *.test.ts                    Vitest — module duy nhất bắt buộc có unit test
-│
-├─ ✍️ src/scene/                ── MODULE: Three.js product output
-│  ├─ README.md
-│  ├─ renderer-technique.ts        khai báo pass/cost/cache cho assessToolcraftRenderPlan
-│  ├─ scene-host.tsx               mount vào scene.canvasContent, đọc useToolcraftProductSceneFrame
-│  ├─ depth-preview.ts             pass 2D: ảnh gốc ↔ depth map, split slider
-│  ├─ particle-cloud.ts            pass 3D: GL_POINTS, orbit
-│  ├─ raster-frame.ts              scene.rasterFrameRenderer cho export ảnh
-│  └─ shaders/
-│     ├─ particles.vert.glsl · particles.frag.glsl
-│     └─ lib/noise.glsl             random → value noise → fBM → curlNoise
-│
-├─ 🤖 public/models/depth-anything-v2-small/   ← self-host model default (gitignore)
-├─ 🤖 public/toolcraft-defaults/               ← binary của app-defaults.json
-├─ 🔒 e2e/                      ← Playwright: acceptance + performance + kernel benchmark
-├─ 🔒 scripts/                  ← gate: ai:check, files:check, verify:*
-└─ 🤖 .toolcraft/               ← scratch, artifact, journal, receipt (gitignore)
-   ├─ scratch/                     file tạm của agent
-   └─ browser-artifacts/           screenshot, trace
+└─ src/
+   ├─ main.tsx · index.css     ← entry + design tokens
+   ├─ App.tsx                  ── TẦNG 3: shell + điều phối
+   │
+   ├─ store/studio.ts          ── TẦNG 2.5: state (zustand)
+   │
+   ├─ ui/                      ── TẦNG 2: giao diện
+   │  ├─ primitives.tsx           Slider, Select, Segmented, Button, Badge,
+   │  │                           Progress, Notice, Panel, Section
+   │  ├─ Dropzone.tsx             nhận ảnh: bấm / kéo thả / Ctrl+V
+   │  ├─ CanvasStage.tsx          khung canvas pan/zoom + DPR
+   │  └─ ControlsPanel.tsx        lắp primitives thành panel trái
+   │
+   ├─ depth/                   ── TẦNG 2: AI depth estimation
+   │  ├─ registry.ts              danh sách model đã kiểm chứng
+   │  ├─ protocol.ts              kiểu message + type guard
+   │  ├─ worker-bridge.ts         nơi DUY NHẤT chạm tới Worker
+   │  ├─ depth-worker.ts          transformers.js + ONNX (chạy trong worker)
+   │  ├─ depth-client.ts          huỷ run lỗi thời, API callback
+   │  └─ colormap.ts              grayscale / turbo / inferno
+   │
+   ├─ scene/                   ── TẦNG 2: vẽ
+   │  └─ depth-preview.ts         pass 2D: ảnh gốc ↔ depth, split slider
+   │
+   └─ shared/                  ── TẦNG 1: nền
+      ├─ config.ts               ⭐ NGUỒN SỰ THẬT DUY NHẤT cho tham số
+      ├─ types.ts                hợp đồng dữ liệu giữa các module
+      └─ math.ts                 smoothstep, quantize, remap
 ```
 
 ---
 
 ## Quy tắc phụ thuộc
 
-Toolcraft **bắt buộc** đồ thị phụ thuộc của product phải phi chu trình (acyclic) và sẽ in ra vòng lặp ngắn nhất khi vi phạm. Ta ép nó bằng một luật 4 tầng đơn giản:
-
 ```
         ┌─────────────┐
-        │  src/app    │  tầng 3 — import được tất cả
+        │   App.tsx   │  tầng 3 — import được tất cả
+        └──────┬──────┘
+               │
+        ┌──────▼──────┐
+        │    store    │  tầng 2.5 — import shared + registry
         └──────┬──────┘
      ┌─────────┼─────────┐
      ▼         ▼         ▼
- ┌───────┐ ┌────────┐ ┌───────┐
- │ depth │ │pointcl.│ │ scene │  tầng 2 — chỉ import shared
- └───┬───┘ └───┬────┘ └───┬───┘
-     └─────────┼──────────┘
-               ▼
-         ┌──────────┐
-         │  shared  │  tầng 1 — không import gì của ta
-         └──────────┘
+ ┌──────┐ ┌───────┐ ┌───────┐
+ │  ui  │ │ depth │ │ scene │  tầng 2
+ └───┬──┘ └───┬───┘ └───┬───┘
+     └────────┼─────────┘
+              ▼
+        ┌──────────┐
+        │  shared  │  tầng 1 — không import gì của ta
+        └──────────┘
 ```
 
 **Luật:**
 
-1. `shared` không import bất kỳ module nào của ta. Nếu thấy muốn import → thứ đó không thuộc `shared`.
-2. Tầng 2 (`depth`, `pointcloud`, `scene`) **chỉ** import `shared` — không import lẫn nhau.
-3. Dữ liệu đi ngang giữa tầng 2 phải qua kiểu khai báo trong `shared/types.ts`, do `app` làm trung gian truyền.
-4. `app` là nơi duy nhất biết cả 3 module tồn tại.
+1. `shared` không import module nào của ta. Muốn import → thứ đó không thuộc `shared`.
+2. Tầng 2 chỉ import `shared` (và `store` khi cần đọc state).
+3. Tầng 2 **không import lẫn nhau**. Dữ liệu đi ngang qua kiểu khai báo ở `shared/types.ts`, do `App.tsx` làm trung gian.
+4. `App.tsx` là nơi duy nhất biết cả ba module tồn tại.
 
-Ví dụ: `pointcloud` cần `DepthMap` — nhưng **không** import từ `depth`. Kiểu `DepthMap` sống ở `shared/types.ts`; `depth` sinh ra nó, `app` chuyển nó sang `pointcloud`. Đổi lấy một chút gián tiếp, nhận lại: không bao giờ có chu trình, test module độc lập được, và luật đủ đơn giản để nhớ.
+Ví dụ: `scene/depth-preview.ts` cần `DepthMap` nhưng **không** import `depth/`. Kiểu đó sống ở `shared/types.ts`.
+
+> Luật này vốn sinh ra để thoả gate phi-chu-trình của Toolcraft. Toolcraft đã bỏ,
+> nhưng luật thì giữ — nó vẫn là cách rẻ nhất để test module độc lập và để biết
+> chắc sửa một chỗ không làm hỏng chỗ khác.
 
 ---
 
-## Nơi được đặt file
+## Nơi đặt file
 
-| Loại file | Nơi đặt |
+| Loại | Nơi |
 |---|---|
-| Source sản phẩm | bất kỳ đâu dưới `src/` (trừ `src/toolcraft`, `src/routes`) |
+| Source | `src/` |
 | Tài liệu học | `docs/learn/` |
-| Ảnh cho tài liệu | `docs/assets/` |
-| Test fixture | `e2e/fixtures/` |
-| File tạm, thí nghiệm | `.toolcraft/scratch/<task>/` |
-| Screenshot, trace debug | `.toolcraft/browser-artifacts/` |
-| Style | `*.module.css` cạnh component, **selector phải local** |
+| Script tiện ích | `tools/` |
+| Asset tĩnh | `public/` |
+| Test | cạnh file nó test, `*.test.ts` |
+| Shader | `src/scene/shaders/*.glsl` (P2) |
 
-Đặt sai chỗ → `npm run files:check` báo. Đặt file mới vào `docs/toolcraft/` → `npm run test` fail.
+## Lệnh
+
+```bash
+npm run dev           # Vite, port 5173, có header cross-origin isolation
+npm run models:fetch  # tải model default ~47 MB về public/models/
+npm run typecheck     # tsc -b
+npm run test          # vitest
+npm run build         # tsc -b && vite build
+npm run lint          # oxlint
+```

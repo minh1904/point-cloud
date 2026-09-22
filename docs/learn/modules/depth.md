@@ -156,7 +156,7 @@ Trả `null` nghĩa là "kết quả này đã lỗi thời, bỏ đi" — khôn
 
 **WebGPU không phải lúc nào cũng có.** Chrome/Edge tốt, Safari 18+ có, Firefox mới có. Luôn phải có nhánh `device: "wasm"`. Đừng phát hiện bằng user-agent — thử `navigator.gpu?.requestAdapter()` rồi bắt lỗi.
 
-**Fallback WASM chậm âm thầm.** Nếu thiếu header COOP/COEP, ORT rơi về single-thread, chậm 3–4 lần và **không báo gì**. Xem [01-toolcraft-constraints.md](../01-toolcraft-constraints.md#cross-origin-isolation). Kiểm tra `crossOriginIsolated`.
+**Fallback WASM chậm âm thầm.** Nếu thiếu header COOP/COEP, ORT rơi về single-thread, chậm 3–4 lần và **không báo gì**. Header đặt ở `vite.config.ts` (dev) và `public/_headers` (prod) — hai chỗ phải khớp. Kiểm tra `crossOriginIsolated === true`.
 
 **Depth là *tương đối* và *nghịch đảo*.** Model relative trả disparity chuẩn hoá riêng cho từng ảnh. Cùng một `depthScale`, hai ảnh khác nhau sẽ cho độ dày rất khác. **Đừng cố auto-calibrate** — cho user một slider và để họ quyết định.
 

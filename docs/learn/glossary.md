@@ -127,27 +127,3 @@ v = min + q / 65535 * (max - min)
 **`COEP: credentialless` vs `require-corp`** — `require-corp` chặn mọi asset cross-origin (kể cả model từ HF CDN). Dùng `credentialless`.
 
 ---
-
-## Toolcraft
-
-**Signed file** — file bị manifest integrity bảo vệ. Sửa → `npm run test` fail. Gồm `src/toolcraft/**`, `src/routes/**`, `index.html`, `vite.config.ts`, `AGENTS.md`, `docs/toolcraft/**`, và **nội dung các script npm**.
-
-**Schema control** — control UI khai báo dưới dạng dữ liệu (`{ id, kind, ... }`), runtime dựng ra. Đối lập với việc tự render component form.
-
-**`canvasContent`** — port để cắm output sản phẩm vào canvas của runtime. Chỉ được chứa output, không chứa UI chrome.
-
-**`useToolcraftProductSceneFrame()`** — hook trả về product rect, backing size, world-to-local translation. **Nguồn duy nhất** cho kích thước và hệ toạ độ. Không đo DOM.
-
-**`rasterFrameRenderer`** — callback tất định vẽ một frame trong toạ độ scene, để runtime dùng khi export ảnh/video.
-
-**`sceneBoundsProvider`** — trả rect world-space của scene sản phẩm, cho cả live output và export.
-
-**`onPanelAction`** — handler cho action không thuộc export chuẩn. Đây là đường hợp lệ để export JSON của ta.
-
-**Artifact export** — export ảnh/SVG/video do runtime sở hữu hoàn toàn. Product code chỉ cung cấp `renderFrame`.
-
-**Non-export download** — download do sản phẩm khởi tạo qua `onPanelAction`, trả Promise thật. Đây là loại của export JSON.
-
-**`rendererTechnique`** — khai báo bắt buộc trước khi viết shader: mỗi pass có cost, frequency, lifecycle, execution location, cache key, invalidation.
-
-**Acceptance test** — ~80 test trong `src/app/app-acceptance.*.test.ts` enforce design system. Bị ký, không sửa được. Fail nghĩa là schema của bạn sai, không phải test sai.

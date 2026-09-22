@@ -14,7 +14,7 @@ Nó chịu ba loại phức tạp cùng lúc:
 2. **Vòng đời tài nguyên GPU** — texture, buffer, program phải dispose đúng lúc
 3. **Hợp đồng Toolcraft** — phải khai báo render plan trước khi viết shader, và không được tự sở hữu canvas
 
-Đọc [01-toolcraft-constraints.md](../01-toolcraft-constraints.md#renderer-vì-sao-threejs-thuần-không-phải-r3f) trước khi mở file nào trong module này.
+Hiện tại module này mới có pass 2D (`depth-preview.ts`, Canvas 2D). Phần WebGL/particles mô tả bên dưới là thiết kế cho P2, chưa cài đặt.
 
 ---
 
@@ -275,8 +275,6 @@ Module này khó test bằng Vitest (cần WebGL context). Chủ yếu là Playw
 
 ## Đọc thêm
 
-- [01-toolcraft-constraints.md](../01-toolcraft-constraints.md) — vì sao không R3F
+- [03-why-these-choices.md](../03-why-these-choices.md#q2--renderer-threejs-thuần-không-r3f) — vì sao Three.js thuần, không R3F
 - [pointcloud.md](pointcloud.md) — bản TypeScript của cùng công thức
-- `docs/toolcraft/renderer-technique.md` — hợp đồng gốc
-- `docs/toolcraft/performance.md` — ngưỡng hiệu năng
 - [Bài Codrops gốc](https://tympanus.net/codrops/2025/12/10/simulating-life-in-the-browser-creating-a-living-particle-system-for-the-untillabs-website/) — nguồn của fBM/curl noise

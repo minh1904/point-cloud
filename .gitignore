@@ -1,42 +1,27 @@
-# Dependencies
-node_modules
-
-# Build output
-dist
-dist-ssr
-build
-out
-.vite
-.turbo
-.output
-.next
-.vercel
-*.tsbuildinfo
-
-# Test output
-coverage
-test-results
-playwright-report
-.playwright-mcp
-.playwright-*
-
-# Local environment
-.env
-.env.*
-!.env.example
-.toolcraft
-
 # Logs
 logs
 *.log
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS and editor files
-.DS_Store
-Thumbs.db
-.idea
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Model AI tải bằng `npm run models:fetch` — không commit
+public/models

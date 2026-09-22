@@ -1,6 +1,10 @@
-import { startDesktopApp } from "./desktop-access";
-import "./desktop-access.css";
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
 
-const dispose = startDesktopApp(() => import("./app-bootstrap"));
-
-if (import.meta.hot) import.meta.hot.dispose(dispose);
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)

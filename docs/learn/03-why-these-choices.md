@@ -4,7 +4,11 @@ Mỗi quyết định ghi lại **cái gì đã chọn, cái gì đã loại, v�
 
 ---
 
-## Q1 — Framework: Toolcraft, không phải Vite thuần
+## Q1 — Framework: Vite thuần (đã ĐẢO NGƯỢC quyết định ban đầu)
+
+**Ban đầu chọn:** Toolcraft. **Sau đó bỏ.** Xem [Q11](#q11--bỏ-toolcraft) để biết vì sao và cái giá phải trả. Phần dưới giữ lại lý do ban đầu vì nó vẫn đúng ở thời điểm đó.
+
+### Lý do ban đầu chọn Toolcraft
 
 **Loại:** Vite + React tự setup · Next.js
 
@@ -12,7 +16,7 @@ Mỗi quyết định ghi lại **cái gì đã chọn, cái gì đã loại, v�
 
 **Vì sao không Next.js:** app 100% client-side, không có gì để SSR. Next chỉ thêm ma sát khi bundle Worker + WASM.
 
-**Cái giá:** Toolcraft ràng buộc rất chặt — không thêm được route, không render control thủ công, không tự sở hữu canvas. Xem [01-toolcraft-constraints.md](01-toolcraft-constraints.md). Đây là đánh đổi có ý thức: mất tự do bố cục, được tính nhất quán và ~80 test miễn phí.
+**Cái giá:** Toolcraft ràng buộc rất chặt — không thêm được route, không render control thủ công, không tự sở hữu canvas. Đây là đánh đổi có ý thức: mất tự do bố cục, được tính nhất quán và ~80 test miễn phí. (Chính những ràng buộc này về sau dẫn tới [Q11](#q11--bỏ-toolcraft).)
 
 **Xem lại khi:** cần nhiều hơn một màn thật sự độc lập, hoặc cần server (share link, gallery).
 
@@ -129,6 +133,60 @@ shared (tầng 1) → không import gì của ta
 Tầng 2 **không import lẫn nhau**. Dữ liệu đi ngang qua kiểu khai báo ở `shared/types.ts`, do `app` làm trung gian.
 
 **Cái giá:** một chút gián tiếp — `pointcloud` cần `DepthMap` nhưng không được import `depth`. **Cái nhận:** gate không bao giờ đỏ vì chu trình, và test được từng module độc lập.
+
+---
+
+## Q11 — Bỏ Toolcraft
+
+**Bỏ sau khi đã scaffold và viết xong P1a.** Không phải quyết định nhẹ nhàng — mất khoảng một buổi.
+
+**Hai bức tường, cả hai đều là thiết kế có chủ đích của Toolcraft, không phải bug:**
+
+| Việc | Kết quả |
+|---|---|
+| Download file `.json` | Không có đường hợp lệ. `ToolcraftArtifactFileExtension` là union đóng `.jpg .mp4 .png .svg .webm`; gate AST chặn `URL.createObjectURL` **và** `document.createElement`; `onPanelAction` trả `PromiseLike<unknown>` nên không có kênh đưa Blob về runtime; catalog artifact action là `Object.freeze` 3 entry trong vùng ký |
+| Web Worker cho AI | 9 cách thử, giải được 5/6 violation. Cái cuối không qua: gate truy vết **bắc cầu** — bất kỳ hàm product nào có chữ ký structural mà cuối cùng điều khiển Worker đều bị coi là "erase interaction authority" |
+
+Không có cơ chế suppress, disable hay exclude nào trong toàn bộ `scripts/`.
+
+**Kết luận:** Toolcraft được thiết kế cho app mà product code chỉ khai báo schema và vẽ trong `canvasContent`. Nó giữ worker model-import của chính nó *bên trong* `src/toolcraft` — vùng miễn khỏi gate. App này là pipeline AI + WebGL sở hữu worker và xuất định dạng riêng, tức là không thuộc loại nó nhắm tới.
+
+**Cộng thêm 2 bug thật** (tái hiện trên scaffold nguyên bản, trong file bị ký nên không sửa được):
+- `app-schema.test.ts` — version skew: runtime sinh `canvas.sizing.defaultMode` nhưng test đi kèm không biết field đó
+- `app-acceptance.framework-boundary.test.ts` — so sánh đường dẫn thô, `/` vs `\` → `npm run test` đỏ vĩnh viễn trên Windows
+
+**Cái giữ lại được:** `src/shared`, `src/depth` dùng nguyên vẹn. Các luật thiết kế của Toolcraft (control 28px, nhãn trên giá trị phải, trạng thái rỗng trung tính, section theo cohesion) được chép vào UI kit tự viết — xem [modules/ui.md](modules/ui.md).
+
+**Bốn thứ học được trong lúc lách gate, vẫn còn giá trị sau khi bỏ:**
+
+1. **Bỏ Comlink → raw `postMessage` + type guard.** Message từ worker là input không tin cậy; validate shape tường minh là đúng chứ không chỉ để qua gate.
+2. **`self` trong worker bị TypeScript hiểu là `Window`** nếu tsconfig có lib `DOM` mà không có `WebWorker`. Typecheck tự tố giác: `self.postMessage` resolve sang overload `(message, targetOrigin: string)`. Cần `/// <reference lib="webworker" />`.
+3. **API callback hợp hơn Promise** cho inference: một effect React cần huỷ khi dependency đổi, và `onProgress` phải gọi nhiều lần trong một run — Promise không diễn tả được.
+4. **Không transfer buffer, clone thay thế.** ~8 MB cho ảnh 1920×1080, chừng 5–10 ms. Đổi lại caller giữ được pixel — đúng thứ đường export ở P3 cần.
+
+---
+
+## Q12 — README của repo model KHÔNG phải bằng chứng
+
+`en970/depth-anything-v3-small-onnx` (Depth Anything V3) ghi rõ trong README là dùng được với `pipeline('depth-estimation', ...)`, kèm cả số đo tốc độ. Tôi đưa vào registry làm model "experimental".
+
+Chạy thật thì lỗi:
+
+```
+Unexpected token '<', "<!doctype "... is not valid JSON
+```
+
+Repo chỉ có `config.json` + hai file `.onnx`, **thiếu `preprocessor_config.json`** — file mà `pipeline()` cần để biết cách resize/normalize. Thiếu nó, HF trả trang 404 HTML và ta nhận lỗi parse JSON khó hiểu.
+
+**Luật rút ra:** trước khi thêm model vào registry, kiểm file thật:
+
+```bash
+curl -s "https://huggingface.co/api/models/<id>" | grep preprocessor_config
+```
+
+Thay bằng `Xenova/depth-anything-small-hf` (V1, 25 MB, đã kiểm) và `onnx-community/depth-anything-v2-base` (190 MB, đã kiểm). Khi `onnx-community` phát hành DA3 chính thức thì thêm lại.
+
+**Một bug kèm theo, cũng chỉ lộ ra khi chạy thật:** đặt `env.allowLocalModels = true` cho *mọi* model làm transformers.js thử `/models/<id>/config.json` trước — dev server trả `index.html` cho đường dẫn không tồn tại, ra đúng lỗi trên. Chỉ bật tìm-local cho model có `selfHosted: true`.
 
 ---
 

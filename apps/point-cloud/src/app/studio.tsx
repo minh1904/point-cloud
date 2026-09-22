@@ -52,7 +52,7 @@ export function Studio() {
         </Button>
         {stats && (
           <span className="font-mono text-2xs text-muted-foreground tabular-nums">
-            {stats.calls} draw call{stats.calls === 1 ? "" : "s"} ·{" "}
+            {stats.fps} fps · {stats.calls} draw call{stats.calls === 1 ? "" : "s"} ·{" "}
             {stats.points.toLocaleString("en-US")} points
           </span>
         )}
@@ -102,6 +102,15 @@ export function Studio() {
         </Panel>
 
         <Panel title="Post effects">
+          <Slider
+            label="Scale"
+            value={postParams.renderScale}
+            onValueChange={setPost("renderScale")}
+            min={0.5}
+            max={1}
+            step={0.05}
+            format={{ style: "percent" }}
+          />
           <Slider
             label="Vignette"
             value={postParams.vignette}

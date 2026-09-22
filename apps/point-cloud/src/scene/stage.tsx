@@ -57,7 +57,11 @@ export function Stage({
         />
         <ScenePass params={postParams}>
           <color attach="background" args={["#000000"]} />
-          <ParticleField {...params} playing={playing} />
+          <ParticleField
+            {...params}
+            renderScale={postParams.renderScale}
+            playing={playing}
+          />
         </ScenePass>
         <RenderInfo onStats={onStats} />
       </Canvas>

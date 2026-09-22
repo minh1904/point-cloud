@@ -31,6 +31,7 @@ interface ParticleFieldProps extends ParticleParams {
   count?: number;
   radius?: number;
   color?: string;
+  renderScale?: number;
   playing: boolean;
 }
 
@@ -44,6 +45,7 @@ export function ParticleField({
   count = 60_000,
   radius = 1.3,
   color = "#dfe6ff",
+  renderScale = 1,
   size,
   softness,
   driftAmplitude,
@@ -98,12 +100,21 @@ export function ParticleField({
     const uniforms = material.current?.uniforms;
     if (!uniforms) return;
     uniforms.uSize!.value = size;
-    uniforms.uScale!.value = height * dpr * 0.5;
+    uniforms.uScale!.value = height * dpr * renderScale * 0.5;
     uniforms.uMaxPointSize!.value = maxPointSize;
     (uniforms.uColor!.value as Color).set(color);
     uniforms.uSoftness!.value = softness;
     uniforms.uDriftAmplitude!.value = driftAmplitude;
-  }, [size, color, softness, driftAmplitude, height, dpr, maxPointSize]);
+  }, [
+    size,
+    color,
+    softness,
+    driftAmplitude,
+    height,
+    dpr,
+    maxPointSize,
+    renderScale,
+  ]);
 
   useFrame((_, delta) => {
     if (!playing || !points.current || !material.current) return;

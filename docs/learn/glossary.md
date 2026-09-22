@@ -41,6 +41,9 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Vignette** | Hiệu ứng làm tối dần rìa và bốn góc khung hình nhằm tập trung tầm nhìn vào vùng trung tâm. | [P2.4](p2-4-post-effects.md) |
 | **Chromatic aberration** | Hiện tượng sắc sai quang học: dải màu đỏ và xanh lam bị tách lệch khỏi tâm thấu kính. | [P2.4](p2-4-post-effects.md) |
 | **Film grain** | Hạt nhiễu giả ngẫu nhiên mô phỏng phim nhựa cổ điển, giúp ảnh sống động và giảm bệt màu (banding). | [P2.4](p2-4-post-effects.md) |
+| **Fill-rate** | Tốc độ GPU có thể ghi pixel vào framebuffer (pixels/giây); thường là nút thắt cổ chai trên màn hình DPR cao. | [P2.5](p2-5-render-scale.md) |
+| **Overdraw** | Hiện tượng nhiều fragment/hạt vẽ chồng lên cùng một vị trí pixel, làm lãng phí công suất tính toán của GPU. | [P2.5](p2-5-render-scale.md) |
+| **Render scale** | Tỉ lệ co giảm độ phân giải của FBO (ví dụ 50%–100%) so với canvas để giảm tải fill-rate mà UI vẫn giữ nguyên độ nét. | [P2.5](p2-5-render-scale.md) |
 
 ## Không gian toạ độ
 

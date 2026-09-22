@@ -105,7 +105,7 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 | ✅ 2.2 | Fullscreen quad shader that samples the FBO | Post-processing = a 2D shader over the frame | Can invert colours as a sanity test |
 | ✅ 2.3 | `useFrame` priorities (-1 render, 1 quad) | Ordering passes in R3F; `gl.autoClear` pitfalls | No flicker, no double render |
 | ✅ 2.4 | Vignette + chromatic aberration + grain | Per-pixel effects and why they're cheap | Controls change them live |
-| 2.5 | Render scale (FBO at 0.5–1× resolution) | Fill-rate vs quality trade-off | FPS rises when scale drops |
+| ✅ 2.5 | Render scale (FBO at 0.5–1× resolution) | Fill-rate vs quality trade-off | FPS rises when scale drops |
 
 ---
 

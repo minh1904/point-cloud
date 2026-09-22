@@ -37,9 +37,10 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P2.2 · Fullscreen post-processing shader](p2-2-fullscreen-post-shader.md)
 - [P2.3 · Thứ tự các render pass](p2-3-render-pass-order.md)
 - [P2.4 · Vignette, chromatic aberration và grain](p2-4-post-effects.md)
+- [P2.5 · Render scale FBO](p2-5-render-scale.md)
 
 ### Tiếp theo
-- P2.5 · Render scale (FBO ở 0.5–1× resolution) *(sắp tới)*
+- P3.1 · Geometry không có vị trí (aParticleUv + aIndex) *(sắp tới)*
 
 ## Bức tranh tổng thể
 

@@ -12,12 +12,14 @@ const OFFSCREEN_RENDER_PRIORITY = -1;
 const SCREEN_RENDER_PRIORITY = 1;
 
 export interface PostParams {
+  renderScale: number;
   vignette: number;
   chromaticAberration: number;
   grain: number;
 }
 
 export const defaultPostParams: PostParams = {
+  renderScale: 1,
   vignette: 0.35,
   chromaticAberration: 0.002,
   grain: 0.025,
@@ -43,7 +45,15 @@ export function ScenePass({
   const renderer = useRef(gl);
   const postMaterial = useRef<ShaderMaterial>(null);
   const contentScene = useMemo(() => new Scene(), []);
-  const target = useFBO({
+
+  const size = useThree((state) => state.size);
+  const dpr = useThree((state) => state.viewport.dpr);
+  const renderScale = params.renderScale ?? 1;
+
+  const fboWidth = Math.max(1, Math.round(size.width * dpr * renderScale));
+  const fboHeight = Math.max(1, Math.round(size.height * dpr * renderScale));
+
+  const target = useFBO(fboWidth, fboHeight, {
     type: HalfFloatType,
     depthBuffer: true,
     stencilBuffer: false,

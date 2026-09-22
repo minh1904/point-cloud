@@ -1,26 +1,27 @@
 # Status & handoff
 
-_Last updated: 2026-09-22 · last commit on `main`: `027686c`_
+_Last updated: 2026-09-23 · last commit on `main`: `ff1e64f`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 and P1 are complete; P2 is in progress.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause and an orbit camera with Reset view. P2.4 adds classic per-pixel post effects (vignette, chromatic aberration, animated 24fps film grain) with an interactive Atelier controls panel, updating uniforms live without shader recompilation. The HUD remains stable at two draw calls.
+**P0, P1 and P2 are complete; P3 is next.** The app renders 60,000 soft round points uniformly inside a sphere, drifting on the GPU, with a Panel of Sliders (size, softness, drift, speed), Play/Pause, an orbit camera with Reset view, and live FPS readout. P2 post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration, and animated film grain. Point size remains invariant on screen across render scales, and HUD reports two stable draw calls.
 
 | Phase | Status |
 |---|---|
 | P0 Scaffold (monorepo, Next.js, Atelier tokens + Button, Storybook) | ✅ done |
 | P1 Particle field (1.1 → 1.6) | ✅ done |
 | P-UI Atelier | Button, Slider, Panel done · Section, PropertyRow, NumberField pending (pulled in by P2) |
-| P2 FBO + post-processing | 2.1–2.4 done · ⏭ **2.5 next** |
-| P3–P9 | not started |
+| P2 FBO + post-processing | ✅ done (2.1–2.5) |
+| P3 Textures as data | ⏭ **3.1 next** |
+| P4–P9 | not started |
 
-## Next step: P2.5
+## Next step: P3.1
 
-Implement render scale (FBO at 0.5–1× canvas resolution) to explore the fill-rate vs quality trade-off and confirm performance scaling on high-DPR displays when render resolution drops.
+Create geometry with no real CPU positions: pass `aParticleUv` (texel center coordinates) and `aIndex`, setting `frustumCulled=false`. The vertex shader will fetch particle data directly from GPU textures instead of CPU attribute buffers.
 
-Per the project rules, P2.5 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
+Per the project rules, P3.1 also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
 ## Open decisions
 

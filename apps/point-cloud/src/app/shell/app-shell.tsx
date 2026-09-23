@@ -10,6 +10,7 @@ import { useUiStore } from "@/store/ui-store";
 import { Inspector } from "../inspector/inspector";
 import { StatusBar } from "./status-bar";
 import { Toolbar } from "./toolbar";
+import { useShortcuts } from "./use-shortcuts";
 
 // WebGL only exists in the browser, so the canvas is never server-rendered:
 // no empty markup to hydrate, and scene code may touch window freely.
@@ -46,6 +47,8 @@ const Stage = dynamic(() => import("@/scene/stage").then((m) => m.Stage), {
 export function AppShell() {
   const controls = useRef<OrbitControlsHandle>(null);
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
+
+  useShortcuts();
 
   return (
     <main className="flex h-dvh w-full flex-col overflow-hidden bg-background">

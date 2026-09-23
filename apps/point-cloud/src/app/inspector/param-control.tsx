@@ -17,13 +17,17 @@ import { useParamsStore } from "@/store/params-store";
 export function ParamControl({ param }: { param: Param }) {
   const value = useParamsStore((state) => state.values[param.key]);
   const set = useParamsStore((state) => state.set);
+  const commit = useParamsStore((state) => state.commit);
 
   if (param.kind === "number") {
     return (
       <Slider
         label={param.label}
         value={typeof value === "number" ? value : param.default}
+        // Live while the drag runs…
         onValueChange={(next) => set(param.key, next)}
+        // …and one history entry when the gesture ends (7.4).
+        onValueCommitted={() => commit()}
         min={param.min}
         max={param.max}
         step={param.step}
@@ -40,7 +44,10 @@ export function ParamControl({ param }: { param: Param }) {
         size="sm"
         className="mt-1"
         title={param.hint}
-        onClick={() => set(param.key, !on)}
+        onClick={() => {
+          set(param.key, !on);
+          commit();
+        }}
       >
         {on ? (param.onLabel ?? param.label) : param.label}
       </Button>
@@ -57,12 +64,11 @@ export function ParamControl({ param }: { param: Param }) {
       size="sm"
       className="mt-1"
       title={param.hint}
-      onClick={() =>
-        set(
-          param.key,
-          param.options[(param.options.indexOf(current) + 1) % param.options.length]!,
-        )
-      }
+      onClick={() => {
+        const index = (param.options.indexOf(current) + 1) % param.options.length;
+        set(param.key, param.options[index]!);
+        commit();
+      }}
     >
       {param.label}: {current}
     </Button>

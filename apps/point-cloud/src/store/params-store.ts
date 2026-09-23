@@ -34,37 +34,117 @@ import {
   type ParamValues,
 } from "@/params/schema";
 
+/** How many steps back the history keeps. Snapshots are ~20 numbers each. */
+const HISTORY_LIMIT = 100;
+
 interface ParamsState {
   values: ParamValues;
-  /** Live write during a drag. Deliberately does not touch history (7.4). */
+  /** Snapshots before each committed change, oldest first. */
+  past: readonly ParamValues[];
+  future: readonly ParamValues[];
+
+  /** Live write during a drag. Deliberately does not touch history. */
   set: (key: string, value: ParamValue) => void;
-  /** Replace everything at once — a preset, an undo step, an import. */
+  /** End of a gesture: fold everything since the last commit into one step. */
+  commit: () => void;
+  /** Replace everything at once — a preset, an import. Its own history step. */
   setAll: (values: ParamValues) => void;
   reset: () => void;
   resetGroup: (group: GroupId) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
-export const useParamsStore = create<ParamsState>((set) => ({
-  values: defaultValues(),
+/** Shallow equality is enough: every value is a number, boolean or string. */
+function sameValues(a: ParamValues, b: ParamValues): boolean {
+  for (const key in a) if (a[key] !== b[key]) return false;
+  return true;
+}
 
-  set: (key, value) => {
-    const param = PARAM_BY_KEY.get(key);
-    if (!param) return;
+export const useParamsStore = create<ParamsState>((set, get) => {
+  /**
+   * The values as they were before the gesture in progress (P7.4).
+   *
+   * This is the whole of "drag coalescing". A slider fires `onValueChange`
+   * sixty times a second and `onValueCommitted` once, on pointer up. Pushing
+   * history on every change would make Ctrl+Z step back through a drag one
+   * frame at a time — technically undo, practically useless. So the first
+   * write of a gesture remembers where it started, every later write is free,
+   * and the commit turns the whole thing into a single entry.
+   *
+   * Keeping it outside the store state is deliberate: it is bookkeeping, not
+   * something anything should subscribe to or render from.
+   */
+  let gestureStart: ParamValues | null = null;
 
-    set((state) => ({ values: { ...state.values, [key]: coerce(param, value) } }));
-  },
+  /** Push `before` onto the past and drop the redo branch. */
+  const pushHistory = (before: ParamValues) =>
+    set((state) => ({
+      past: [...state.past, before].slice(-HISTORY_LIMIT),
+      // Redo only means anything while you are still walking back the same
+      // path. Change something and the branch you had walked away from is
+      // gone — the same rule every editor uses.
+      future: [],
+    }));
 
-  setAll: (values) => set({ values }),
+  return {
+    values: defaultValues(),
+    past: [],
+    future: [],
 
-  reset: () => set({ values: defaultValues() }),
+    set: (key, value) => {
+      const param = PARAM_BY_KEY.get(key);
+      if (!param) return;
 
-  resetGroup: (group) =>
-    set((state) => {
-      const values = { ...state.values };
+      const next = coerce(param, value);
+      const state = get();
+      if (state.values[key] === next) return;
+
+      gestureStart ??= state.values;
+      set({ values: { ...state.values, [key]: next } });
+    },
+
+    commit: () => {
+      const before = gestureStart;
+      gestureStart = null;
+      if (before && !sameValues(before, get().values)) pushHistory(before);
+    },
+
+    setAll: (values) => {
+      const before = gestureStart ?? get().values;
+      gestureStart = null;
+      if (sameValues(before, values)) return;
+      pushHistory(before);
+      set({ values });
+    },
+
+    reset: () => get().setAll(defaultValues()),
+
+    resetGroup: (group) => {
+      const values = { ...get().values };
       for (const param of paramsInGroup(group)) values[param.key] = param.default;
-      return { values };
-    }),
-}));
+      get().setAll(values);
+    },
+
+    undo: () => {
+      gestureStart = null;
+      const { past, future, values } = get();
+      const previous = past[past.length - 1];
+      if (!previous) return;
+
+      set({ past: past.slice(0, -1), values: previous, future: [values, ...future] });
+    },
+
+    redo: () => {
+      gestureStart = null;
+      const { past, future, values } = get();
+      const next = future[0];
+      if (!next) return;
+
+      set({ past: [...past, values], values: next, future: future.slice(1) });
+    },
+  };
+});
 
 /**
  * Read the values without subscribing.

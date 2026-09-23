@@ -8,6 +8,14 @@ export interface SliderProps {
   value?: number;
   defaultValue?: number;
   onValueChange?: (value: number) => void;
+  /**
+   * Fires once when the interaction ends — pointer up, or a keyboard step.
+   *
+   * `onValueChange` fires on every frame of a drag, which is right for a live
+   * preview and wrong for anything that should record one event per gesture:
+   * an undo entry, an analytics ping, a network write.
+   */
+  onValueCommitted?: (value: number) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -28,6 +36,7 @@ export function Slider({
   value,
   defaultValue,
   onValueChange,
+  onValueCommitted,
   min = 0,
   max = 1,
   step = 0.01,
@@ -41,6 +50,7 @@ export function Slider({
       value={value}
       defaultValue={defaultValue}
       onValueChange={(next) => onValueChange?.(next)}
+      onValueCommitted={(next) => onValueCommitted?.(next)}
       min={min}
       max={max}
       step={step}

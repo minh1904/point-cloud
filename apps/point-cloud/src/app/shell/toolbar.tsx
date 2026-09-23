@@ -3,6 +3,7 @@
 import { Button } from "@atelier/ui";
 import type { RefObject } from "react";
 
+import { useParamsStore } from "@/store/params-store";
 import { useSessionStore } from "@/store/session-store";
 import { useUiStore } from "@/store/ui-store";
 import type { OrbitControlsHandle } from "@/scene/stage";
@@ -25,6 +26,12 @@ export function Toolbar({
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const toggleInspector = useUiStore((state) => state.toggleInspector);
   const toggleHelp = useUiStore((state) => state.toggleHelp);
+  // A boolean selector, not the arrays themselves: the toolbar should re-render
+  // when undo becomes possible, not every time a step is pushed.
+  const canUndo = useParamsStore((state) => state.past.length > 0);
+  const canRedo = useParamsStore((state) => state.future.length > 0);
+  const undo = useParamsStore((state) => state.undo);
+  const redo = useParamsStore((state) => state.redo);
 
   return (
     <div className="flex shrink-0 items-center gap-1 border-b border-border/10 bg-popover/60 px-2 py-1.5 backdrop-blur-md">
@@ -45,6 +52,27 @@ export function Toolbar({
       </Button>
       <Button variant="ghost-muted" className="h-8 sm:h-7" onClick={replayIntro}>
         <span className="hidden sm:inline">Replay&nbsp;</span>Intro
+      </Button>
+
+      <span className="mx-1 hidden h-4 w-px bg-border/20 sm:block" />
+
+      <Button
+        variant="ghost-muted"
+        className="h-8 sm:h-7"
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        onClick={undo}
+      >
+        Undo
+      </Button>
+      <Button
+        variant="ghost-muted"
+        className="h-8 sm:h-7"
+        disabled={!canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+        onClick={redo}
+      >
+        Redo
       </Button>
 
       <div className="ml-auto flex items-center gap-1">

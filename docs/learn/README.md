@@ -41,9 +41,13 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 
 ### P3 — Texture làm dữ liệu
 - [P3.1 · Geometry không có vị trí](p3-1-geometry-without-positions.md)
+- [P3.2 · Màu đọc từ texture](p3-2-color-texture.md)
+- [P3.3 · Vị trí 16-bit trong hai file PNG](p3-3-16-bit-positions.md)
+- [P3.4 · Bounds và `metadata.json`](p3-4-bounds-va-metadata.md)
+- [P3.5 · Test cho decoder](p3-5-test-cho-decoder.md)
 
 ### Tiếp theo
-- P3.2 · Nạp `color.png` và lấy mẫu trong vertex shader *(sắp tới)*
+- P4.1 · Value noise và fBM trong GLSL *(sắp tới)*
 
 ## Bức tranh tổng thể
 

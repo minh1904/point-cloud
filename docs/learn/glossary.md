@@ -51,6 +51,19 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Frustum culling** | Bỏ draw call của vật nằm ngoài khối nón cụt camera nhìn thấy. Phải tắt khi vị trí chỉ sinh ra trong shader. | [P3.1](p3-1-geometry-without-positions.md) |
 | **Hash (trong shader)** | Hàm tất định biến một toạ độ thành số "ngẫu nhiên", thay cho attribute random do CPU sinh. Nhạy với độ lớn đầu vào. | [P3.1](p3-1-geometry-without-positions.md) |
 | **ulp** (unit in the last place) | Khoảng cách giữa hai số float liền kề. Càng xa 0 thì ulp càng lớn → số lớn mất độ phân giải phần thập phân. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Vertex texture fetch** (VTF) | Đọc texture ngay trong vertex shader. WebGL 2 bảo đảm hỗ trợ; WebGL 1 thì nhiều GPU di động không cho. | [P3.2](p3-2-color-texture.md) |
+| **`NearestFilter`** | Trả về đúng texel được hỏi, không nội suy. Bắt buộc với texture chứa dữ liệu vì texel cạnh nhau là hạt khác nhau. | [P3.2](p3-2-color-texture.md) |
+| **Mipmap** | Chuỗi bản thu nhỏ trung bình hoá của texture. Tốt cho ảnh ở xa, hỏng cho dữ liệu. | [P3.2](p3-2-color-texture.md) |
+| **`flipY`** | three.js lật ảnh theo chiều dọc khi upload để hợp quy ước OpenGL. Phải tắt với texture dữ liệu. | [P3.2](p3-2-color-texture.md) |
+| **Wrap mode** (`ClampToEdge` / `Repeat`) | Cách xử lý khi uv đi ra ngoài `[0, 1]`: kẹp vào mép, hay vòng sang phía đối diện. | [P3.2](p3-2-color-texture.md) |
+| **`colorSpace` của texture** | Báo cho three.js biết byte trong file là màu đã mã hoá sRGB (`SRGBColorSpace`) hay con số thô (`NoColorSpace`). | [P3.2](p3-2-color-texture.md) |
+| **Lượng tử hoá** (quantisation) | Ép một số thực về một trong N mức rời rạc. Sai số tối đa bằng nửa bước nếu làm tròn về mức gần nhất. | [P3.3](p3-3-16-bit-positions.md) |
+| **Tách hi/lo** | Chia một giá trị 16-bit thành byte cao và byte thấp, cất vào hai file PNG 8-bit: `(hi × 256 + lo) / 65535`. | [P3.3](p3-3-16-bit-positions.md) |
+| **PNG scanline filter** | Mỗi hàng của PNG được lưu thành hiệu với byte lân cận. Thuận nghịch, không mất mát, và là lý do dốc toạ độ nén được. | [P3.3](p3-3-16-bit-positions.md) |
+| **Bounds** | Khoảng nhỏ nhất–lớn nhất của từng trục, lưu trong `metadata.json`. Biến giá trị 0…1 trong PNG thành toạ độ thế giới. | [P3.4](p3-4-bounds-va-metadata.md) |
+| **Normalised storage** | Cất dữ liệu ở dạng 0…1 rồi ánh xạ lại bằng bounds — gọn vì dùng hết độ phân giải cho đúng vùng có dữ liệu. | [P3.4](p3-4-bounds-va-metadata.md) |
+| **Relief** | Bề dày của phần nổi so với bề rộng ảnh. Bản gốc chỉ ~0.6%; nông cộng FOV hẹp giúp depth sai vẫn trông thật. | [P3.3](p3-3-16-bit-positions.md) |
+| **`Math.fround`** | Làm tròn một số về float32 gần nhất — cách mô phỏng số học của GPU ngay trong test JavaScript. | [P3.5](p3-5-test-cho-decoder.md) |
 
 ## Không gian toạ độ
 

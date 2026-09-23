@@ -7,7 +7,10 @@
  * that lights up the sky instead of the subject, is obvious in a thumbnail and
  * nearly impossible to spot in a finished cloud.
  */
+import { decode } from "@/bundle/position-codec";
+
 import type { RgbaBytes } from "./decode-image";
+import type { PackedBundle } from "./pack-bundle";
 
 export interface PreviewImage {
   width: number;
@@ -61,6 +64,63 @@ export function heatPreview(
       255 * Math.min(1, Math.max(0, t * 2.6 - 1.6) + Math.max(0, 0.9 - t * 3.2)),
     );
     data[i * 4 + 3] = 255;
+  }
+
+  return { width, height, data };
+}
+
+/**
+ * Paint the packed cloud back into a picture (P7.6).
+ *
+ * This is the only preview that reads the *output* rather than an input, and
+ * it earns its place by being the one that shows what the sampler actually
+ * did: where the points went, how evenly they are spaced, and whether the
+ * subject got the budget the importance map promised it. The colour comes
+ * from each point, so it doubles as a check that 6.7 read the right pixel.
+ *
+ * Deliberately no depth, no lens, no motion — those are the canvas's job. Flat
+ * x and y, straight from the encoded positions, decoded exactly the way the
+ * vertex shader does it.
+ */
+export function pointsPreview(bundle: PackedBundle, longSide = 512): PreviewImage {
+  const { bounds, particleCount } = bundle.metadata;
+  const spanX = bounds.max[0] - bounds.min[0];
+  const spanY = bounds.max[1] - bounds.min[1];
+
+  const width = spanX >= spanY ? longSide : Math.max(1, Math.round((longSide * spanX) / spanY));
+  const height = spanX >= spanY ? Math.max(1, Math.round((longSide * spanY) / spanX)) : longSide;
+
+  const data = new Uint8ClampedArray(width * height * 4) as RgbaBytes;
+  // Opaque black behind the points, so the gaps read as gaps rather than as
+  // whatever the canvas had before.
+  for (let i = 3; i < data.length; i += 4) data[i] = 255;
+
+  for (let i = 0; i < particleCount; i++) {
+    const x = decode(
+      bundle.positionHigh[i * 4]!,
+      bundle.positionLow[i * 4]!,
+      bounds.min[0],
+      bounds.max[0],
+    );
+    const y = decode(
+      bundle.positionHigh[i * 4 + 1]!,
+      bundle.positionLow[i * 4 + 1]!,
+      bounds.min[1],
+      bounds.max[1],
+    );
+
+    const px = Math.min(width - 1, Math.max(0, Math.round(((x - bounds.min[0]) / spanX) * (width - 1))));
+    // World +y is up and image row 0 is the top, so the vertical axis flips
+    // back here exactly as it flipped in `liftToCloud`.
+    const py = Math.min(
+      height - 1,
+      Math.max(0, Math.round((1 - (y - bounds.min[1]) / spanY) * (height - 1))),
+    );
+
+    const out = (py * width + px) * 4;
+    data[out] = bundle.color[i * 4]!;
+    data[out + 1] = bundle.color[i * 4 + 1]!;
+    data[out + 2] = bundle.color[i * 4 + 2]!;
   }
 
   return { width, height, data };

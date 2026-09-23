@@ -9,6 +9,8 @@ import { usePresetsStore } from "@/store/presets-store";
 import { useUiStore } from "@/store/ui-store";
 
 import { Inspector } from "../inspector/inspector";
+import { HelpOverlay } from "./help-overlay";
+import { StageOverlay, StageTabs } from "./stage-view";
 import { StatusBar } from "./status-bar";
 import { Toolbar } from "./toolbar";
 import { useShortcuts } from "./use-shortcuts";
@@ -66,6 +68,9 @@ export function AppShell() {
             screens can sit over it without a z-index fight. */}
         <div className="relative min-w-0 flex-1">
           <Stage controlsRef={controls} />
+          <StageTabs />
+          <StageOverlay />
+          <HelpOverlay />
         </div>
 
         {inspectorOpen && (

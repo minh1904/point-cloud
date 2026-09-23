@@ -86,8 +86,18 @@ P6 là chỗ dự án ngừng dựng lại renderer của UntilLabs và đi qua 
 
 Đọc theo thứ tự 7.2 → 7.3 → 7.1 thì hợp lý hơn thứ tự đánh số: schema có trước, cách đọc schema mà không qua React có sau, và bố cục là thứ hưởng lợi từ cả hai.
 
+### P8 — Ra khỏi công cụ
+- [P8.1 · Chọn định dạng bundle](p8-1-dinh-dang-bundle.md)
+- [P8.2 · Viết PNG và ZIP bằng tay, trong trình duyệt](p8-2-png-va-zip-trong-trinh-duyet.md)
+- [P8.3 · Xuất ra file, và con số kilobyte nói thật](p8-3-xuat-va-do-dung-luong.md)
+- [P8.4 · `metadata.json` v1, và khi nào thì đáng dùng một thư viện](p8-4-metadata-zod.md)
+- [P8.5 · Nhập lại bundle — bài kiểm tra thật của định dạng](p8-5-nhap-lai-bundle.md)
+- [P8.6 · Một component thả vào dự án của người khác](p8-6-component-drop-in.md)
+
+Tham khảo kèm theo: [đặc tả bundle format](../bundle-format.md) và [tài liệu `<ParticleImage>`](../particle-image.md).
+
 ### Tiếp theo
-- P8.1 · Chốt định dạng bundle để xuất ra *(sắp tới)*
+- P9 · Đánh bóng (tuỳ chọn) *(sắp tới)*
 
 ## Bức tranh tổng thể
 

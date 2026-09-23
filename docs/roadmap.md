@@ -186,12 +186,12 @@ Built from Atelier components (P-UI); look follows decision 0.4.
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 8.1 | 🔶 **DECISION: bundle format** — default: `.zip` with `metadata.json` + `position_h.png` + `position_l.png` + `color.png` + `density.png` (+ `lut.png`, `params.json`). Alternative: a single `.json` with base64 PNGs for copy-paste import | Size vs convenience | Format spec written in `docs/bundle-format.md` |
-| 8.2 | Encoder: quantise positions to 16-bit, split hi/lo, write PNG bytes **directly** (UPNG/fflate), never via canvas | Canvas premultiplies alpha and colour-manages → corrupts data. Alpha must be 255 | Byte-exact round trip test |
-| 8.3 | Texture size choice (128² / 256² / 512²) = particle budget, show bundle size before export | Budget ~600 KB for 65k points in the original | UI shows KB estimate |
-| 8.4 | `metadata.json` v1: `version`, `width`, `height`, `particleCount`, `bounds`, `precision`, `densityRange`, `params` | Versioned format so old exports keep loading | Schema validated (zod) on import |
-| 8.5 | Import a bundle back into the tool | Proves the format is self-sufficient | Export → import → identical render |
-| 8.6 | Drop-in `<ParticleImage src="/particles/foo" />` R3F component (copyable file or small package) + usage docs | What the "real project" needs: loader + material + params, nothing else | Works in a fresh Vite/Next app |
+| ✅ 8.1 | **DECIDED: a `.zip` of the folder the renderer already reads** — `metadata.json` + `color.png` (alpha carries density) + `position_h.png` + `position_l.png` + optional `params.json`. No `density.png` (6.6 put it in alpha) and no `lut.png` (too big for what a name recovers) | Size vs convenience | Format spec written in `docs/bundle-format.md` |
+| ✅ 8.2 | Encoder: quantise positions to 16-bit, split hi/lo, write PNG bytes **directly** — no UPNG or fflate in the end, the browser's own `CompressionStream` plus the P3.5 codec split in two | Canvas premultiplies alpha and colour-manages → corrupts data. Alpha must be 255 | Byte-exact round trip test |
+| ✅ 8.3 | Texture size choice (128² / 192² / 256² / 512²) = particle budget, show bundle size before export | Budget ~600 KB for 65k points in the original; measured 679 KB here | UI shows KB estimate |
+| ✅ 8.4 | `metadata.json` v1: `version`, `width`, `height`, `particleCount`, `bounds`, `precision`, `source`, `depth`. No `densityRange` (density is absolute since 6.6) and no `params` (its own file) | Versioned format so old exports keep loading | Schema validated (zod) on import |
+| ✅ 8.5 | Import a bundle back into the tool | Proves the format is self-sufficient | Export → import → identical render |
+| ✅ 8.6 | Drop-in `<ParticleImage src="/particles/foo" />` R3F component (copyable file or small package) + usage docs | What the "real project" needs: loader + material + params, nothing else | Works in a fresh Vite/Next app |
 
 ---
 

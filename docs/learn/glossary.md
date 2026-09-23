@@ -158,6 +158,25 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **`image-rendering: pixelated`** | Phóng to ảnh bằng nearest-neighbour, để dữ liệu không bị nội suy thành giá trị không có thật. | [P7.6](p7-6-stage-view.md) |
 | **`<kbd>`** | Phần tử HTML nghĩa là "gõ từ bàn phím"; trình đọc màn hình thông báo đúng như vậy. | [P7.7](p7-7-phim-tat-va-hud.md) |
 
+## Định dạng file & phân phối (P8)
+
+| Thuật ngữ | Nghĩa | Gặp lần đầu |
+|---|---|---|
+| **Bundle** | Bốn file mô tả trọn một đám mây: `metadata.json` + ba PNG dữ liệu. | [P8.1](p8-1-dinh-dang-bundle.md) |
+| **Base64** | Mã hoá nhị phân thành văn bản; tốn thêm **33%** dung lượng. | [P8.1](p8-1-dinh-dang-bundle.md) |
+| **Stored vs deflated (zip)** | Method 0 lưu nguyên, method 8 nén. PNG đã nén rồi nên bundle dùng stored. | [P8.1](p8-1-dinh-dang-bundle.md) |
+| **`CompressionStream`** | DEFLATE có sẵn trong trình duyệt, dưới dạng API luồng. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **zlib wrapper (RFC 1950)** | DEFLATE kèm header + Adler-32. PNG cần nó; zip thì dùng DEFLATE trần. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **Local header / Central directory / EOCD** | Ba phần cấu tạo nên một file zip. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **Endianness** | Thứ tự byte. Zip là little-endian, PNG là big-endian — trong cùng một file. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **CRC-32** | Mã kiểm lỗi; PNG và ZIP dùng chung đa thức. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **Reproducible build** | Cùng đầu vào cho ra file giống hệt từng byte — nên timestamp bị bỏ trống. | [P8.2](p8-2-png-va-zip-trong-trinh-duyet.md) |
+| **Object URL** | `URL.createObjectURL(blob)` tạo địa chỉ tạm cho một Blob; nhớ `revoke`. | [P8.3](p8-3-xuat-va-do-dung-luong.md) |
+| **Schema validation (zod)** | Kiểm dữ liệu ngoài lúc chạy và báo tên trường sai. | [P8.4](p8-4-metadata-zod.md) |
+| **Round-trip test** | Xuất rồi nhập lại rồi so bằng hash — phép thử thật của một định dạng. | [P8.5](p8-5-nhap-lai-bundle.md) |
+| **Latest-callback ref** | Giữ callback trong ref để nó không nằm trong dependency của effect. | [P8.6](p8-6-component-drop-in.md) |
+| **Codegen** | Sinh code lúc build (ở đây: nhúng GLSL thành chuỗi) và commit kết quả. | [P8.6](p8-6-component-drop-in.md) |
+
 ## React Three Fiber & Next.js
 
 | Thuật ngữ | Nghĩa | Gặp lần đầu |

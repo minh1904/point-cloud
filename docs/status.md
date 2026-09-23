@@ -1,12 +1,12 @@
 # Status & handoff
 
-_Last updated: 2026-09-24 · last commit on `main`: `cb91bf0`_
+_Last updated: 2026-09-24 · last commit on `main`: `ed10d26`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 through P7 are complete. P8 is next.** A photo dropped into the app is decoded, given a depth map by Depth Anything V2 running in a worker, measured for detail, sampled into 65,536 blue-noise points, lifted into shallow relief and packed into the same three data textures the renderer has read since P3 — so it arrives with every P4 and P5 effect already on it. The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
+**P0 through P8 are complete. P9 is optional.** A photo dropped into the app is decoded, given a depth map by Depth Anything V2 running in a worker, measured for detail, sampled into 65,536 blue-noise points, lifted into shallow relief and packed into the same three data textures the renderer has read since P3 — so it arrives with every P4 and P5 effect already on it. The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
 
 P3.1 replaced the CPU-generated sphere with a data-driven geometry: 256² = 65,536 particles whose `position` attribute is all zeros, each carrying `aParticleUv` (its texel centre) and `aIndex` instead. The vertex shader derives the position — currently a flat grid — and hashes its own per-point scale and randomness from the texel coordinate, so `aScale` / `aRandomness` are gone. `frustumCulled` is off, because a zeroed `position` gives three.js a bounding sphere of radius 0.
 
@@ -24,6 +24,8 @@ P6 is where the project stopped rebuilding the UntilLabs renderer and went past 
 
 P7 turned it into a tool. A parameter is now **one entry in `src/params/schema.ts`** — the inspector builds its panels from the groups, the shader writes uniforms by walking the same list, presets serialise by key, and P8's export will read it too (7.2). Those values live outside React and the frame loop reads them with `getState()`, so dragging a slider re-renders that slider and nothing else; `Stage` takes one prop, a ref, and is memoised (7.3). Around them sit a toolbar, a docked inspector, a status bar (7.1), undo/redo that folds a whole drag into one step via Base UI's `onValueCommitted` (7.4), four built-in looks plus user presets in localStorage (7.5), a full-viewport view of every pipeline stage including where the points landed (7.6), and keyboard shortcuts with a sheet that lists them (7.7).
 
+P8 got the cloud out of the tool. A bundle is **a `.zip` of exactly the folder the renderer already reads** — `metadata.json`, `color.png` with crowding in its alpha, the two position maps, and an optional `params.json` carrying the look (8.1, spec in [bundle-format.md](bundle-format.md)). Writing it needed PNG in the browser, so the P3.5 codec was split: structure in `src/bundle/png-codec.ts`, compression supplied by `node:zlib` in the script and `CompressionStream` in the page (8.2). Zip is written by hand, stored entries, no timestamps — so exporting the same cloud twice gives byte-identical files. The Export panel measures the real size rather than guessing it (8.3, 679 KB for 65,536 points), `metadata.json` is validated with zod and versioned (8.4), and a bundle can be dropped back in: export → import → the points stage hashes the same both times (8.5). Finally `@atelier/particle-image` renders a bundle in somebody else's project with no dependency on the studio, its shaders generated into template literals because a stranger's bundler will not import `.glsl` (8.6, docs in [particle-image.md](particle-image.md)).
+
 The three breakpoints survived the move: under `sm` the inspector is a sheet over the bottom of the viewport, from `sm` it docks as a 224px column and the canvas gives up the width, from `lg` it is 256px. The toolbar and status bar shorten their labels as the screen narrows. `studio.tsx` is gone; `src/app/shell/` replaced it.
 
 | Phase | Status |
@@ -37,18 +39,42 @@ The three breakpoints survived the move: under `sm` the inspector is a sheet ove
 | P5 The look | ✅ done (5.2–5.6, and 5.1 via 6.6) |
 | P6 Photo → point cloud | ✅ done (6.1–6.9) |
 | P7 Design-tool UX | ✅ done (7.1–7.7) |
-| P8 Export & import | ⏭ **8.1 next** |
-| P9 Polish | not started |
+| P8 Export & import | ✅ done (8.1–8.6) |
+| P9 Polish | ⏭ optional, nothing started |
 
-## Next step: P8.1
+## Next step: P9, or stop
 
-**Decision 8.1 has to be made first**: the bundle format. Default is a `.zip` holding `metadata.json`, `position_h.png`, `position_l.png`, `color.png` (+ `lut.png`, `params.json`); the alternative is a single `.json` with base64 PNGs, bigger but paste-able. Write the spec into `docs/bundle-format.md` either way.
+P8.6 was the last thing the project set out to do. A photograph goes in, a
+cloud comes out, and the cloud renders in somebody else's project. **P9 is
+explicitly optional** — read `docs/roadmap.md` and pick what is worth the time
+rather than working through it.
 
-Two things make P8 cheaper than it looks. **6.8 kept the 16-bit hi/lo encoding**, so the packer already holds the exact bytes a PNG needs — 8.2 is a file write, not a conversion. And `scripts/png.ts` has written PNG bytes directly since P3.5, with a byte-exact round-trip test, which is the other half of 8.2.
+The one thing that is genuinely unfinished rather than merely unstarted is
+**decision 0.4, the visual style**: `packages/tokens/src/theme.css` still holds
+Toolcraft's values. P7 built a real inspector to hang them on, so this is the
+moment they would pay off. The known issue to fix alongside it: Button's `link`
+variant fails WCAG AA contrast in dark theme (4.06 : 1).
 
-Note also that **density now rides in the colour map's alpha** (6.6), so the format does not need a separate `density.png` the way the roadmap's sketch assumed.
+### What P8 left behind
 
-Per the project rules, every step also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
+**`shaders.gen.ts` goes stale silently.** It is generated and committed so the
+package can be copied out of the repo and just work; the cost is that changing
+a shader without running `bun run build:particle-image` leaves the drop-in
+component rendering the old one. Nothing will warn you.
+
+**The component duplicates a little of the app** — `createGrid`, the parameter
+defaults. Deliberate: a file meant to be copied into a stranger's project
+should not import from a studio they do not have. It does mean two places to
+update if the grid addressing ever changes.
+
+**Shuffling costs compression.** `position_h.png` should compress far better
+than `position_l.png` and does not — 209 KB against 214 KB — because 6.9
+shuffles point order, so texel neighbours are unrelated points and PNG's
+scanline filters have nothing to work with. The trade is worth it (the intro
+would otherwise arrive in bands) but it is a real cost nobody priced at 6.9.
+
+**No LUT travels with a bundle.** `params.json` names the grade; the PNG is a
+separate ~500 KB. `<ParticleImage>` takes a `lut` prop for it.
 
 ### What P7 left behind
 
@@ -84,7 +110,7 @@ cd point-cloud
 bun install
 bun run dev          # http://localhost:3000
 bun run storybook    # http://localhost:6006
-bun run typecheck && bun run lint && bun run test   # all should pass (156 tests)
+bun run typecheck && bun run lint && bun run test   # all should pass (188 tests)
 ```
 
 Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun@1.3.14` and uses Bun workspaces plus the text `bun.lock` lockfile.
@@ -108,6 +134,10 @@ Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun
 - **Distance constants in shaders are tied to the scene's scale** — the near-camera wobble uses `smoothstep(3.2, 1.2, …)` because this cloud is 3 units wide. The UntilLabs equivalents (50, 20) are for a scene 244 units wide. Copying shader code between projects means converting them.
 - **`react-hooks/immutability` decides where state lives, twice now.** A ref may only be mutated by the component that created it, so passing one down and writing to it in a child is an error. It also rejects mutating uniforms through an extracted local (`const u = material.current.uniforms`) while allowing the same write through `material.current.uniforms` directly.
 - **Navigating to the same URL is not a reload.** Next.js serves a soft navigation and React keeps the existing canvas, so anything applied once at creation — camera position, `fov` — silently keeps its old value. Use `location.reload()` when testing initialisation.
+- **R3F does not mount its scene while the tab is hidden.** `ResizeObserver` callbacks are not delivered in a hidden document, so the canvas stays at its default 300×150 and R3F never creates the root — meaning nothing inside `<Canvas>` mounts, no bundle loads, and the viewport is black. This is broader than the fps note below: while a tab is hidden, *nothing in the scene can be verified at all*.
+- **A `React.lazy` boundary inside `<Canvas>` suspends the whole subtree.** `next/dynamic` is built on it, so loading anything with `dynamic()` from inside the R3F tree stops everything under it from mounting. Put the lazy boundary outside the canvas, as `app-shell.tsx` does.
+- **An API that takes a callback must tolerate an inline arrow.** Listing `onLoad` in an effect's dependency array turned `<ParticleImage>` into a fetch loop — 36 requests for 4 files. Hold callbacks in a ref.
+- **Re-run `bun run build:particle-image` after changing a shader**, or the drop-in component keeps rendering the previous one.
 - **Parameters do not go through React.** `readParams()` in a `useFrame` reads the store without subscribing; a slider re-renders itself and nothing else. Adding `useParamsStore((s) => s.values)` anywhere in the shell would quietly undo P7.3 — if the canvas starts re-rendering, look there first.
 - **`min-h-0` is what makes the shell scroll.** A flex item defaults to `min-height: auto` and refuses to shrink below its content, so without it the inspector's content pushes the status bar off screen and `overflow-y-auto` never engages.
 - **`react-hooks/immutability` rejects writing uniforms through an extracted local** but allows the same write through `material.current.uniforms` directly. Known since P4; the better escape is usually to move the write into the frame loop rather than to work around the rule.

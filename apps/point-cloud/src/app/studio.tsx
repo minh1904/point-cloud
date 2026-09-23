@@ -5,7 +5,10 @@ import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 
 import {
+  defaultLensParams,
   defaultParticleParams,
+  GRADES,
+  type LensParams,
   type ParticleParams,
 } from "@/scene/particle-field";
 import type { RenderStats } from "@/scene/render-info";
@@ -22,8 +25,13 @@ export function Studio() {
   const [playing, setPlaying] = useState(true);
   const [stats, setStats] = useState<RenderStats | null>(null);
   const [params, setParams] = useState<ParticleParams>(defaultParticleParams);
+  const [lens, setLens] = useState<LensParams>(defaultLensParams);
   const [postParams, setPostParams] = useState<PostParams>(defaultPostParams);
   const controls = useRef<OrbitControlsHandle>(null);
+  // Only a counter lives in React state. The intro's progress itself changes
+  // every frame and stays inside the scene, because re-rendering sixty times a
+  // second to animate a shader uniform is the trap step 7.3 exists to close.
+  const [introReplay, setIntroReplay] = useState(0);
 
   // Each slider writes one field. For now every change re-renders the scene
   // component; roadmap step 7.3 moves this to transient store updates.
@@ -33,6 +41,8 @@ export function Studio() {
 
   const setParticle = (key: NumericParticleParam) => (value: number) =>
     setParams((current) => ({ ...current, [key]: value }));
+  const setLensParam = (key: keyof LensParams) => (value: number) =>
+    setLens((current) => ({ ...current, [key]: value }));
   const setPost = (key: keyof PostParams) => (value: number) =>
     setPostParams((current) => ({ ...current, [key]: value }));
 
@@ -40,6 +50,8 @@ export function Studio() {
     <main className="relative h-dvh w-full overflow-hidden">
       <Stage
         params={params}
+        lens={lens}
+        introReplay={introReplay}
         postParams={postParams}
         playing={playing}
         onStats={setStats}
@@ -53,6 +65,12 @@ export function Studio() {
         {/* Restores the camera state the controls saved when they mounted. */}
         <Button variant="ghost-muted" onClick={() => controls.current?.reset()}>
           Reset view
+        </Button>
+        <Button
+          variant="ghost-muted"
+          onClick={() => setIntroReplay((n) => n + 1)}
+        >
+          Replay intro
         </Button>
         {stats && (
           <span className="font-mono text-2xs text-muted-foreground tabular-nums">
@@ -142,6 +160,73 @@ export function Studio() {
             }
           >
             {params.debugNoise ? "Showing noise field" : "Show noise field"}
+          </Button>
+        </Panel>
+
+        <Panel title="Lens">
+          {/* Changing this dollies the camera to hold the framing, so what you
+              see is perspective compression rather than a zoom. */}
+          <Slider
+            label="FOV"
+            value={lens.fov}
+            onValueChange={setLensParam("fov")}
+            min={8}
+            max={60}
+            step={1}
+            format={{ maximumFractionDigits: 0 }}
+          />
+          <Slider
+            label="Focus"
+            value={lens.focalDepth}
+            onValueChange={setLensParam("focalDepth")}
+            step={0.01}
+            format={{ maximumFractionDigits: 2 }}
+          />
+          <Slider
+            label="Range"
+            value={lens.focalRange}
+            onValueChange={setLensParam("focalRange")}
+            min={0.02}
+            max={1}
+            step={0.01}
+            format={{ maximumFractionDigits: 2 }}
+          />
+          <Slider
+            label="Edge"
+            value={lens.edgeBokeh}
+            onValueChange={setLensParam("edgeBokeh")}
+            step={0.01}
+            format={{ maximumFractionDigits: 2 }}
+          />
+          <Slider
+            label="Grade"
+            value={lens.gradeIntensity}
+            onValueChange={setLensParam("gradeIntensity")}
+            step={0.01}
+            format={{ maximumFractionDigits: 2 }}
+          />
+          {/* Cycles the baked LUTs. `neutral` is the identity grade: at full
+              intensity it must leave the picture untouched, which is the only
+              real test that the lookup maths is right. */}
+          <Button
+            variant="ghost-muted"
+            size="sm"
+            className="mt-1"
+            onClick={() =>
+              setLens((current) => ({
+                ...current,
+                grade: GRADES[(GRADES.indexOf(current.grade) + 1) % GRADES.length]!,
+              }))
+            }
+          >
+            LUT: {lens.grade}
+          </Button>
+          <Button
+            variant="ghost-muted"
+            size="sm"
+            onClick={() => setLens(defaultLensParams)}
+          >
+            Reset
           </Button>
         </Panel>
 

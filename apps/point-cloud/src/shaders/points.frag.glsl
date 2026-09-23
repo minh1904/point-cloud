@@ -4,6 +4,9 @@ uniform float uSoftness;  // 0 = hard disc, 1 = fades all the way from the cente
 
 varying float vCoverage; // < 1 for points smaller than a pixel (P1.4)
 varying vec3 vColor;     // linear-space color read from the data texture (P3.2)
+varying float vDefocus;  // 0 = sharp, 1 = fully outside the focal slice (P5.3)
+varying float vEdge;     // 0 mid-frame, up to 1 at the sides (P5.4)
+varying float vReveal;   // 0 before this particle arrives, 1 once it has (P5.5)
 
 void main() {
   // P1.3 — a point is rasterised as a square sprite. gl_PointCoord is this
@@ -19,6 +22,15 @@ void main() {
   // Fade the rim instead of cutting it: full alpha inside, down to 0 at the
   // edge. The fade band starts at 0.5 * (1 - softness).
   float alpha = 1.0 - smoothstep(0.5 * (1.0 - uSoftness), 0.5, d);
+
+  // P5.3 / P5.4 — the other half of the cheat. Shrinking a point opens gaps;
+  // fading it is what turns those gaps into softness rather than sparseness.
+  // The floor matters: drop it much below this and a defocused sky stops
+  // being soft and simply disappears, which is a hole in the picture rather
+  // than depth of field.
+  alpha *= mix(1.0, 0.14, vDefocus * vDefocus);
+  alpha *= 1.0 - vEdge * 0.55;
+  alpha *= vReveal;
 
   gl_FragColor = vec4(vColor, alpha * vCoverage);
 

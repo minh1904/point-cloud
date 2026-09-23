@@ -21,6 +21,7 @@
 // beyond the arithmetic itself.
 
 #include <pc_noise>
+#include <pc_lut>
 
 attribute vec2 aParticleUv;  // centre of this particle's texel, in (0, 1)
 
@@ -40,9 +41,18 @@ uniform float uNoiseScatter;   // how far apart neighbours sample the field
 uniform float uBreathe;        // depth breathing, in world units
 uniform float uViewportAspect; // width / height, to keep the wobble round
 uniform float uDebugNoise;     // 1 = show the fBM field instead of the photo
+uniform float uFocalDepth;     // which depth slice is sharp, 0..1 across bounds
+uniform float uFocalRange;     // how much depth stays sharp around it
+uniform float uEdgeBokeh;      // how strongly the left and right edges soften
+uniform sampler2D uLut;        // colour grade, a 64^3 cube flattened to 512x512
+uniform float uLutIntensity;   // 0 = ungraded, 1 = the grade in full
+uniform float uProgress;       // intro progress, 0 -> 1 (P5.5)
 
 varying float vCoverage; // how much of the 1px minimum the point really fills
 varying vec3 vColor;     // this particle's colour, fetched from uColorMap
+varying float vDefocus;  // 0 = sharp, 1 = fully outside the focal slice (P5.3)
+varying float vEdge;     // 0 in the middle of frame, up to 1 at the sides (P5.4)
+varying float vReveal;   // 0 before this particle arrives, 1 once it has (P5.5)
 
 // Deterministic pseudo-randomness from a 2D coordinate (Dave Hoskins' hash32).
 // This replaces the aScale / aRandomness attributes of P1.4-P1.5: the same
@@ -78,6 +88,16 @@ void main() {
   // Three vertex texture fetches, 65,536 particles, all in parallel. These are
   // the lines the whole P3 phase exists to make possible.
   vColor = texture2D(uColorMap, aParticleUv).rgb;
+
+  // P5.2 — the colour grade. It runs here, once per particle, rather than in
+  // the fragment shader: the colour is constant across a point sprite, so
+  // grading per pixel would repeat the same two texture fetches for every one
+  // of the dozens of pixels a point covers.
+  //
+  // The article describing the original puts the LUT in the post-processing
+  // pass. Reading their shipped code shows it applied in the particle shader
+  // instead, with the post shader declaring a LUT uniform it never uses.
+  vColor = pcGrade(uLut, vColor, uLutIntensity);
 
   vec3 randomness = hash32(texel);
 
@@ -132,11 +152,60 @@ void main() {
   flow.x /= uViewportAspect; // NDC is square; the viewport usually is not
   gl_Position.xy += flow * uNoiseAmplitude * gl_Position.w;
 
+  // P5.5 — the intro. One uniform counts from 0 to 1, and every particle reads
+  // its own arrival out of it. No timeline, no per-particle state, no CPU work
+  // that scales with the count: 65,536 independent animations from one float.
+  //
+  // The delay mixes two kinds of randomness on purpose. Pure per-particle noise
+  // makes the cloud fade up as an even haze; pure fBM makes whole regions
+  // arrive together in slabs. Four parts grain to six parts clump gives
+  // patches that materialise at their own pace with ragged edges.
+  float grain = hash32(texel + 41.3).z;
+  float clump = pcFbm(aParticleUv * 2.0);
+  float delay = mix(grain, clump, 0.4) * 0.62;
+
+  // And a focus ring opening out of the centre, its edge chewed up by noise so
+  // it never reads as a circle — a lens hunting for focus rather than a wipe.
+  vec2 fromCentre = aParticleUv - 0.5;
+  float radius = length(fromCentre);
+  float angle = atan(fromCentre.y, fromCentre.x);
+  float ragged = pcFbm(vec2(angle * 1.7, radius * 5.0)) * 0.13 + sin(angle * 6.0) * 0.025;
+  float ring = smoothstep(radius + ragged - 0.09, radius + ragged + 0.09, uProgress * 0.92);
+
+  vReveal = min(smoothstep(delay, delay + 0.34, uProgress), ring);
+
+  // P5.4 — edge bokeh. Particles near the left and right edges are blown up,
+  // faded, and pushed a little further out, which is roughly what a fast lens
+  // does to anything away from its centre. It frames the subject without
+  // drawing a frame.
+  //
+  // Measured in NDC, so it follows the screen rather than the cloud: dividing
+  // clip x by w is the perspective divide the GPU is about to do anyway.
+  vEdge = smoothstep(0.55, 1.0, abs(gl_Position.x / gl_Position.w)) * uEdgeBokeh;
+  gl_Position.x *= 1.0 + vEdge * 0.3;
+
   // Points have no geometry for the projection to shrink, so perspective is
   // applied by hand: a world-sized point covers fewer pixels further away.
-  // uScale is in device pixels, so the apparent (CSS) size is the same at any
-  // devicePixelRatio and scales with the viewport like the rest of the scene.
+  // uScale is in device pixels and carries the 1/tan(fov/2) of the lens, so
+  // the apparent size is right at any devicePixelRatio, viewport or focal
+  // length — zooming in with the FOV slider grows the points with the scene.
   float pixels = uSize * scale * (uScale / -mvPosition.z);
+
+  // P5.3 — fake depth of field. Real DOF spreads an out-of-focus point into a
+  // disc, which post-processing does by blurring the whole frame at great
+  // expense. A point cloud can cheat: shrink the point and fade it instead.
+  // The gaps that opens between neighbours read as softness, and it costs two
+  // multiplies inside a shader that was already running.
+  //
+  // The slice is measured along the cloud's own depth (`normalised.z`, 0..1
+  // across the bundle's bounds) rather than distance from the camera. For a
+  // photograph lifted into shallow relief that is the meaningful axis — and
+  // it means the focus does not drift while you orbit.
+  vDefocus = smoothstep(0.0, max(uFocalRange, 0.001), abs(normalised.z - uFocalDepth));
+  pixels *= 1.0 - vDefocus * vDefocus * 0.5;
+  pixels *= 1.0 + vEdge * 1.4;
+  // Arriving particles grow into place rather than blinking on.
+  pixels *= 0.4 + 0.6 * vReveal;
 
   // The GPU cannot draw less than one pixel: a 0.3px point would be drawn as
   // a full pixel and look too bright. Draw 1px but let the fragment shader

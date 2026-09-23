@@ -8,6 +8,7 @@
     "start": "bun x next start",
     "lint": "bun x eslint",
     "build:sample": "bun run scripts/build-sample-bundle.ts",
+    "build:luts": "bun run scripts/build-luts.ts",
     "typecheck": "bun x next typegen && bun x tsc --noEmit"
   },
   "dependencies": {

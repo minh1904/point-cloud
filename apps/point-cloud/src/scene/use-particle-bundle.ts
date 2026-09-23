@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   ClampToEdgeWrapping,
+  LinearFilter,
   NearestFilter,
   NoColorSpace,
   SRGBColorSpace,
   TextureLoader,
   type ColorSpace,
+  type MagnificationTextureFilter,
   type Texture,
 } from "three";
 
@@ -44,9 +46,13 @@ export const SAMPLE_BUNDLE = "/particles/sample";
  * 128 means 128 — decoding those as colour would bend every coordinate along a
  * curve, and nothing would report an error.
  */
-function configureDataTexture(texture: Texture, colorSpace: ColorSpace): Texture {
-  texture.minFilter = NearestFilter;
-  texture.magFilter = NearestFilter;
+function configureDataTexture(
+  texture: Texture,
+  colorSpace: ColorSpace,
+  filter: MagnificationTextureFilter = NearestFilter,
+): Texture {
+  texture.minFilter = filter;
+  texture.magFilter = filter;
   texture.generateMipmaps = false;
   texture.flipY = false;
   texture.wrapS = ClampToEdgeWrapping;
@@ -110,4 +116,43 @@ export function useParticleBundle(baseUrl: string = SAMPLE_BUNDLE): ParticleBund
   }, [baseUrl]);
 
   return bundle;
+}
+
+/**
+ * Loads a colour grade (P5.2).
+ *
+ * Almost the same settings as a data texture, with one deliberate difference:
+ * `LinearFilter`. A LUT *wants* to be interpolated — 64 samples per axis is
+ * coarse, and blending between neighbouring entries is what turns a lattice of
+ * 262,144 colours into a smooth mapping over all of them. The one place
+ * filtering must not reach is across a tile border, and `pcLutLookup` keeps the
+ * sample half a texel inside for exactly that reason.
+ *
+ * `NoColorSpace`, though, for the same reason the position maps use it: the
+ * bytes are a lookup table, not a picture. The shader does its own conversion
+ * around the lookup, because grades are authored on display values.
+ */
+export function useLookupTexture(url: string): Texture | null {
+  const [texture, setTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    let loaded: Texture | undefined;
+    let cancelled = false;
+
+    new TextureLoader().load(url, (result) => {
+      if (cancelled) {
+        result.dispose();
+        return;
+      }
+      loaded = configureDataTexture(result, NoColorSpace, LinearFilter);
+      setTexture(loaded);
+    });
+
+    return () => {
+      cancelled = true;
+      loaded?.dispose();
+    };
+  }, [url]);
+
+  return texture;
 }

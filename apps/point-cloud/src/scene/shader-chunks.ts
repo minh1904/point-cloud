@@ -1,5 +1,6 @@
 import { ShaderChunk } from "three";
 
+import lut from "@/shaders/lut.glsl";
 import noise from "@/shaders/noise.glsl";
 
 /**
@@ -17,4 +18,6 @@ import noise from "@/shaders/noise.glsl";
  */
 // three types ShaderChunk with its own chunk names, so a new key needs the
 // cast. The registry itself is a plain object and takes any name.
-(ShaderChunk as unknown as Record<string, string>).pc_noise = noise;
+const registry = ShaderChunk as unknown as Record<string, string>;
+registry.pc_noise = noise;
+registry.pc_lut = lut;

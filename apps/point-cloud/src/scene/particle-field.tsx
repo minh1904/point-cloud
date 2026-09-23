@@ -7,6 +7,7 @@ import { Vector3, type ShaderMaterial } from "three";
 import fragmentShader from "@/shaders/points.frag.glsl";
 import vertexShader from "@/shaders/points.vert.glsl";
 
+import "./shader-chunks";
 import { createParticleGrid } from "./particle-grid";
 import { SAMPLE_BUNDLE, useParticleBundle } from "./use-particle-bundle";
 
@@ -15,10 +16,18 @@ export interface ParticleParams {
   size: number;
   /** 0 = hard-edged disc, 1 = fades from the center out. */
   softness: number;
-  /** How far points wander from their home position, in world units. */
-  driftAmplitude: number;
-  /** Multiplier on animation time: 0 freezes the drift, 2 doubles it. */
-  driftSpeed: number;
+  /** Curl offset on screen, in normalised device units (the screen spans 2). */
+  noiseAmplitude: number;
+  /** How many noise cells span the cloud: low is broad swells, high is churn. */
+  noiseFrequency: number;
+  /** How far apart neighbouring particles sample the field. 0 moves them as one. */
+  noiseScatter: number;
+  /** Depth breathing, in world units. Relief is only ~0.08, so this is small. */
+  breathe: number;
+  /** Multiplier on animation time: 0 freezes everything, 2 doubles it. */
+  speed: number;
+  /** Paint the fBM field instead of the photo (P4.1). */
+  debugNoise: boolean;
 }
 
 export const defaultParticleParams: ParticleParams = {
@@ -27,11 +36,16 @@ export const defaultParticleParams: ParticleParams = {
   // and a soft rim contributes little alpha. Below ~0.03 the photo reads as
   // dark speckle instead of a surface.
   size: 0.045,
-  // A quarter of the grid spacing: enough to shimmer, little enough to keep
-  // the image legible. Raise it to watch the photo dissolve into a field.
-  driftAmplitude: 0.004,
   softness: 0.5,
-  driftSpeed: 1,
+  noiseAmplitude: 0.012,
+  noiseFrequency: 3,
+  // Small on purpose. Scatter is how far apart neighbours sample the field, so
+  // past ~0.5 they stop sharing a flow at all and the cloud shimmers in place
+  // instead of drifting — and the debug view turns from clouds into confetti.
+  noiseScatter: 0.15,
+  breathe: 0.01,
+  speed: 1,
+  debugNoise: false,
 };
 
 interface ParticleFieldProps extends ParticleParams {
@@ -53,14 +67,23 @@ interface ParticleFieldProps extends ParticleParams {
  * this component no longer knows or cares what it is drawing: hand it another
  * bundle and it renders that instead, whether the bundle came from a file or,
  * from P6, from a photo the user dropped in.
+ *
+ * P4 — motion sits on top of that fixed home position and keeps no state at
+ * all: the whole offset is recomputed from `uTime` every frame. Nothing to
+ * store, nothing to drift out of sync, and the cost per particle is the
+ * arithmetic alone.
  */
 export function ParticleField({
   bundleUrl = SAMPLE_BUNDLE,
   renderScale = 1,
   size,
   softness,
-  driftAmplitude,
-  driftSpeed,
+  noiseAmplitude,
+  noiseFrequency,
+  noiseScatter,
+  breathe,
+  speed,
+  debugNoise,
   playing,
 }: ParticleFieldProps) {
   const material = useRef<ShaderMaterial>(null);
@@ -93,7 +116,12 @@ export function ParticleField({
             uMaxPointSize: { value: 64 },
             uSoftness: { value: 0 },
             uTime: { value: 0 },
-            uDriftAmplitude: { value: 0 },
+            uNoiseAmplitude: { value: 0 },
+            uNoiseFrequency: { value: 1 },
+            uNoiseScatter: { value: 0 },
+            uBreathe: { value: 0 },
+            uViewportAspect: { value: 1 },
+            uDebugNoise: { value: 0 },
           },
           // Soft rims need alpha blending. Not writing depth keeps a faded rim
           // from hiding the points behind it; with thousands of small
@@ -115,7 +143,8 @@ export function ParticleField({
 
   // Uniforms are how a ShaderMaterial is tweaked: new values are uploaded on
   // the next draw, with no shader recompile.
-  const height = useThree((state) => state.size.height);
+  const size2d = useThree((state) => state.size);
+  const height = size2d.height;
   const dpr = useThree((state) => state.viewport.dpr);
   useEffect(() => {
     const uniforms = material.current?.uniforms;
@@ -131,15 +160,34 @@ export function ParticleField({
     uniforms.uScale!.value = height * dpr * renderScale * 0.5;
     uniforms.uMaxPointSize!.value = maxPointSize;
     uniforms.uSoftness!.value = softness;
-    uniforms.uDriftAmplitude!.value = driftAmplitude;
-  }, [bundle, size, softness, driftAmplitude, height, dpr, maxPointSize, renderScale]);
+    uniforms.uNoiseAmplitude!.value = noiseAmplitude;
+    uniforms.uNoiseFrequency!.value = noiseFrequency;
+    uniforms.uNoiseScatter!.value = noiseScatter;
+    uniforms.uBreathe!.value = breathe;
+    uniforms.uViewportAspect!.value = size2d.width / Math.max(1, size2d.height);
+    uniforms.uDebugNoise!.value = debugNoise ? 1 : 0;
+  }, [
+    bundle,
+    size,
+    softness,
+    noiseAmplitude,
+    noiseFrequency,
+    noiseScatter,
+    breathe,
+    debugNoise,
+    size2d,
+    height,
+    dpr,
+    maxPointSize,
+    renderScale,
+  ]);
 
   useFrame((_, delta) => {
     if (!playing || !material.current) return;
     // Advance time here instead of multiplying elapsed time by the speed in
     // the shader: changing the speed then bends the motion smoothly rather
     // than jumping every point to a different phase.
-    material.current.uniforms.uTime!.value += delta * driftSpeed;
+    material.current.uniforms.uTime!.value += delta * speed;
   });
 
   // Every particle's position and colour live in the bundle, so there is no
@@ -156,8 +204,10 @@ export function ParticleField({
         {/* Zeros, but required: three.js reads the vertex count from here. */}
         <bufferAttribute attach="attributes-position" args={[grid.positions, 3]} />
         <bufferAttribute attach="attributes-aParticleUv" args={[grid.particleUv, 2]} />
-        {/* Identity rather than address. First read by the shader in P4.2
-            (curl-noise seed) and P5.5 (reveal order). */}
+        {/* Identity rather than address. P4.2 seeds the flow field from the
+            texel hash instead, since hashing a five-digit integer loses float
+            precision (P3.1), so this is still waiting for P5.5 (reveal order),
+            which needs the ordinal itself rather than a hash of it. */}
         <bufferAttribute attach="attributes-aIndex" args={[grid.index, 1]} />
       </bufferGeometry>
       <shaderMaterial ref={material} args={materialArgs} />

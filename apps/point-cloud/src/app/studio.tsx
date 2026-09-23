@@ -27,7 +27,11 @@ export function Studio() {
 
   // Each slider writes one field. For now every change re-renders the scene
   // component; roadmap step 7.3 moves this to transient store updates.
-  const setParticle = (key: keyof ParticleParams) => (value: number) =>
+  type NumericParticleParam = {
+    [K in keyof ParticleParams]: ParticleParams[K] extends number ? K : never;
+  }[keyof ParticleParams];
+
+  const setParticle = (key: NumericParticleParam) => (value: number) =>
     setParams((current) => ({ ...current, [key]: value }));
   const setPost = (key: keyof PostParams) => (value: number) =>
     setPostParams((current) => ({ ...current, [key]: value }));
@@ -75,22 +79,6 @@ export function Studio() {
             onValueChange={setParticle("softness")}
             format={{ maximumFractionDigits: 2 }}
           />
-          <Slider
-            label="Drift"
-            value={params.driftAmplitude}
-            onValueChange={setParticle("driftAmplitude")}
-            max={0.1}
-            step={0.001}
-            format={{ maximumFractionDigits: 3 }}
-          />
-          <Slider
-            label="Speed"
-            value={params.driftSpeed}
-            onValueChange={setParticle("driftSpeed")}
-            max={3}
-            step={0.1}
-            format={{ maximumFractionDigits: 1 }}
-          />
           <Button
             variant="ghost-muted"
             size="sm"
@@ -98,6 +86,62 @@ export function Studio() {
             onClick={() => setParams(defaultParticleParams)}
           >
             Reset
+          </Button>
+        </Panel>
+
+        <Panel title="Motion">
+          <Slider
+            label="Amplitude"
+            value={params.noiseAmplitude}
+            onValueChange={setParticle("noiseAmplitude")}
+            max={0.15}
+            step={0.001}
+            format={{ maximumFractionDigits: 3 }}
+          />
+          <Slider
+            label="Frequency"
+            value={params.noiseFrequency}
+            onValueChange={setParticle("noiseFrequency")}
+            min={0.2}
+            max={12}
+            step={0.1}
+            format={{ maximumFractionDigits: 1 }}
+          />
+          <Slider
+            label="Scatter"
+            value={params.noiseScatter}
+            onValueChange={setParticle("noiseScatter")}
+            max={4}
+            step={0.05}
+            format={{ maximumFractionDigits: 2 }}
+          />
+          <Slider
+            label="Breathe"
+            value={params.breathe}
+            onValueChange={setParticle("breathe")}
+            max={0.08}
+            step={0.001}
+            format={{ maximumFractionDigits: 3 }}
+          />
+          <Slider
+            label="Speed"
+            value={params.speed}
+            onValueChange={setParticle("speed")}
+            max={3}
+            step={0.1}
+            format={{ maximumFractionDigits: 1 }}
+          />
+          {/* P4.1 — paints the fBM field the motion is driven by, straight
+              onto the particles. A proper Toggle arrives with P5. */}
+          <Button
+            variant={params.debugNoise ? "outline" : "ghost-muted"}
+            size="sm"
+            className="mt-1"
+            onClick={() =>
+              setParams((current) => ({ ...current, debugNoise: !current.debugNoise }))
+            }
+          >
+            {params.debugNoise ? "Showing noise field" : "Show noise field"}
           </Button>
         </Panel>
 

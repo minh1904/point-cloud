@@ -13,6 +13,14 @@
 // P3.3/P3.4 — and so does the position. Nothing about where a particle sits
 // is computed here any more; it is read out of two textures and mapped back
 // onto the bundle's bounds. The placeholder grid is gone.
+//
+// P4 — on top of that fixed home position sits the motion: curl noise in clip
+// space (4.2, 4.3) plus a slow breathing in depth (4.4). None of it is
+// simulated. Every frame recomputes the whole offset from time alone, so
+// there is no state to keep, no error to accumulate, and no cost per particle
+// beyond the arithmetic itself.
+
+#include <pc_noise>
 
 attribute vec2 aParticleUv;  // centre of this particle's texel, in (0, 1)
 
@@ -26,7 +34,12 @@ uniform float uSize;         // point size in world units
 uniform float uScale;        // half the drawing-buffer height, in device pixels
 uniform float uMaxPointSize; // largest gl_PointSize this GPU supports
 uniform float uTime;         // seconds of animation, advanced on the CPU
-uniform float uDriftAmplitude; // how far points wander, in world units
+uniform float uNoiseAmplitude; // curl offset, in normalised device units
+uniform float uNoiseFrequency; // how many noise cells span the cloud
+uniform float uNoiseScatter;   // how far apart neighbours sample the field
+uniform float uBreathe;        // depth breathing, in world units
+uniform float uViewportAspect; // width / height, to keep the wobble round
+uniform float uDebugNoise;     // 1 = show the fBM field instead of the photo
 
 varying float vCoverage; // how much of the 1px minimum the point really fills
 varying vec3 vColor;     // this particle's colour, fetched from uColorMap
@@ -67,26 +80,57 @@ void main() {
   vColor = texture2D(uColorMap, aParticleUv).rgb;
 
   vec3 randomness = hash32(texel);
-  float scale = mix(0.5, 1.0, hash32(texel + 91.7).y);
 
-  // P1.5 — every point runs the same code, but its own randomness makes it
-  // move differently: the random value sets both how far it swings (the
-  // multiplier) and where in the cycle it starts (the phase, * 10.0). Three
-  // axes with different frequencies (0.5, 0.3, 0.4) never line up, so the
-  // motion reads as wandering rather than a loop.
-  vec3 drift = vec3(
-    sin(uTime * 0.5 + randomness.x * 10.0) * randomness.x,
-    cos(uTime * 0.3 + randomness.y * 10.0) * randomness.y,
-    sin(uTime * 0.4 + randomness.z * 10.0) * randomness.z
-  );
-  vec3 displaced = home + drift * uDriftAmplitude;
+  // Per-particle size variation reads as depth and texture (P1.4), but it also
+  // means the field below is sampled by dots of differing weight. The debug
+  // view flattens them so what you see is the noise, not the sampling.
+  float scale = mix(mix(0.5, 1.0, hash32(texel + 91.7).y), 0.8, uDebugNoise);
+
+  // P4.2 — where this particle samples the flow field. The scatter term is
+  // what decides whether neighbours move together or apart: at 0 the cloud
+  // behaves like a sheet in a breeze, and as it grows each particle wanders
+  // its own way. It comes from the texel hash rather than aIndex directly,
+  // because hashing a five-digit integer runs out of float precision (P3.1).
+  vec2 flowSeed = aParticleUv * uNoiseFrequency
+                + randomness.xy * uNoiseScatter
+                + uTime * 0.12;
+
+  // P4.1 — the debug view. Painting the fBM field onto the same particles is
+  // the cheapest way to see what the motion is actually being driven by.
+  //
+  // Two corrections make it legible. fBM is an average of averages, so its
+  // values crowd around 0.5 and the raw field is nearly flat grey — hence the
+  // contrast stretch. And vColor is linear light that the fragment shader
+  // encodes to sRGB at the end, which lifts mid grey to near white; raising it
+  // to 2.2 first cancels that out, so what reaches the screen is the field.
+  float field = clamp((pcFbm(flowSeed) - 0.2) / 0.55, 0.0, 1.0);
+  vColor = mix(vColor, vec3(pow(field, 2.2)), uDebugNoise);
+
+  // P4.4 — breathing. A slow sine in depth, with a per-particle phase so the
+  // surface undulates instead of sliding back and forth as one slab.
+  home.z += sin(uTime * 0.25 + randomness.z * 6.2831) * uBreathe;
 
   // Object space -> camera (view) space. The camera looks down -z,
   // so -mvPosition.z is the distance in front of it.
-  vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(home, 1.0);
+
+  // P4.4 — and a faster wobble that only wakes up close to the camera, where
+  // there are enough pixels for it to register. Far away it would be motion
+  // nobody can see, paid for at full price.
+  float nearness = smoothstep(3.2, 1.2, -mvPosition.z);
+  mvPosition.z += sin(uTime * 0.5 + randomness.x * 6.2831) * nearness * uBreathe * 0.6;
 
   // View space -> clip space; the GPU then divides by w for perspective.
   gl_Position = projectionMatrix * mvPosition;
+
+  // P4.3 — the curl offset is added *after* the projection, in clip space.
+  // Multiplying by w cancels the perspective divide that follows, so the
+  // displacement is a fixed distance on screen no matter how far away the
+  // particle is. Offsetting in world space instead would make near particles
+  // swing wildly while distant ones barely twitched.
+  vec2 flow = pcCurl(flowSeed);
+  flow.x /= uViewportAspect; // NDC is square; the viewport usually is not
+  gl_Position.xy += flow * uNoiseAmplitude * gl_Position.w;
 
   // Points have no geometry for the projection to shrink, so perspective is
   // applied by hand: a world-sized point covers fewer pixels further away.

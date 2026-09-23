@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 
 import { Button } from "./button";
 import { Panel } from "./panel";
@@ -28,6 +29,28 @@ export const WithControls: Story = {
       </Button>
     </Panel>
   ),
+};
+
+// The panel holds no state, so the collapsed flag lives with the consumer —
+// which is what lets one button collapse a whole stack of them at once.
+function CollapsibleDemo() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <Panel
+      title="Particles"
+      collapsible
+      collapsed={collapsed}
+      onCollapsedChange={setCollapsed}
+    >
+      <Slider label="Size" defaultValue={0.025} max={0.1} step={0.001} />
+      <Slider label="Softness" defaultValue={0.5} />
+    </Panel>
+  );
+}
+
+export const Collapsible: Story = {
+  render: () => <CollapsibleDemo />,
 };
 
 // Over a busy background, the translucent surface and blur keep text legible.

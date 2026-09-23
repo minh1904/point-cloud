@@ -47,6 +47,7 @@ uniform float uEdgeBokeh;      // how strongly the left and right edges soften
 uniform sampler2D uLut;        // colour grade, a 64^3 cube flattened to 512x512
 uniform float uLutIntensity;   // 0 = ungraded, 1 = the grade in full
 uniform float uProgress;       // intro progress, 0 -> 1 (P5.5)
+uniform float uDensityBoost;   // how much the loneliest points grow (P5.1)
 
 varying float vCoverage; // how much of the 1px minimum the point really fills
 varying vec3 vColor;     // this particle's colour, fetched from uColorMap
@@ -87,7 +88,17 @@ void main() {
 
   // Three vertex texture fetches, 65,536 particles, all in parallel. These are
   // the lines the whole P3 phase exists to make possible.
-  vColor = texture2D(uColorMap, aParticleUv).rgb;
+  vec4 colorSample = texture2D(uColorMap, aParticleUv);
+  vColor = colorSample.rgb;
+
+  // P5.1/P6.6 — the alpha channel of the colour map carries how crowded this
+  // particle is: 1 where points are packed tight, 0 out in the sparse
+  // background. It rides in alpha because alpha is the one channel sRGB does
+  // not put through a transfer curve, so the number arrives as the number —
+  // and because a bundle whose colour map has no alpha reads back 1.0, which
+  // means "densest", which leaves the size alone. Every pre-6.6 bundle keeps
+  // rendering exactly as it did.
+  float crowding = colorSample.a;
 
   // P5.2 — the colour grade. It runs here, once per particle, rather than in
   // the fragment shader: the colour is constant across a point sprite, so
@@ -190,6 +201,18 @@ void main() {
   // the apparent size is right at any devicePixelRatio, viewport or focal
   // length — zooming in with the FOV slider grows the points with the scene.
   float pixels = uSize * scale * (uScale / -mvPosition.z);
+
+  // P5.1 — grow the lonely points. The sampler puts far fewer points on flat
+  // background than on the subject, which is the whole idea, and at one size
+  // that background shows through as holes.
+  //
+  // The exponent is not arbitrary. Crowding is a *logarithmic* measure of
+  // spacing (P6.6): every 0.5 it drops means the neighbours are three times
+  // further away. Undoing a logarithm takes an exponential, so pow() with the
+  // square of that three is what makes point size track spacing exactly at a
+  // boost of 1. Written this way it is also 1.0 when crowding is 1, so a
+  // bundle whose colour map has no alpha is left alone.
+  pixels *= pow(9.0, (1.0 - crowding) * uDensityBoost);
 
   // P5.3 — fake depth of field. Real DOF spreads an out-of-focus point into a
   // disc, which post-processing does by blurring the whole frame at great

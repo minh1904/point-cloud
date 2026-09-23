@@ -9,9 +9,11 @@
     "lint": "bun x eslint",
     "build:sample": "bun run scripts/build-sample-bundle.ts",
     "build:luts": "bun run scripts/build-luts.ts",
-    "typecheck": "bun x next typegen && bun x tsc --noEmit"
+    "typecheck": "bun x next typegen && bun x tsc --noEmit",
+    "build:particle-image": "bun run scripts/build-particle-image.ts"
   },
   "dependencies": {
+    "@atelier/particle-image": "workspace:*",
     "@atelier/tokens": "workspace:*",
     "@atelier/ui": "workspace:*",
     "@huggingface/transformers": "^4.3.0",

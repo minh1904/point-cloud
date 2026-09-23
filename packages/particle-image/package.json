@@ -1,0 +1,25 @@
+{
+  "name": "@atelier/particle-image",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "bun x tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^9",
+    "react": "^19",
+    "three": ">=0.170"
+  },
+  "devDependencies": {
+    "@react-three/fiber": "^9.7.0",
+    "@types/react": "~19.2.18",
+    "@types/three": "~0.182.0",
+    "react": "~19.2.8",
+    "three": "~0.182.0",
+    "typescript": "~6.0.3"
+  }
+}

@@ -16,6 +16,7 @@
       "name": "point-cloud",
       "version": "0.1.0",
       "dependencies": {
+        "@atelier/particle-image": "workspace:*",
         "@atelier/tokens": "workspace:*",
         "@atelier/ui": "workspace:*",
         "@huggingface/transformers": "^4.3.0",
@@ -39,6 +40,23 @@
         "raw-loader": "^4.0.2",
         "tailwindcss": "^4",
         "typescript": "~6.0.3",
+      },
+    },
+    "packages/particle-image": {
+      "name": "@atelier/particle-image",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@react-three/fiber": "^9.7.0",
+        "@types/react": "~19.2.18",
+        "@types/three": "~0.182.0",
+        "react": "~19.2.8",
+        "three": "~0.182.0",
+        "typescript": "~6.0.3",
+      },
+      "peerDependencies": {
+        "@react-three/fiber": "^9",
+        "react": "^19",
+        "three": ">=0.170",
       },
     },
     "packages/tokens": {
@@ -90,6 +108,8 @@
     "@asamuzakjp/dom-selector": ["@asamuzakjp/dom-selector@6.8.1", "", { "dependencies": { "@asamuzakjp/nwsapi": "^2.3.9", "bidi-js": "^1.0.3", "css-tree": "^3.1.0", "is-potential-custom-element-name": "^1.0.1", "lru-cache": "^11.2.6" } }, "sha512-MvRz1nCqW0fsy8Qz4dnLIvhOlMzqDVBabZx6lH+YywFDdjXhMY37SmpV1XFX3JzG5GWHn63j6HX6QPr3lZXHvQ=="],
 
     "@asamuzakjp/nwsapi": ["@asamuzakjp/nwsapi@2.3.9", "", {}, "sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q=="],
+
+    "@atelier/particle-image": ["@atelier/particle-image@workspace:packages/particle-image"],
 
     "@atelier/tokens": ["@atelier/tokens@workspace:packages/tokens"],
 

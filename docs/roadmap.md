@@ -127,11 +127,11 @@ Learn the format **before** generating it. Use the decoded UntilLabs sample loca
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 4.1 | Value noise + fBM in GLSL (rotated octaves) | Layered noise; why octave rotation removes axis bias | Debug view shows fBM field |
-| 4.2 | 2D curl noise from fBM gradient, seeded by `uv + index` | Curl = divergence-free flow: particles swirl without clumping | Particles drift organically |
-| 4.3 | Apply offset in clip space, scaled by perspective | Screen-space jitter is depth-independent | Near/far particles move equally on screen |
-| 4.4 | Breathing (slow Z sine) and near-camera Z wobble | Stacking cheap motions | Subtle depth motion |
-| 4.5 | Expose amplitude / frequency / speed / curl / breathe as params | Uniforms as the tool's "knobs" | Params change motion live |
+| ✅ 4.1 | Value noise + fBM in GLSL (rotated octaves) | Layered noise; why octave rotation removes axis bias | Debug view shows fBM field |
+| ✅ 4.2 | 2D curl noise from fBM gradient, seeded by `uv + index` | Curl = divergence-free flow: particles swirl without clumping | Particles drift organically |
+| ✅ 4.3 | Apply offset in clip space, scaled by perspective | Screen-space jitter is depth-independent | Near/far particles move equally on screen |
+| ✅ 4.4 | Breathing (slow Z sine) and near-camera Z wobble | Stacking cheap motions | Subtle depth motion |
+| ✅ 4.5 | Expose amplitude / frequency / speed / curl / breathe as params | Uniforms as the tool's "knobs" | Params change motion live |
 
 Stateless by design (no simulation). A GPGPU layer for pointer interaction is optional, see P9.
 

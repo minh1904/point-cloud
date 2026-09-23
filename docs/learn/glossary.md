@@ -64,6 +64,15 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Normalised storage** | Cất dữ liệu ở dạng 0…1 rồi ánh xạ lại bằng bounds — gọn vì dùng hết độ phân giải cho đúng vùng có dữ liệu. | [P3.4](p3-4-bounds-va-metadata.md) |
 | **Relief** | Bề dày của phần nổi so với bề rộng ảnh. Bản gốc chỉ ~0.6%; nông cộng FOV hẹp giúp depth sai vẫn trông thật. | [P3.3](p3-3-16-bit-positions.md) |
 | **`Math.fround`** | Làm tròn một số về float32 gần nhất — cách mô phỏng số học của GPU ngay trong test JavaScript. | [P3.5](p3-5-test-cho-decoder.md) |
+| **Value noise** | Gán số ngẫu nhiên cho mỗi điểm lưới nguyên rồi nội suy mượt ở giữa. Rẻ hơn Perlin, khó phân biệt khi chồng nhiều octave. | [P4.1](p4-1-value-noise-fbm.md) |
+| **fBM** (fractional Brownian motion) | Cộng cùng một noise ở tần số gấp đôi, biên độ một nửa. Cho chi tiết ở mọi cỡ như tự nhiên. | [P4.1](p4-1-value-noise-fbm.md) |
+| **Octave** | Một tầng trong fBM. Mỗi octave gấp đôi tần số và giảm nửa biên độ; xoay mỗi octave để khử thiên lệch theo trục. | [P4.1](p4-1-value-noise-fbm.md) |
+| **`ShaderChunk`** | Sổ đăng ký toàn cục của three.js; `#include <tên>` trong bất kỳ shader nào đều tra ở đây. Cách duy nhất để chia sẻ code GLSL. | [P4.1](p4-1-value-noise-fbm.md) |
+| **Curl noise** | Gradient của một trường noise, xoay 90°. Divergence bằng 0 nên hạt xoáy mãi mà không bao giờ vón cục. | [P4.2](p4-2-curl-noise.md) |
+| **Divergence** | Đo lượng "sinh ra hoặc mất đi" tại một điểm của trường. Bằng 0 = vào bao nhiêu ra bấy nhiêu = mật độ được bảo toàn. | [P4.2](p4-2-curl-noise.md) |
+| **Sai phân trung tâm** | Ước lượng đạo hàm bằng `(f(p+e) − f(p−e)) / 2e`. Chính xác hơn sai phân tiến, đổi lại một lần lấy mẫu. | [P4.2](p4-2-curl-noise.md) |
+| **Stateless animation** (P4) | Toàn bộ độ dịch tính lại từ `uTime` mỗi frame. Không trạng thái, không sai số tích luỹ, nhưng cũng không tương tác được. | [P4.2](p4-2-curl-noise.md) |
+| **Nhân với `w`** | Cộng độ dịch trong clip space rồi nhân `gl_Position.w` để triệt tiêu perspective divide — chuyển động đều bằng nhau trên màn hình bất kể độ sâu. | [P4.3](p4-3-clip-space-offset.md) |
 
 ## Không gian toạ độ
 

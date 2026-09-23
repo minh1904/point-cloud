@@ -46,8 +46,15 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P3.4 · Bounds và `metadata.json`](p3-4-bounds-va-metadata.md)
 - [P3.5 · Test cho decoder](p3-5-test-cho-decoder.md)
 
+### P4 — Chuyển động
+- [P4.1 · Value noise và fBM](p4-1-value-noise-fbm.md)
+- [P4.2 · Curl noise](p4-2-curl-noise.md)
+- [P4.3 · Cộng độ dịch trong clip space](p4-3-clip-space-offset.md)
+- [P4.4 · Thở và rung gần camera](p4-4-breathing.md)
+- [P4.5 · Biến chuyển động thành núm vặn](p4-5-motion-params.md)
+
 ### Tiếp theo
-- P4.1 · Value noise và fBM trong GLSL *(sắp tới)*
+- P5.1 · Kích thước hạt theo mật độ *(sắp tới)*
 
 ## Bức tranh tổng thể
 

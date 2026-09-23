@@ -12,6 +12,7 @@ import { DetailPanel } from "../detail-panel";
 import { PhotoPanel } from "../photo-panel";
 
 import { ParamControl } from "./param-control";
+import { PresetsPanel } from "./presets-panel";
 
 /** Panel titles, in the order they appear. Also the collapse-all target. */
 export const PANEL_ORDER: readonly string[] = [
@@ -20,6 +21,7 @@ export const PANEL_ORDER: readonly string[] = [
   "Detail",
   "Cloud",
   ...PARAM_GROUPS.map((group) => group.label),
+  "Presets",
 ];
 
 /** Collapse state for one panel, wired to the UI store. */
@@ -77,6 +79,7 @@ export function Inspector() {
   const depthPanel = usePanel("Depth");
   const detailPanel = usePanel("Detail");
   const cloudPanel = usePanel("Cloud");
+  const presetsPanel = usePanel("Presets");
 
   const collapsed = useUiStore((state) => state.collapsed);
   const setAllCollapsed = useUiStore((state) => state.setAllCollapsed);
@@ -112,6 +115,7 @@ export function Inspector() {
         {PARAM_GROUPS.map((group) => (
           <GroupPanel key={group.id} group={group.id} label={group.label} />
         ))}
+        <PresetsPanel panel={presetsPanel} />
       </div>
     </div>
   );

@@ -2,9 +2,10 @@
 
 import { cn } from "@atelier/ui";
 import dynamic from "next/dynamic";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import type { OrbitControlsHandle } from "@/scene/stage";
+import { usePresetsStore } from "@/store/presets-store";
 import { useUiStore } from "@/store/ui-store";
 
 import { Inspector } from "../inspector/inspector";
@@ -49,6 +50,12 @@ export function AppShell() {
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
 
   useShortcuts();
+
+  // P7.5 — localStorage cannot be read while rendering: the server has none,
+  // and the markup would not match. An effect runs after the first paint,
+  // which is late enough to be safe and early enough not to be seen.
+  const hydrate = usePresetsStore((state) => state.hydrate);
+  useEffect(() => hydrate(), [hydrate]);
 
   return (
     <main className="flex h-dvh w-full flex-col overflow-hidden bg-background">

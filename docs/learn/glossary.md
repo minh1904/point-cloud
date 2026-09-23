@@ -140,6 +140,24 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **`DataTexture`** | Texture nuôi bằng mảng typed thay vì ảnh; không bị lật dọc khi upload. | [P6.8](p6-8-dong-goi-texture.md) |
 | **Fisher-Yates** | Thuật toán xáo trộn cho mọi hoán vị xác suất bằng nhau. | [P6.9](p6-9-xao-thu-tu.md) |
 
+## Công cụ & trạng thái (P7)
+
+| Thuật ngữ | Nghĩa | Gặp lần đầu |
+|---|---|---|
+| **Schema-driven UI** | Mô tả tham số một lần bằng dữ liệu; giao diện, uniform, preset và bản xuất đều đọc từ đó. | [P7.2](p7-2-param-schema.md) |
+| **Discriminated union** | Union có một trường "tag" (`kind`) để TypeScript thu hẹp kiểu trong từng nhánh. | [P7.2](p7-2-param-schema.md) |
+| **Transient update** | Ghi trạng thái mà **không** gây render — đọc store bằng `getState()` trong vòng lặp frame. | [P7.3](p7-3-store-to-uniform.md) |
+| **Selector (store)** | Hàm chọn một phần state; store so sánh kết quả để quyết định có báo cho component không. | [P7.3](p7-3-store-to-uniform.md) |
+| **`memo`** | Bọc component để nó chỉ render lại khi prop đổi. | [P7.3](p7-3-store-to-uniform.md) |
+| **`min-h-0`** | Cho phép một flex item co nhỏ hơn nội dung; thiếu nó thì `overflow-y-auto` bên trong vô tác dụng. | [P7.1](p7-1-shell-layout.md) |
+| **Snapshot history** | Undo bằng cách lưu toàn bộ trạng thái trước mỗi bước, thay vì lưu lệnh và phép đảo. | [P7.4](p7-4-undo-redo.md) |
+| **Drag coalescing** | Gộp mọi thay đổi trong một thao tác kéo thành một bước undo duy nhất. | [P7.4](p7-4-undo-redo.md) |
+| **`onValueCommitted`** | Sự kiện bắn một lần khi thao tác kết thúc (nhả chuột, bấm phím), khác `onValueChange`. | [P7.4](p7-4-undo-redo.md) |
+| **Throttle vs debounce** | Throttle: chốt đều đặn mỗi N ms. Debounce: chờ im lặng N ms rồi mới chạy. | [P7.5](p7-5-presets.md) |
+| **Hydration mismatch** | Server và client dựng ra HTML khác nhau; nguyên nhân kinh điển là đọc `localStorage` hay `Date.now()` lúc render. | [P7.5](p7-5-presets.md) |
+| **`image-rendering: pixelated`** | Phóng to ảnh bằng nearest-neighbour, để dữ liệu không bị nội suy thành giá trị không có thật. | [P7.6](p7-6-stage-view.md) |
+| **`<kbd>`** | Phần tử HTML nghĩa là "gõ từ bàn phím"; trình đọc màn hình thông báo đúng như vậy. | [P7.7](p7-7-phim-tat-va-hud.md) |
+
 ## React Three Fiber & Next.js
 
 | Thuật ngữ | Nghĩa | Gặp lần đầu |

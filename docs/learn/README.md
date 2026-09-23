@@ -75,8 +75,19 @@ Thứ tự ở đây là thứ tự đã làm, không phải thứ tự đánh s
 
 P6 là chỗ dự án ngừng dựng lại renderer của UntilLabs và đi qua nó: mọi thứ từ 6.2 trở đi tự động hoá phần họ làm tay trong Houdini. **P5.1 được giải quyết trong [P6.6](p6-6-mat-do-diem.md)**, vì mãi tới đó mới có mật độ thật để đo.
 
+### P7 — Trở thành một công cụ
+- [P7.1 · Bố cục của một công cụ: toolbar, viewport, inspector, status bar](p7-1-shell-layout.md)
+- [P7.2 · Khai báo mỗi núm vặn đúng một lần](p7-2-param-schema.md)
+- [P7.3 · Từ store thẳng vào uniform, không đi qua React](p7-3-store-to-uniform.md)
+- [P7.4 · Undo / redo, và vì sao một cú kéo là **một** bước](p7-4-undo-redo.md)
+- [P7.5 · Preset, và cái bẫy hydration của `localStorage`](p7-5-presets.md)
+- [P7.6 · Nhìn vào khúc giữa của pipeline](p7-6-stage-view.md)
+- [P7.7 · Phím tắt, status bar, và bảng liệt kê phím tắt](p7-7-phim-tat-va-hud.md)
+
+Đọc theo thứ tự 7.2 → 7.3 → 7.1 thì hợp lý hơn thứ tự đánh số: schema có trước, cách đọc schema mà không qua React có sau, và bố cục là thứ hưởng lợi từ cả hai.
+
 ### Tiếp theo
-- P7.1 · Bố cục viewport + inspector + toolbar + status bar *(sắp tới)*
+- P8.1 · Chốt định dạng bundle để xuất ra *(sắp tới)*
 
 ## Bức tranh tổng thể
 

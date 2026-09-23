@@ -79,7 +79,7 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 | P1–P2 | ✅ `Panel` (collapsible), ✅ `Slider` (inline value) · `Section`, `PropertyRow`, `NumberField` (scrub) | Base UI composition, pointer capture for scrubbing, controlled vs uncontrolled |
 | P4–P5 | `Toggle`, `Select`, `SegmentedControl`, `Tooltip` | Keyboard and focus handling that Base UI gives for free |
 | P6 | ✅ `FileDrop` · `Progress`, stage `Tabs` | File input a11y, drag-and-drop events |
-| P7 | `@atelier/params` (`useParams(schema)`, history, presets, persistence), `@atelier/shell` (viewport + inspector + toolbar + status bar), `Toolbar`, `Kbd` | One schema driving UI, uniforms, presets and export; transient updates at 60 fps |
+| P7 | ✅ `Kbd` · params + shell built **in the app** first (`src/params`, `src/app/shell`) per the rule above; extract to `@atelier/params` / `@atelier/shell` when a second consumer appears | One schema driving UI, uniforms, presets and export; transient updates at 60 fps |
 | Later | Registry (shadcn-style copy-the-source) for other demos | Distribution without lock-in |
 
 ---
@@ -172,13 +172,13 @@ Built from Atelier components (P-UI); look follows decision 0.4.
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 7.1 | Layout: viewport + inspector + toolbar + status bar | Keeping R3F canvas isolated from React re-renders | Tweaking a slider never re-mounts the canvas |
-| 7.2 | Param schema (single source of truth: label, range, default, group, uniform key) | One schema drives UI, uniforms, presets and export | Adding a param = one schema entry |
-| 7.3 | Store → uniforms without React renders (Zustand `subscribe` in `useFrame`) | Transient updates for 60 fps sliders | Slider drag keeps 60 fps |
-| 7.4 | Undo/redo (history of param snapshots, drag coalescing) | Command history in a design tool | Ctrl+Z / Ctrl+Shift+Z work, one step per drag |
-| 7.5 | Presets: save / load / reset, built-ins | Serialising params | Presets survive reload |
-| 7.6 | Pipeline stages view: original / depth / importance / points | Making the invisible steps visible | Toggle between stage previews |
-| 7.7 | Keyboard shortcuts, perf HUD (fps, points, draw calls) | Tool ergonomics | Shortcuts listed in a help overlay |
+| ✅ 7.1 | Layout: viewport + inspector + toolbar + status bar | Keeping R3F canvas isolated from React re-renders | Tweaking a slider never re-mounts the canvas |
+| ✅ 7.2 | Param schema (single source of truth: label, range, default, group, uniform key) | One schema drives UI, uniforms, presets and export | Adding a param = one schema entry |
+| ✅ 7.3 | Store → uniforms without React renders (Zustand `subscribe` in `useFrame`) | Transient updates for 60 fps sliders | Slider drag keeps 60 fps |
+| ✅ 7.4 | Undo/redo (history of param snapshots, drag coalescing) | Command history in a design tool | Ctrl+Z / Ctrl+Shift+Z work, one step per drag |
+| ✅ 7.5 | Presets: save / load / reset, built-ins | Serialising params | Presets survive reload |
+| ✅ 7.6 | Pipeline stages view: original / depth / importance / points | Making the invisible steps visible | Toggle between stage previews |
+| ✅ 7.7 | Keyboard shortcuts, perf HUD (fps, points, draw calls) | Tool ergonomics | Shortcuts listed in a help overlay |
 
 ---
 

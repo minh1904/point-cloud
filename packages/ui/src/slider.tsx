@@ -18,8 +18,9 @@ export interface SliderProps {
 }
 
 /**
- * Inline-label slider for dense inspectors: the whole 28px track is the hit
- * area, the fill shows the value, label and number sit inside the track.
+ * Inline-label slider for dense inspectors: the whole track is the hit area,
+ * the fill shows the value, label and number sit inside the track. The track
+ * is 32px tall on touch-sized screens and 28px from `sm` up.
  * Keyboard support (arrows, Page Up/Down, Home/End) comes from Base UI.
  */
 export function Slider({
@@ -48,7 +49,7 @@ export function Slider({
       thumbAlignment="edge"
       className={cn("w-full data-[disabled]:opacity-50", className)}
     >
-      <BaseSlider.Control className="group/slider relative flex h-7 w-full cursor-ew-resize touch-none items-center select-none data-[disabled]:cursor-default">
+      <BaseSlider.Control className="group/slider relative flex h-8 w-full cursor-ew-resize touch-none items-center select-none sm:h-7 data-[disabled]:cursor-default">
         <BaseSlider.Track className="relative h-full w-full overflow-hidden rounded-lg border border-border/12 bg-input/10 transition-colors group-hover/slider:border-border/20">
           <BaseSlider.Indicator className="h-full bg-foreground/10 transition-colors group-hover/slider:bg-foreground/15" />
           <BaseSlider.Thumb

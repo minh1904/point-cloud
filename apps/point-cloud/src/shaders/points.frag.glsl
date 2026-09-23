@@ -1,9 +1,9 @@
 // Runs once per pixel covered by each point.
 
-uniform vec3 uColor;      // linear-space color (THREE.Color converts from sRGB)
 uniform float uSoftness;  // 0 = hard disc, 1 = fades all the way from the center
 
 varying float vCoverage; // < 1 for points smaller than a pixel (P1.4)
+varying vec3 vColor;     // linear-space color read from the data texture (P3.2)
 
 void main() {
   // P1.3 — a point is rasterised as a square sprite. gl_PointCoord is this
@@ -20,7 +20,7 @@ void main() {
   // edge. The fade band starts at 0.5 * (1 - softness).
   float alpha = 1.0 - smoothstep(0.5 * (1.0 - uSoftness), 0.5, d);
 
-  gl_FragColor = vec4(uColor, alpha * vCoverage);
+  gl_FragColor = vec4(vColor, alpha * vCoverage);
 
   // Convert linear -> the renderer's output color space (sRGB). Without this
   // chunk the same color looks darker than it does with PointsMaterial.

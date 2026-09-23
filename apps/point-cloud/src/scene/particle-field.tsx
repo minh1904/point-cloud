@@ -2,12 +2,13 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Color, type ShaderMaterial } from "three";
+import { Vector3, type ShaderMaterial } from "three";
 
 import fragmentShader from "@/shaders/points.frag.glsl";
 import vertexShader from "@/shaders/points.vert.glsl";
 
-import { createParticleGrid, DEFAULT_TEXTURE_SIZE } from "./particle-grid";
+import { createParticleGrid } from "./particle-grid";
+import { SAMPLE_BUNDLE, useParticleBundle } from "./use-particle-bundle";
 
 export interface ParticleParams {
   /** World-space point size before the per-point 0.5–1 scale. */
@@ -21,20 +22,21 @@ export interface ParticleParams {
 }
 
 export const defaultParticleParams: ParticleParams = {
-  // Tuned to the grid spacing (fieldSize / textureSize ≈ 0.0117 world units):
-  // points just touch, so the field reads as a surface rather than a lattice.
-  size: 0.016,
+  // Grid spacing is about 0.0117 world units, but points need roughly 4x that
+  // to actually cover it: half of them are shrunk by the per-point 0.5-1 scale,
+  // and a soft rim contributes little alpha. Below ~0.03 the photo reads as
+  // dark speckle instead of a surface.
+  size: 0.045,
+  // A quarter of the grid spacing: enough to shimmer, little enough to keep
+  // the image legible. Raise it to watch the photo dissolve into a field.
+  driftAmplitude: 0.004,
   softness: 0.5,
-  driftAmplitude: 0.01,
   driftSpeed: 1,
 };
 
 interface ParticleFieldProps extends ParticleParams {
-  /** Side of the square data texture; the field holds `textureSize²` points. */
-  textureSize?: number;
-  /** World width and height the grid of texels is spread over. */
-  fieldSize?: number;
-  color?: string;
+  /** Bundle to render, as a URL under `public/`. */
+  bundleUrl?: string;
   renderScale?: number;
   playing: boolean;
 }
@@ -45,14 +47,15 @@ interface ParticleFieldProps extends ParticleParams {
  * own shader pair (P1.2): round soft discs (P1.3) sized by perspective, with a
  * per-point scale and sub-pixel dimming (P1.4), drifting on the GPU (P1.5).
  *
- * P3.1 — the geometry no longer carries any real data. `position` is a buffer
- * of zeros and each vertex instead knows which texel of the data texture is
- * its own; the vertex shader derives everything else from that coordinate.
+ * P3 — the geometry carries no data at all. `position` is a buffer of zeros
+ * and each vertex knows only which texel is its own; colour (3.2) and position
+ * (3.3, 3.4) are both fetched from textures in the vertex shader. Which means
+ * this component no longer knows or cares what it is drawing: hand it another
+ * bundle and it renders that instead, whether the bundle came from a file or,
+ * from P6, from a photo the user dropped in.
  */
 export function ParticleField({
-  textureSize = DEFAULT_TEXTURE_SIZE,
-  fieldSize = 3,
-  color = "#dfe6ff",
+  bundleUrl = SAMPLE_BUNDLE,
   renderScale = 1,
   size,
   softness,
@@ -61,7 +64,15 @@ export function ParticleField({
   playing,
 }: ParticleFieldProps) {
   const material = useRef<ShaderMaterial>(null);
-  const grid = useMemo(() => createParticleGrid(textureSize), [textureSize]);
+  const bundle = useParticleBundle(bundleUrl);
+
+  // The grid is pure addressing, so it only depends on the texture size the
+  // bundle declares — 256² here, one particle per texel.
+  const textureSize = bundle?.metadata.width;
+  const grid = useMemo(
+    () => (textureSize === undefined ? undefined : createParticleGrid(textureSize)),
+    [textureSize],
+  );
 
   // Built once: R3F would recreate the material if `args` changed identity.
   const materialArgs = useMemo(
@@ -71,12 +82,15 @@ export function ParticleField({
           vertexShader,
           fragmentShader,
           uniforms: {
+            uColorMap: { value: null },
+            uPositionHigh: { value: null },
+            uPositionLow: { value: null },
+            uBoundsMin: { value: new Vector3() },
+            uBoundsMax: { value: new Vector3() },
             uTextureSize: { value: 1 },
-            uFieldSize: { value: 1 },
             uSize: { value: 0 },
             uScale: { value: 1 },
             uMaxPointSize: { value: 64 },
-            uColor: { value: new Color() },
             uSoftness: { value: 0 },
             uTime: { value: 0 },
             uDriftAmplitude: { value: 0 },
@@ -105,27 +119,20 @@ export function ParticleField({
   const dpr = useThree((state) => state.viewport.dpr);
   useEffect(() => {
     const uniforms = material.current?.uniforms;
-    if (!uniforms) return;
-    uniforms.uTextureSize!.value = grid.size;
-    uniforms.uFieldSize!.value = fieldSize;
+    if (!uniforms || !bundle) return;
+
+    uniforms.uColorMap!.value = bundle.color;
+    uniforms.uPositionHigh!.value = bundle.positionHigh;
+    uniforms.uPositionLow!.value = bundle.positionLow;
+    (uniforms.uBoundsMin!.value as Vector3).fromArray(bundle.metadata.bounds.min);
+    (uniforms.uBoundsMax!.value as Vector3).fromArray(bundle.metadata.bounds.max);
+    uniforms.uTextureSize!.value = bundle.metadata.width;
     uniforms.uSize!.value = size;
     uniforms.uScale!.value = height * dpr * renderScale * 0.5;
     uniforms.uMaxPointSize!.value = maxPointSize;
-    (uniforms.uColor!.value as Color).set(color);
     uniforms.uSoftness!.value = softness;
     uniforms.uDriftAmplitude!.value = driftAmplitude;
-  }, [
-    grid,
-    fieldSize,
-    size,
-    color,
-    softness,
-    driftAmplitude,
-    height,
-    dpr,
-    maxPointSize,
-    renderScale,
-  ]);
+  }, [bundle, size, softness, driftAmplitude, height, dpr, maxPointSize, renderScale]);
 
   useFrame((_, delta) => {
     if (!playing || !material.current) return;
@@ -134,6 +141,10 @@ export function ParticleField({
     // than jumping every point to a different phase.
     material.current.uniforms.uTime!.value += delta * driftSpeed;
   });
+
+  // Every particle's position and colour live in the bundle, so there is no
+  // meaningful frame to draw before it arrives.
+  if (!bundle || !grid) return null;
 
   return (
     // The real positions only exist inside the vertex shader, so the bounding

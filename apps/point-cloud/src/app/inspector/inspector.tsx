@@ -11,6 +11,7 @@ import { DepthPanel } from "../depth-panel";
 import { DetailPanel } from "../detail-panel";
 import { PhotoPanel } from "../photo-panel";
 
+import { ExportPanel } from "./export-panel";
 import { ParamControl } from "./param-control";
 import { PresetsPanel } from "./presets-panel";
 
@@ -22,6 +23,7 @@ export const PANEL_ORDER: readonly string[] = [
   "Cloud",
   ...PARAM_GROUPS.map((group) => group.label),
   "Presets",
+  "Export",
 ];
 
 /** Collapse state for one panel, wired to the UI store. */
@@ -80,6 +82,7 @@ export function Inspector() {
   const detailPanel = usePanel("Detail");
   const cloudPanel = usePanel("Cloud");
   const presetsPanel = usePanel("Presets");
+  const exportPanel = usePanel("Export");
 
   const collapsed = useUiStore((state) => state.collapsed);
   const setAllCollapsed = useUiStore((state) => state.setAllCollapsed);
@@ -116,6 +119,7 @@ export function Inspector() {
           <GroupPanel key={group.id} group={group.id} label={group.label} />
         ))}
         <PresetsPanel panel={presetsPanel} />
+        <ExportPanel panel={exportPanel} />
       </div>
     </div>
   );

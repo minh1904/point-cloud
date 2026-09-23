@@ -4,7 +4,17 @@ import { create } from "zustand";
 
 import { decodePhoto, type PhotoPixels } from "@/photo/decode-image";
 import type { DepthMap, DepthModelId } from "@/photo/depth/depth-map";
-import { cancelJobs, runDepth, type JobProgress } from "@/photo/worker-client";
+import {
+  defaultImportanceWeights,
+  type ImportanceComponents,
+  type ImportanceWeights,
+} from "@/photo/importance";
+import {
+  cancelJobs,
+  runDepth,
+  runImportance,
+  type JobProgress,
+} from "@/photo/worker-client";
 
 export type PhotoStatus = "empty" | "decoding" | "ready" | "error";
 export type StageStatus = "idle" | "running" | "ready" | "error";
@@ -29,11 +39,19 @@ interface PhotoState {
   depthProgress: JobProgress | null;
   depthError: string | null;
 
+  /** The three detail measurements, computed once per depth map (6.4). */
+  components: ImportanceComponents | null;
+  weights: ImportanceWeights;
+  importanceStatus: StageStatus;
+  importanceError: string | null;
+
   load: (file: File) => Promise<void>;
   clear: () => void;
   setDepthModel: (model: DepthModelId) => void;
   estimateDepth: () => Promise<void>;
   cancelDepth: () => void;
+  setWeight: (key: keyof ImportanceWeights, value: number) => void;
+  resetWeights: () => void;
 }
 
 /**
@@ -57,12 +75,44 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
   // is also how a cancelled run knows to stay quiet.
   let token = 0;
   let depthRun = 0;
+  let importanceRun = 0;
 
   const idleDepth = {
     depth: null,
     depthStatus: "idle" as StageStatus,
     depthProgress: null,
     depthError: null,
+    components: null,
+    importanceStatus: "idle" as StageStatus,
+    importanceError: null,
+  };
+
+  /**
+   * Re-measure detail against whatever depth map is current.
+   *
+   * Called after *each* of the two depth passes, because the depth-edge term
+   * is only as good as the depth it was measured from — the heuristic version
+   * exists so the sliders do something during the model download, and the
+   * model version is the one that gets used.
+   */
+  const measureImportance = async (): Promise<void> => {
+    const { pixels, depth } = get();
+    if (!pixels || !depth) return;
+
+    const mine = ++importanceRun;
+    set({ importanceStatus: "running", importanceError: null });
+
+    try {
+      const components = await runImportance(pixels, depth);
+      if (mine !== importanceRun) return;
+      set({ components, importanceStatus: "ready" });
+    } catch (cause) {
+      if (mine !== importanceRun) return;
+      set({
+        importanceStatus: "error",
+        importanceError: cause instanceof Error ? cause.message : String(cause),
+      });
+    }
   };
 
   return {
@@ -71,11 +121,13 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     pixels: null,
     error: null,
     depthModel: "depth-anything-v2-small",
+    weights: defaultImportanceWeights,
     ...idleDepth,
 
     load: async (file: File) => {
       const mine = ++token;
       depthRun++;
+      importanceRun++;
       cancelJobs();
       set({
         status: "decoding",
@@ -103,6 +155,7 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     clear: () => {
       token++;
       depthRun++;
+      importanceRun++;
       cancelJobs();
       set({ status: "empty", source: null, pixels: null, error: null, ...idleDepth });
     },
@@ -137,6 +190,7 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
         const quick = await runDepth(pixels, "heuristic");
         if (mine !== depthRun) return;
         set({ depth: quick });
+        void measureImportance();
 
         if (depthModel === "heuristic") {
           set({ depthStatus: "ready", depthProgress: null });
@@ -148,6 +202,7 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
         });
         if (mine !== depthRun) return;
         set({ depth: estimated, depthStatus: "ready", depthProgress: null });
+        void measureImportance();
       } catch (cause) {
         if (mine !== depthRun) return;
         // The heuristic map from the first pass is still in place, so this is
@@ -162,11 +217,18 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
 
     cancelDepth: () => {
       depthRun++;
+      importanceRun++;
       cancelJobs();
       set({
         depthStatus: get().depth ? "ready" : "idle",
         depthProgress: null,
+        importanceStatus: get().components ? "ready" : "idle",
       });
     },
+
+    setWeight: (key, value) =>
+      set((state) => ({ weights: { ...state.weights, [key]: value } })),
+
+    resetWeights: () => set({ weights: defaultImportanceWeights }),
   };
 });

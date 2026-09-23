@@ -16,6 +16,7 @@ import { defaultPostParams, type PostParams } from "@/scene/scene-pass";
 import type { OrbitControlsHandle } from "@/scene/stage";
 
 import { DepthPanel } from "./depth-panel";
+import { DetailPanel } from "./detail-panel";
 import { PhotoPanel } from "./photo-panel";
 
 // WebGL only exists in the browser, so the canvas is never server-rendered:
@@ -24,7 +25,15 @@ const Stage = dynamic(() => import("@/scene/stage").then((m) => m.Stage), {
   ssr: false,
 });
 
-const PANELS = ["Photo", "Depth", "Particles", "Motion", "Lens", "Post effects"] as const;
+const PANELS = [
+  "Photo",
+  "Depth",
+  "Detail",
+  "Particles",
+  "Motion",
+  "Lens",
+  "Post effects",
+] as const;
 type PanelName = (typeof PANELS)[number];
 
 export function Studio() {
@@ -165,6 +174,7 @@ export function Studio() {
 
           <PhotoPanel panel={panelProps("Photo")} />
           <DepthPanel panel={panelProps("Depth")} />
+          <DetailPanel panel={panelProps("Detail")} />
 
           <Panel {...panelProps("Particles")}>
             <Slider

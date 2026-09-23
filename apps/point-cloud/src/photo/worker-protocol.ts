@@ -4,6 +4,10 @@
  * Kept in its own module because both sides import it and neither should
  * import the other: the worker must never pull in React, and the main thread
  * must never pull in a 10 MB inference library just to know a message shape.
+ *
+ * Every buffer crosses as a raw `ArrayBuffer` rather than a typed array. That
+ * is the only form `postMessage` can *transfer* (hand over without copying),
+ * and the receiving side wraps it back up in one line.
  */
 import type { DepthModelId } from "./depth/depth-map";
 
@@ -14,12 +18,26 @@ export interface ImagePayload {
   data: ArrayBuffer;
 }
 
-export type WorkerRequest = {
-  kind: "depth";
-  id: number;
-  model: DepthModelId;
-  image: ImagePayload;
-};
+/** One float per pixel — a depth map, an importance map, a component. */
+export interface MapPayload {
+  width: number;
+  height: number;
+  data: ArrayBuffer;
+}
+
+export type WorkerRequest =
+  | {
+      kind: "depth";
+      id: number;
+      model: DepthModelId;
+      image: ImagePayload;
+    }
+  | {
+      kind: "importance";
+      id: number;
+      image: ImagePayload;
+      depth: MapPayload;
+    };
 
 export type WorkerResponse =
   | {
@@ -38,5 +56,15 @@ export type WorkerResponse =
       height: number;
       /** Float32 values, 0 nearest to 1 farthest. */
       data: ArrayBuffer;
+    }
+  | {
+      kind: "importance";
+      id: number;
+      width: number;
+      height: number;
+      /** Three Float32 maps, each already normalised to 0…1. */
+      edges: ArrayBuffer;
+      texture: ArrayBuffer;
+      depthEdges: ArrayBuffer;
     }
   | { kind: "error"; id: number; message: string };

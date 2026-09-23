@@ -15,8 +15,9 @@
  * politely checks between stages would cancel nothing at all during the one
  * stage that takes the time.
  */
-import type { DepthMap, DepthModelId } from "./depth/depth-map";
 import type { PhotoPixels } from "./decode-image";
+import type { DepthMap, DepthModelId } from "./depth/depth-map";
+import type { ImportanceComponents } from "./importance";
 import type { WorkerRequest, WorkerResponse } from "./worker-protocol";
 
 export interface JobProgress {
@@ -26,7 +27,7 @@ export interface JobProgress {
 }
 
 interface Pending {
-  resolve: (depth: DepthMap) => void;
+  settle: (message: WorkerResponse) => void;
   reject: (error: Error) => void;
   onProgress?: (progress: JobProgress) => void;
 }
@@ -56,18 +57,8 @@ function ensureWorker(): Worker {
     }
 
     pending.delete(message.id);
-
-    if (message.kind === "error") {
-      job.reject(new Error(message.message));
-      return;
-    }
-
-    job.resolve({
-      width: message.width,
-      height: message.height,
-      data: new Float32Array(message.data),
-      kind: message.model,
-    });
+    if (message.kind === "error") job.reject(new Error(message.message));
+    else job.settle(message);
   };
 
   created.onerror = (event) => {
@@ -80,29 +71,80 @@ function ensureWorker(): Worker {
   return created;
 }
 
+/** Post one request and resolve with whatever the worker sends back for it. */
+function send<T>(
+  build: (id: number) => WorkerRequest,
+  read: (message: WorkerResponse) => T,
+  onProgress?: (progress: JobProgress) => void,
+): Promise<T> {
+  const id = nextId++;
+  const target = ensureWorker();
+
+  return new Promise<T>((resolve, reject) => {
+    pending.set(id, { settle: (message) => resolve(read(message)), reject, onProgress });
+    target.postMessage(build(id));
+  });
+}
+
 /** Estimate depth for one photo. Rejects if `cancelJobs()` lands first. */
 export function runDepth(
   photo: PhotoPixels,
   model: DepthModelId,
   onProgress?: (progress: JobProgress) => void,
 ): Promise<DepthMap> {
-  const id = nextId++;
-  const target = ensureWorker();
-
-  return new Promise<DepthMap>((resolve, reject) => {
-    pending.set(id, { resolve, reject, onProgress });
-
-    const request: WorkerRequest = {
+  return send(
+    (id) => ({
       kind: "depth",
       id,
       model,
       // A structured clone, on purpose: transferring would detach
       // `photo.data` here on the main thread, and the preview still draws it.
       image: { width: photo.width, height: photo.height, data: photo.data.buffer },
-    };
+    }),
+    (message) => {
+      if (message.kind !== "depth") throw new Error(`expected a depth map, got ${message.kind}`);
+      return {
+        width: message.width,
+        height: message.height,
+        data: new Float32Array(message.data),
+        kind: message.model,
+      };
+    },
+    onProgress,
+  );
+}
 
-    target.postMessage(request);
-  });
+/** Measure the three detail components of one photo (6.4). */
+export function runImportance(
+  photo: PhotoPixels,
+  depth: DepthMap,
+  onProgress?: (progress: JobProgress) => void,
+): Promise<ImportanceComponents> {
+  return send(
+    (id) => ({
+      kind: "importance",
+      id,
+      image: { width: photo.width, height: photo.height, data: photo.data.buffer },
+      depth: {
+        width: depth.width,
+        height: depth.height,
+        data: depth.data.buffer as ArrayBuffer,
+      },
+    }),
+    (message) => {
+      if (message.kind !== "importance") {
+        throw new Error(`expected importance components, got ${message.kind}`);
+      }
+      return {
+        width: message.width,
+        height: message.height,
+        edges: new Float32Array(message.edges),
+        texture: new Float32Array(message.texture),
+        depthEdges: new Float32Array(message.depthEdges),
+      };
+    },
+    onProgress,
+  );
 }
 
 /** Stop everything in flight. Safe to call when nothing is running. */

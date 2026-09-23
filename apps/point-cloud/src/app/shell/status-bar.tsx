@@ -19,6 +19,7 @@ export function StatusBar() {
   const source = usePhotoStore((state) => state.source);
   const bundle = usePhotoStore((state) => state.bundle);
   const depth = usePhotoStore((state) => state.depth);
+  const importedName = usePhotoStore((state) => state.importedName);
 
   return (
     <div className="flex shrink-0 items-center gap-3 overflow-x-auto border-t border-border/10 bg-popover/60 px-3 py-1 font-mono text-2xs text-muted-foreground tabular-nums backdrop-blur-md">
@@ -41,11 +42,13 @@ export function StatusBar() {
           <span className="hidden whitespace-nowrap lg:inline">depth: {depth.kind}</span>
         )}
         <span className="max-w-40 truncate whitespace-nowrap">
-          {bundle && source
-            ? source.name
-            : source
-              ? `${source.name} — building`
-              : "sample bundle"}
+          {importedName
+            ? importedName
+            : bundle && source
+              ? source.name
+              : source
+                ? `${source.name} — building`
+                : "sample bundle"}
         </span>
       </span>
     </div>

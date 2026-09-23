@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 
+import { importBundle } from "@/bundle/import-bundle";
 import { decodePhoto, type PhotoPixels } from "@/photo/decode-image";
 import type { DepthMap, DepthModelId } from "@/photo/depth/depth-map";
 import {
@@ -11,6 +12,7 @@ import {
   type ImportanceWeights,
 } from "@/photo/importance";
 import type { PackedBundle } from "@/photo/pack-bundle";
+import { useParamsStore } from "./params-store";
 import {
   cancelJobs,
   runBuild,
@@ -22,7 +24,7 @@ import {
 export type PhotoStatus = "empty" | "decoding" | "ready" | "error";
 
 /** Texture sides the cloud can be packed into — one particle per texel. */
-export const CLOUD_SIZES = [128, 192, 256] as const;
+export const CLOUD_SIZES = [128, 192, 256, 512] as const;
 
 export interface BuildParams {
   /** Side of the square data texture; `size²` points. */
@@ -79,6 +81,10 @@ interface PhotoState {
   buildProgress: JobProgress | null;
   buildError: string | null;
 
+  /** Set when the cloud came from a zip rather than from a photo (8.5). */
+  importedName: string | null;
+  importError: string | null;
+
   load: (file: File) => Promise<void>;
   clear: () => void;
   setDepthModel: (model: DepthModelId) => void;
@@ -89,6 +95,7 @@ interface PhotoState {
   setBuildParam: <K extends keyof BuildParams>(key: K, value: BuildParams[K]) => void;
   reseed: () => void;
   buildCloud: () => Promise<void>;
+  loadBundleFile: (file: File) => Promise<void>;
 }
 
 /**
@@ -127,6 +134,8 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     buildStatus: "idle" as StageStatus,
     buildProgress: null,
     buildError: null,
+    importedName: null,
+    importError: null,
   };
 
   /**
@@ -263,6 +272,41 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
           depthProgress: null,
           depthError: cause instanceof Error ? cause.message : String(cause),
         });
+      }
+    },
+
+    /**
+     * Load a cloud from an exported zip (8.5).
+     *
+     * Everything upstream is cleared, because none of it applies: there is no
+     * photo behind an imported cloud, no depth map, no importance map. What
+     * arrives is the end of the pipeline, and the renderer cannot tell the
+     * difference — which is the whole claim the format makes.
+     */
+    loadBundleFile: async (file: File) => {
+      const mine = ++token;
+      depthRun++;
+      importanceRun++;
+      buildRun++;
+      cancelJobs();
+      set({ status: "empty", source: null, pixels: null, error: null, ...idleDepth });
+
+      try {
+        const { bundle, params } = await importBundle(file);
+        if (mine !== token) return;
+
+        // The look goes through `setAll`, so it is one undoable step: opening
+        // a bundle should be reversible like any other edit.
+        if (params) useParamsStore.getState().setAll(params);
+        set({
+          bundle,
+          buildStatus: "ready",
+          importedName: file.name,
+          importError: null,
+        });
+      } catch (cause) {
+        if (mine !== token) return;
+        set({ importError: cause instanceof Error ? cause.message : String(cause) });
       }
     },
 

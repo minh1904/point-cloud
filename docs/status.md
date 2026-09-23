@@ -1,22 +1,26 @@
 # Status & handoff
 
-_Last updated: 2026-09-23 · last commit on `main`: `eaa6d35`_
+_Last updated: 2026-09-24 · last commit on `main`: `1e3b871`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 through P4 are complete; P5 is done except 5.1, which is blocked on density data. P6 is next.** The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
+**P0 through P6 are complete, and P5.1 came with them. P7 is next.** A photo dropped into the app is decoded, given a depth map by Depth Anything V2 running in a worker, measured for detail, sampled into 65,536 blue-noise points, lifted into shallow relief and packed into the same three data textures the renderer has read since P3 — so it arrives with every P4 and P5 effect already on it. The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
 
 P3.1 replaced the CPU-generated sphere with a data-driven geometry: 256² = 65,536 particles whose `position` attribute is all zeros, each carrying `aParticleUv` (its texel centre) and `aIndex` instead. The vertex shader derives the position — currently a flat grid — and hashes its own per-point scale and randomness from the texel coordinate, so `aScale` / `aRandomness` are gone. `frustumCulled` is off, because a zeroed `position` gives three.js a bounding sphere of radius 0.
 
-P3.2 gave that address something to point at, and 3.3-3.4 finished the job: the field renders entirely from a **bundle** under `public/particles/sample/` — `color.png`, `position_h.png`, `position_l.png` and `metadata.json`. Colour and position are both vertex texture fetches; positions are 16-bit values split across the two PNGs and mapped back onto the bundle's `bounds`. `ParticleField` now takes a `bundleUrl` and nothing else about the data: hand it a different bundle and it renders that, which is exactly the seam P6 writes into.
+P3.2 gave that address something to point at, and 3.3-3.4 finished the job: the field renders entirely from a **bundle** under `public/particles/sample/` — `color.png`, `position_h.png`, `position_l.png` and `metadata.json`. Colour and position are both vertex texture fetches; positions are 16-bit values split across the two PNGs and mapped back onto the bundle's `bounds`. `ParticleField` takes a `bundleUrl` and nothing else about the data: hand it a different bundle and it renders that — and since 6.8 an in-memory bundle from a dropped photo takes precedence over the URL, through the same three textures.
 
 3.5 added the CPU mirror of the shader decode (`src/bundle/position-codec.ts`) plus a dependency-free PNG reader/writer (`scripts/png.ts`) — together these are also the encoder half that P8.2 needs.
 
-P5 dressed it as a photograph. A 16 degree telephoto (5.6) flattens perspective so a relief under 3% of the width reads as compressed rather than flat; fake DOF (5.3) shrinks and fades particles outside a depth slice instead of blurring the frame; edge bokeh (5.4) blows out and pushes apart the left and right margins; a baked 64³ LUT (5.2) carries the colour grade in a 512² PNG; and an intro (5.5) reveals 65,536 particles on their own timelines from a single `uProgress` float while the camera pushes in. **5.1 is not done** — see below.
+P5 dressed it as a photograph. A 16 degree telephoto (5.6) flattens perspective so a relief under 3% of the width reads as compressed rather than flat; fake DOF (5.3) shrinks and fades particles outside a depth slice instead of blurring the frame; edge bokeh (5.4) blows out and pushes apart the left and right margins; a baked 64³ LUT (5.2) carries the colour grade in a 512² PNG; and an intro (5.5) reveals 65,536 particles on their own timelines from a single `uProgress` float while the camera pushes in. 5.1 waited for P6.6 and is described with it below.
 
 P4 replaced the placeholder `sin`/`cos` drift with curl noise built on value-noise fBM (`src/shaders/noise.glsl`, shared through a registered `ShaderChunk`). The offset is added in clip space and multiplied by `w`, so particles move the same distance on screen at any depth; a slow depth breathing and a near-camera wobble sit underneath it. All of it is stateless — the whole offset is recomputed from `uTime` every frame, which is why changing any parameter mid-flight needs no reset. Five knobs in a new **Motion** panel, plus a debug button that paints the fBM field onto the particles.
+
+P6 is where the project stopped rebuilding the UntilLabs renderer and went past it. What 6.1-6.9 added, in the order the data flows:
+
+`decode-image.ts` decodes a dropped file off the main thread and caps it at 1024px (6.1) · a **pipeline worker** runs Depth Anything V2 Small through transformers.js on WebGPU with a WASM fallback, reporting progress and cancellable by termination (6.2, 6.3) — with `heuristicDepth`, the painter's-cue estimator shared with `build-sample-bundle.ts`, running first so nothing waits on a 50 MB download · `importance.ts` measures detail three ways, luminance gradient, local contrast and depth gradient, each normalised alone and mixed on the main thread so four sliders stay live (6.4) · `sample-points.ts` places the points by Mitchell's best-candidate scored `d²·w`, which holds the density the map asked for instead of flattening it (6.5) · `density.ts` measures how crowded each point ended up, on an absolute log scale (6.6), and the shader grows the lonely ones — **that is 5.1, finally unblocked** · `lift.ts` gives them z from the depth map at 3% relief, bilinear for depth and nearest for colour (6.7) · `shuffle.ts` breaks the link between texel and place (6.9) · and `pack-bundle.ts` writes the three maps, with crowding riding in the colour map's alpha (6.8).
 
 The studio shell around all of it is now responsive. Three layouts share one markup: under `sm` the controls are a bottom sheet capped at 52dvh, from `sm` a 224px rail down the right edge, from `lg` the original 256px column — and the toolbar shortens its labels and gives up the draw-call readout as the screen narrows. `Panel` grew a collapse toggle; it stores nothing itself, so `Studio` owns the flags and a single **Collapse all** button folds the stack. **Hide** dismisses the rail entirely to a **Controls** pill, which is the only way to see the whole frame on a phone.
 
@@ -28,38 +32,33 @@ The studio shell around all of it is now responsive. Three layouts share one mar
 | P2 FBO + post-processing | ✅ done (2.1–2.5) |
 | P3 Textures as data | ✅ done (3.1–3.5) |
 | P4 Motion (curl noise) | ✅ done (4.1–4.5) |
-| P5 The look | 5.2–5.6 ✅ · 5.1 blocked on density |
-| P6 Photo → point cloud | ⏭ **6.1 next** |
-| P7–P9 | not started |
+| P5 The look | ✅ done (5.2–5.6, and 5.1 via 6.6) |
+| P6 Photo → point cloud | ✅ done (6.1–6.9) |
+| P7 Design-tool UX | ⏭ **7.1 next** |
+| P8–P9 | not started |
 
-## Next step: P6.1
+## Next step: P7.1
 
-Upload or drop an image, downscale it to a working size (about 1024px on the long side), and show a 2D preview. The concepts are `createImageBitmap`, `OffscreenCanvas`, and the colour space of `getImageData`. Done when the image preview and its pixel buffer are in the store.
-
-P6 is where this project stops rebuilding the UntilLabs renderer and goes past it: everything from 6.2 onward automates what they did by hand in Houdini. It also closes two things P3 and P5 left open — real depth, and the density map 5.1 needs.
-
-**Decision 6.2 has to be made now rather than deferred**: which depth model. Default candidate is Depth Anything V2 Small through transformers.js (WebGPU with a WASM fallback). Note size and first-load latency when choosing.
+Lay the app out as a real tool: viewport, inspector, toolbar, status bar. Done when tweaking a slider never re-mounts the canvas. The rail built during P5/P6 is eight panels deep and already wants the structure P7 gives it — and 7.3 (store to uniforms without React renders) is the one that matters most, because every slider today re-renders `ParticleField`.
 
 Per the project rules, every step also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
-### What P5 could not finish
+### What P6 left behind
 
-**5.1 (density-driven point size) is blocked and deliberately skipped.** Sparse regions should get larger points so the background never shows holes — but the sample cloud sits on a regular grid, where density is uniform by construction and there is nothing to measure. It only becomes meaningful after **P6.5** places particles by importance sampling and **P6.6** computes per-point density. Do it there, not before.
+**The sample bundle's depth is still a heuristic** — `scripts/build-sample-bundle.ts` has no browser, so it calls the same `heuristicDepth` the app uses while the model loads. That is now a documented fallback rather than a placeholder: drop `color.png` into the running app and it gets Depth Anything V2. Regenerate any time with `bun run build:sample` from `apps/point-cloud`.
 
-### Still outstanding from P3
+**Points at the frame border read as sparser than they are.** They have neighbours on one side only, so their k-th nearest distance is larger and 6.6 calls them lonely — which the exponential in the shader then amplifies. Correcting it properly means weighting by the fraction of the radius-d disc that falls inside the image. Small, visible only at the extreme edges, and untouched.
 
-**The sample bundle's depth is a placeholder, not a measurement.** `scripts/build-sample-bundle.ts` derives it from two painter's cues in the photo itself (atmospheric perspective + ground plane) because decision 6.2 is still open. The decode path, bounds, codec and tests are all real and verified; only the depth numbers are a stand-in. Regenerate any time with `bun run build:sample` from `apps/point-cloud`.
+**`aIndex` is half-unblocked.** Shuffling (6.9) removed the first objection — the ordinal is no longer spatially meaningful, which is what a seed needs. The second stands: hashing a five-digit integer exhausts float precision, so the shader still hashes texel coordinates. It remains 256 KB of unread buffer, and is still worth removing unless something finds a use for it.
 
-### The attribute still waiting for a job
-
-`aIndex` has been uploaded since P3.1 and the vertex shader has never read it. P4.2 and P5.5 both wanted a per-particle seed and both used the texel hash instead, because hashing a five-digit integer exhausts float precision. Its real use needs **P6.9**: once particle order is shuffled before packing, the ordinal stops being spatially meaningful and becomes usable as a seed. Until then it is 256 KB of unread buffer — worth removing if P6.9 slips.
+**The model needs the network on first use.** transformers.js points onnxruntime's wasm at the jsdelivr CDN by default, and the weights come from Hugging Face. Offline, the model path fails and the app falls back to painter's cues with the reason shown in the Depth panel — which is the designed behaviour, not a bug, but worth knowing before debugging it.
 
 ## Open decisions
 
 | Decision | Blocks | Notes |
 |---|---|---|
 | Visual style (token values) | nothing | Tokens currently hold Toolcraft's values; the owner will customise them in `packages/tokens/src/theme.css`. Known issue to fix then: Button `link` variant fails WCAG AA contrast in dark theme (4.06 : 1). |
-| Depth model (6.2) | P6 | Default candidate: Depth Anything V2 Small via transformers.js (WebGPU → WASM). |
+| ~~Depth model (6.2)~~ | — | **Decided**: Depth Anything V2 Small via transformers.js, WebGPU/fp16 (49.6 MB) falling back to WASM/q8 (27.3 MB), with `heuristicDepth` underneath it. Reasoning in `src/photo/depth/model-depth.ts`. |
 | Export bundle format (8.1) | P8 | Default: zip of `metadata.json` + data PNGs; alternative single JSON with base64 PNGs. |
 
 ## Setting up a new machine
@@ -70,7 +69,7 @@ cd point-cloud
 bun install
 bun run dev          # http://localhost:3000
 bun run storybook    # http://localhost:6006
-bun run typecheck && bun run lint && bun run test   # all should pass (47 tests)
+bun run typecheck && bun run lint && bun run test   # all should pass (115 tests)
 ```
 
 Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun@1.3.14` and uses Bun workspaces plus the text `bun.lock` lockfile.
@@ -94,6 +93,13 @@ Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun
 - **Distance constants in shaders are tied to the scene's scale** — the near-camera wobble uses `smoothstep(3.2, 1.2, …)` because this cloud is 3 units wide. The UntilLabs equivalents (50, 20) are for a scene 244 units wide. Copying shader code between projects means converting them.
 - **`react-hooks/immutability` decides where state lives, twice now.** A ref may only be mutated by the component that created it, so passing one down and writing to it in a child is an error. It also rejects mutating uniforms through an extracted local (`const u = material.current.uniforms`) while allowing the same write through `material.current.uniforms` directly.
 - **Navigating to the same URL is not a reload.** Next.js serves a soft navigation and React keeps the existing canvas, so anything applied once at creation — camera position, `fov` — silently keeps its old value. Use `location.reload()` when testing initialisation.
+- **Transferring an `ArrayBuffer` to a worker detaches it on the sender.** The photo buffer is sent by structured clone on purpose, because the preview still draws it; only results coming *back* are transferred. Getting this backwards gives you an empty array on the second read and no error at all.
+- **Inference cannot be interrupted, so Cancel terminates the worker.** A `postMessage` would queue behind the very computation you are trying to escape. The next run rebuilds the pipeline from the browser cache in a second or two.
+- **`Uint8ClampedArray` is not `Uint8ClampedArray<ArrayBuffer>`** to TypeScript 5.7+. `new ImageData(...)` and the transfer list both want the narrow one; `RgbaBytes` in `decode-image.ts` is the alias.
+- **Alpha does not go through the sRGB transfer curve**, which is why per-point crowding rides there (6.6). It also means a bundle whose colour map has no alpha reads 1.0 and is left alone — the backward-compatibility that makes the sample bundle still render identically.
+- **A `DataTexture` is not flipped on upload; an image is.** The file path sets `flipY = false` to *undo* three.js's flip, and the data path must leave it alone. Setting it on a DataTexture turns the cloud upside down.
+- **The app's tests need `apps/point-cloud/vitest.config.mts`** to resolve the `@/` alias — and `.mts`, not `.ts`, because the app's `package.json` has no `"type": "module"` and vite warns.
+- **Never validate an image filter on a 256px test image.** Texture terms and shuffle artefacts both vanish when there are as many points as pixels. `scripts/` has no upscaler; make one in a scratchpad when checking these.
 - **The three studio breakpoints are `base` / `sm` / `lg`**, and the toolbar's `max-w` is hand-tuned against the rail's width (`calc(100% - 15.5rem)` at `sm`, `17.5rem` at `lg`). Changing `sm:w-56` or `lg:w-64` on the rail means changing those two numbers too, or the toolbar slides under the panels.
 - **Windows display scaling lies about viewport width** — at 125% a 980px browser window is a 724px CSS viewport, so resizing to "768" to test the `md` breakpoint actually tests `sm`. Read the real width off the screenshot, not the window size.
 - **Testing Base UI in jsdom** — query Slider inputs by label, not by role (Base UI hides the thumb until it measures layout, which jsdom never does).

@@ -62,9 +62,21 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 
 Thứ tự ở đây là thứ tự đã làm, không phải thứ tự đánh số: 5.6 đặt khung hình mà mọi bước sau phải chỉnh dưới nó, còn 5.5 để cuối vì intro chỉ đáng dựng khi thứ nó trình diễn đã xong.
 
+### P6 — Ảnh thành đám mây điểm
+- [P6.1 · Ảnh vào app: decode, thu nhỏ, không gian màu](p6-1-anh-vao-app.md)
+- [P6.2 · Chọn model depth (và cái lưới an toàn bên dưới)](p6-2-chon-model-depth.md)
+- [P6.3 · Web Worker: chạy model mà không đứng hình, và huỷ cho thật](p6-3-worker-va-huy.md)
+- [P6.4 · Bản đồ tầm quan trọng: "chi tiết" là con số nào?](p6-4-importance-map.md)
+- [P6.5 · Blue noise: rải hạt theo tầm quan trọng mà vẫn đều](p6-5-blue-noise-sampling.md)
+- [P6.6 · Mật độ điểm — và món nợ P5.1 cuối cùng cũng trả](p6-6-mat-do-diem.md)
+- [P6.7 · Nâng ảnh lên 2.5D: vì sao relief phải nông](p6-7-nang-len-2-5d.md)
+- [P6.8 · Đóng gói vào DataTexture: đường nối mà cả dự án chờ](p6-8-dong-goi-texture.md)
+- [P6.9 · Xáo thứ tự điểm: texture là một cái túi, không phải một tấm bản đồ](p6-9-xao-thu-tu.md)
+
+P6 là chỗ dự án ngừng dựng lại renderer của UntilLabs và đi qua nó: mọi thứ từ 6.2 trở đi tự động hoá phần họ làm tay trong Houdini. **P5.1 được giải quyết trong [P6.6](p6-6-mat-do-diem.md)**, vì mãi tới đó mới có mật độ thật để đo.
+
 ### Tiếp theo
-- P5.1 · Kích thước hạt theo mật độ — *chờ dữ liệu mật độ từ P6.6*
-- P6.1 · Tải ảnh và thu nhỏ về kích thước làm việc *(sắp tới)*
+- P7.1 · Bố cục viewport + inspector + toolbar + status bar *(sắp tới)*
 
 ## Bức tranh tổng thể
 

@@ -108,6 +108,37 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Drawing buffer** | Vùng pixel thật mà WebGL vẽ vào = kích thước CSS × DPR. | [P1.4](p1-4-point-size.md) |
 | **Linear color** | Không gian màu mà phép cộng/trộn đúng về mặt vật lý; GPU tính toán trong không gian này. | [P1.2](p1-2-shader-material.md) |
 | **sRGB** | Không gian màu của màn hình và mã hex (`#dfe6ff`). Phải đổi linear → sRGB trước khi hiển thị. | [P1.2](p1-2-shader-material.md) |
+| **Kênh alpha không qua đường cong sRGB** | GPU giải mã R, G, B qua hàm truyền sRGB nhưng cho A đi thẳng — nên alpha là chỗ cất một con số mà không bị bẻ cong. | [P6.6](p6-6-mat-do-diem.md) |
+| **Luminance (Rec. 709)** | Độ sáng cảm nhận được: `0.2126R + 0.7152G + 0.0722B`. Lục nặng nhất vì mắt nhạy lục nhất. | [P6.4](p6-4-importance-map.md) |
+
+## Ảnh, lấy mẫu & luồng nền (P6)
+
+| Thuật ngữ | Nghĩa | Gặp lần đầu |
+|---|---|---|
+| **`createImageBitmap`** | Giải mã ảnh **ngoài main thread**, trả về đối tượng ảnh sẵn sàng vẽ. Nhớ `close()`. | [P6.1](p6-1-anh-vao-app.md) |
+| **`OffscreenCanvas`** | Canvas không gắn vào DOM, nên CSS và DPR không can thiệp được. | [P6.1](p6-1-anh-vao-app.md) |
+| **Monocular depth** | Đoán độ sâu từ **một** tấm ảnh. Kết quả là độ sâu *tương đối*, không có đơn vị. | [P6.2](p6-2-chon-model-depth.md) |
+| **Inverse depth** | Quy ước mà số **lớn** nghĩa là **gần**. Phần lớn model depth xuất kiểu này. | [P6.2](p6-2-chon-model-depth.md) |
+| **Aerial perspective** | Phối cảnh không khí: vật ở xa sáng hơn và nhạt màu hơn vì không khí tán xạ ánh sáng. | [P6.2](p6-2-chon-model-depth.md) |
+| **Web Worker** | Luồng JS thứ hai, có event loop riêng, không có DOM. Chỉ giao tiếp qua thông điệp. | [P6.3](p6-3-worker-va-huy.md) |
+| **Structured clone** | Thuật toán sao chép sâu dữ liệu khi gửi qua `postMessage`. | [P6.3](p6-3-worker-va-huy.md) |
+| **Transferable** | `ArrayBuffer` được **chuyển giao** thay vì sao chép; bên gửi mất quyền truy cập. | [P6.3](p6-3-worker-va-huy.md) |
+| **Importance map** | Một giá trị 0…1 mỗi pixel, nói pixel đó đáng bao nhiêu hạt. | [P6.4](p6-4-importance-map.md) |
+| **Sobel** | Cặp nhân chập 3×3 đo gradient ảnh; `√(gx²+gy²)` là độ lớn cạnh. | [P6.4](p6-4-importance-map.md) |
+| **Separable filter** | Nhân chập 2D tách được thành hai lượt 1D — box blur và Gaussian đều vậy. | [P6.4](p6-4-importance-map.md) |
+| **Local contrast** | Độ lệch chuẩn độ sáng trong một cửa sổ nhỏ; tính bằng `√(E[L²] − E[L]²)`. | [P6.4](p6-4-importance-map.md) |
+| **Blue noise** | Phân bố ngẫu nhiên nhưng không có hai điểm quá gần nhau; phổ không có tần số thấp. | [P6.5](p6-5-blue-noise-sampling.md) |
+| **White noise (clumping)** | Các lần bốc độc lập → vón cục và lỗ hổng. Thứ mà blue noise tránh. | [P6.5](p6-5-blue-noise-sampling.md) |
+| **Best-candidate (Mitchell)** | Sinh N ứng viên, giữ cái có nhiều chỗ nhất. Cách rẻ để có blue noise. | [P6.5](p6-5-blue-noise-sampling.md) |
+| **Rejection sampling** | Bốc đều rồi nhận với xác suất tỉ lệ trọng số. Không cần bảng luỹ tích. | [P6.5](p6-5-blue-noise-sampling.md) |
+| **PRNG có seed** | Bộ sinh số giả ngẫu nhiên gieo được hạt → cùng seed cho cùng kết quả (`mulberry32`). | [P6.5](p6-5-blue-noise-sampling.md) |
+| **Spatial hash grid** | Chia không gian thành ô để hỏi "cái gì ở gần đây" trong O(1) thay vì O(n). | [P6.5](p6-5-blue-noise-sampling.md) |
+| **k-NN density** | Ước lượng mật độ từ khoảng cách tới hàng xóm thứ k: mật độ ≈ `k / πd²`. | [P6.6](p6-6-mat-do-diem.md) |
+| **2.5D** | Một mặt có độ nổi, không có mặt sau — thứ mà một tấm ảnh cho phép dựng. | [P6.7](p6-7-nang-len-2-5d.md) |
+| **Relief** | Độ dày của lớp nổi, tính theo % bề ngang đám mây. Nông thì che được sai số depth. | [P6.7](p6-7-nang-len-2-5d.md) |
+| **Bilinear sampling** | Nội suy giữa 4 pixel lân cận. Đúng cho độ sâu, **sai** cho màu ở đường bao. | [P6.7](p6-7-nang-len-2-5d.md) |
+| **`DataTexture`** | Texture nuôi bằng mảng typed thay vì ảnh; không bị lật dọc khi upload. | [P6.8](p6-8-dong-goi-texture.md) |
+| **Fisher-Yates** | Thuật toán xáo trộn cho mọi hoán vị xác suất bằng nhau. | [P6.9](p6-9-xao-thu-tu.md) |
 
 ## React Three Fiber & Next.js
 

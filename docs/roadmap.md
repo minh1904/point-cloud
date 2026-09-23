@@ -76,9 +76,9 @@ Every component ships with a story (`*.stories.tsx` next to it) showing all vari
 | Needed by | Components | Behind the scenes |
 |---|---|---|
 | ✅ P0 | Tokens skeleton, `Button` | CSS variables + Tailwind v4 `@theme`; a package consumed via `workspace:*` |
-| P1–P2 | ✅ `Panel`, ✅ `Slider` (inline value) · `Section`, `PropertyRow`, `NumberField` (scrub) | Base UI composition, pointer capture for scrubbing, controlled vs uncontrolled |
+| P1–P2 | ✅ `Panel` (collapsible), ✅ `Slider` (inline value) · `Section`, `PropertyRow`, `NumberField` (scrub) | Base UI composition, pointer capture for scrubbing, controlled vs uncontrolled |
 | P4–P5 | `Toggle`, `Select`, `SegmentedControl`, `Tooltip` | Keyboard and focus handling that Base UI gives for free |
-| P6 | `FileDrop`, `Progress`, stage `Tabs` | File input a11y, drag-and-drop events |
+| P6 | ✅ `FileDrop` · `Progress`, stage `Tabs` | File input a11y, drag-and-drop events |
 | P7 | `@atelier/params` (`useParams(schema)`, history, presets, persistence), `@atelier/shell` (viewport + inspector + toolbar + status bar), `Toolbar`, `Kbd` | One schema driving UI, uniforms, presets and export; transient updates at 60 fps |
 | Later | Registry (shadcn-style copy-the-source) for other demos | Distribution without lock-in |
 
@@ -141,7 +141,7 @@ Stateless by design (no simulation). A GPGPU layer for pointer interaction is op
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 5.1 | Density-driven point size | Sparse areas get bigger points so the background never shows holes | Background grass looks continuous |
+| ✅ 5.1 | Density-driven point size | Sparse areas get bigger points so the background never shows holes | Background grass looks continuous · done in 6.6, which is where real density first exists |
 | ✅ 5.2 | 3D LUT (512², 8×8 tiles) in the particle shader, with intensity | How a 64³ colour cube is packed into 2D and sampled | Swapping LUT PNG changes grade |
 | ✅ 5.3 | Fake DOF: focal distance/range → smaller + more transparent points | Cheap DOF inside the point shader instead of post blur | Focus pulls with a slider |
 | ✅ 5.4 | Edge bokeh (bigger, dimmer, pushed outward at X edges) | Framing the subject like a lens | Edges soften |
@@ -154,15 +154,15 @@ Stateless by design (no simulation). A GPGPU layer for pointer interaction is op
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 6.1 | Upload / drop image, downscale to working size (e.g. 1024 px long side), show 2D preview | `createImageBitmap`, `OffscreenCanvas`, colour space of `getImageData` | Image preview + pixel buffer in store |
-| 6.2 | 🔶 **DECISION: depth model** — Depth Anything V2 Small via transformers.js (WebGPU → WASM fallback) is the default candidate | Monocular relative depth, model size vs quality, first-load cost | Choice noted with size/latency numbers |
-| 6.3 | Depth in a Web Worker, progress events, cancel | Keeping the main thread at 60 fps during inference | Depth map preview; UI never freezes |
-| 6.4 | Importance map = weighted mix of luminance gradient, local contrast, depth edges (+ optional subject mask) | What "detail" means numerically; each term is a slider | Heat-map preview matches intuition |
-| 6.5 | Sample N points from the importance map with blue-noise / weighted Poisson disk | Why plain weighted random clumps; blue noise gives even spacing at varying density | Points dense on subject, even on background |
-| 6.6 | Per-point density (k-NN or grid count) → normalised 0–1 | This is what drives 5.1 | Density preview resembles UntilLabs map |
-| 6.7 | Lift to 2.5D: `z = depth * relief` (relief ≈ 1–5 % of width), colour from image | Shallow relief hides monocular depth error | Tilting the camera shows believable volume |
-| 6.8 | Pack into `DataTexture`s (Float, no hi/lo needed in-app) → feed P3 renderer | Same renderer for uploaded and imported data | Uploaded photo renders with all P4/P5 effects |
-| 6.9 | Shuffle point order before packing | Texture neighbours must not be spatial neighbours (random seeds, even reveal) | Reveal looks uniform, no scan-line artefacts |
+| ✅ 6.1 | Upload / drop image, downscale to working size (e.g. 1024 px long side), show 2D preview | `createImageBitmap`, `OffscreenCanvas`, colour space of `getImageData` | Image preview + pixel buffer in store |
+| ✅ 6.2 | **DECIDED: Depth Anything V2 Small** via transformers.js — WebGPU/fp16 (49.6 MB) with a WASM/q8 fallback (27.3 MB); `heuristicDepth` stays as the instant, offline floor | Monocular relative depth, model size vs quality, first-load cost | Choice noted with size/latency numbers |
+| ✅ 6.3 | Depth in a Web Worker, progress events, cancel | Keeping the main thread at 60 fps during inference | Depth map preview; UI never freezes |
+| ✅ 6.4 | Importance map = weighted mix of luminance gradient, local contrast, depth edges (+ optional subject mask) | What "detail" means numerically; each term is a slider | Heat-map preview matches intuition |
+| ✅ 6.5 | Sample N points from the importance map with blue-noise / weighted Poisson disk | Why plain weighted random clumps; blue noise gives even spacing at varying density | Points dense on subject, even on background |
+| ✅ 6.6 | Per-point density (k-NN or grid count) → normalised 0–1 | This is what drives 5.1 | Density preview resembles UntilLabs map |
+| ✅ 6.7 | Lift to 2.5D: `z = depth * relief` (relief ≈ 1–5 % of width), colour from image | Shallow relief hides monocular depth error | Tilting the camera shows believable volume |
+| ✅ 6.8 | Pack into `DataTexture`s → feed P3 renderer. **Kept the 16-bit hi/lo encoding** rather than floats: one decode in the shader, half the memory, the P3.5 tests cover this path, and P8.1 export becomes a file write | Same renderer for uploaded and imported data | Uploaded photo renders with all P4/P5 effects |
+| ✅ 6.9 | Shuffle point order before packing | Texture neighbours must not be spatial neighbours (random seeds, even reveal) | Reveal looks uniform, no scan-line artefacts |
 
 ---
 
@@ -215,5 +215,5 @@ Built from Atelier components (P-UI); look follows decision 0.4.
 | UI: own component kit **Atelier** (`@atelier/*`), Toolcraft-like but open, built on Base UI + Tailwind v4 | ✅ decided |
 | Repo: Bun monorepo, point-cloud app first, kit grows from it | ✅ decided |
 | 0.4 Visual style (token values) | 🔶 user researching |
-| 6.2 Depth model | 🔶 before P6 |
+| 6.2 Depth model | ✅ decided |
 | 8.1 Bundle format | 🔶 before P8 |

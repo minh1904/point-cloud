@@ -63,7 +63,8 @@ function configureDataTexture(
 }
 
 /**
- * Loads `metadata.json` and the three data textures of a bundle.
+ * Loads `metadata.json` and the three data textures of a bundle, or nothing
+ * at all when `baseUrl` is null.
  *
  * Deliberately not drei's `useTexture`: that returns a globally cached texture
  * which cannot legally be reconfigured (`react-hooks/immutability`), and these
@@ -71,10 +72,17 @@ function configureDataTexture(
  * means an explicit `dispose()` — JavaScript's garbage collector knows nothing
  * about GPU memory.
  */
-export function useParticleBundle(baseUrl: string = SAMPLE_BUNDLE): ParticleBundle | null {
+export function useParticleBundle(
+  baseUrl: string | null = SAMPLE_BUNDLE,
+): ParticleBundle | null {
   const [bundle, setBundle] = useState<ParticleBundle | null>(null);
 
   useEffect(() => {
+    // `null` means a cloud built in the browser is taking this slot (6.8), so
+    // there is nothing to fetch. The previous run's cleanup has already
+    // cleared the state and disposed its textures.
+    if (baseUrl === null) return;
+
     let cancelled = false;
     const loaded: Texture[] = [];
     const loader = new TextureLoader();

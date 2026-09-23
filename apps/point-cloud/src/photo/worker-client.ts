@@ -18,6 +18,7 @@
 import type { PhotoPixels } from "./decode-image";
 import type { DepthMap, DepthModelId } from "./depth/depth-map";
 import type { ImportanceComponents } from "./importance";
+import type { PackedBundle } from "./pack-bundle";
 import type { WorkerRequest, WorkerResponse } from "./worker-protocol";
 
 export interface JobProgress {
@@ -141,6 +142,63 @@ export function runImportance(
         edges: new Float32Array(message.edges),
         texture: new Float32Array(message.texture),
         depthEdges: new Float32Array(message.depthEdges),
+      };
+    },
+    onProgress,
+  );
+}
+
+export interface BuildRequest {
+  photo: PhotoPixels;
+  depth: DepthMap;
+  /** The mixed importance map, already weighted (6.4). */
+  importance: Float32Array;
+  /** Side of the square data texture; `size²` points are placed. */
+  size: number;
+  fieldWidth: number;
+  relief: number;
+  candidates: number;
+  seed: number;
+}
+
+/** Run 6.5 through 6.9 and come back with textures ready to upload (6.8). */
+export function runBuild(
+  request: BuildRequest,
+  onProgress?: (progress: JobProgress) => void,
+): Promise<PackedBundle> {
+  const { photo, depth, importance } = request;
+
+  return send(
+    (id) => ({
+      kind: "build",
+      id,
+      image: { width: photo.width, height: photo.height, data: photo.data.buffer },
+      depth: {
+        width: depth.width,
+        height: depth.height,
+        data: depth.data.buffer as ArrayBuffer,
+      },
+      importance: {
+        width: photo.width,
+        height: photo.height,
+        data: importance.buffer as ArrayBuffer,
+      },
+      size: request.size,
+      fieldWidth: request.fieldWidth,
+      relief: request.relief,
+      candidates: request.candidates,
+      seed: request.seed,
+      depthKind: depth.kind,
+    }),
+    (message) => {
+      if (message.kind !== "bundle") {
+        throw new Error(`expected a packed bundle, got ${message.kind}`);
+      }
+      return {
+        metadata: message.metadata,
+        color: new Uint8Array(message.color),
+        positionHigh: new Uint8Array(message.positionHigh),
+        positionLow: new Uint8Array(message.positionLow),
       };
     },
     onProgress,

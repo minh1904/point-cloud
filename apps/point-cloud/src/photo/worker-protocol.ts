@@ -9,6 +9,8 @@
  * is the only form `postMessage` can *transfer* (hand over without copying),
  * and the receiving side wraps it back up in one line.
  */
+import type { BundleMetadata } from "@/bundle/metadata";
+
 import type { DepthModelId } from "./depth/depth-map";
 
 /** A working image as it crosses the thread boundary: RGBA bytes, row 0 top. */
@@ -37,6 +39,26 @@ export type WorkerRequest =
       id: number;
       image: ImagePayload;
       depth: MapPayload;
+    }
+  | {
+      kind: "build";
+      id: number;
+      image: ImagePayload;
+      depth: MapPayload;
+      /** The mixed importance map — the weights were applied on the main thread. */
+      importance: MapPayload;
+      /** Side of the square data texture; `size²` points are placed. */
+      size: number;
+      /** World width the cloud spans. */
+      fieldWidth: number;
+      /** World depth between nearest and farthest point. */
+      relief: number;
+      /** Candidates weighed per placed point (6.5). */
+      candidates: number;
+      /** Same seed, same cloud. */
+      seed: number;
+      /** Recorded in the metadata so the UI can say where the depth came from. */
+      depthKind: string;
     };
 
 export type WorkerResponse =
@@ -66,5 +88,15 @@ export type WorkerResponse =
       edges: ArrayBuffer;
       texture: ArrayBuffer;
       depthEdges: ArrayBuffer;
+    }
+  | {
+      kind: "bundle";
+      id: number;
+      /** Plain object — structured clone carries it across as-is. */
+      metadata: BundleMetadata;
+      /** RGBA bytes: colour in RGB, crowding in A. */
+      color: ArrayBuffer;
+      positionHigh: ArrayBuffer;
+      positionLow: ArrayBuffer;
     }
   | { kind: "error"; id: number; message: string };

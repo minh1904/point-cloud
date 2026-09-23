@@ -7,9 +7,12 @@ import { Vector3, type ShaderMaterial } from "three";
 import fragmentShader from "@/shaders/points.frag.glsl";
 import vertexShader from "@/shaders/points.vert.glsl";
 
+import { usePhotoStore } from "@/store/photo-store";
+
 import "./shader-chunks";
 import { IntroDolly } from "./intro-dolly";
 import { createParticleGrid } from "./particle-grid";
+import { useCloudBundle } from "./use-cloud-bundle";
 import {
   SAMPLE_BUNDLE,
   useLookupTexture,
@@ -31,6 +34,11 @@ export interface ParticleParams {
   breathe: number;
   /** Multiplier on animation time: 0 freezes everything, 2 doubles it. */
   speed: number;
+  /**
+   * How hard point size chases point spacing (P5.1). 0 leaves every point the
+   * same size; 1 makes size exactly proportional to the gap around it.
+   */
+  densityBoost: number;
   /** Paint the fBM field instead of the photo (P4.1). */
   debugNoise: boolean;
 }
@@ -54,6 +62,15 @@ export const defaultParticleParams: ParticleParams = {
   noiseScatter: 0.15,
   breathe: 0.01,
   speed: 1,
+  // P5.1 — only bites on a cloud built from a photo. The sample bundle is a
+  // regular grid whose crowding is 1 everywhere by construction, so this
+  // multiplies by one there however far it is pushed.
+  //
+  // Tuned by eye against a 1024px photo: at 0.5 the sky still shows holes, at
+  // 1.5 every point is a soft blob and the subject loses its edges. 0.9 closes
+  // the background into a surface while the detail the sampler paid for
+  // survives.
+  densityBoost: 0.9,
   debugNoise: false,
 };
 
@@ -149,6 +166,7 @@ export function ParticleField({
   noiseScatter,
   breathe,
   speed,
+  densityBoost,
   debugNoise,
   lens,
   introReplay,
@@ -156,12 +174,21 @@ export function ParticleField({
 }: ParticleFieldProps) {
   const material = useRef<ShaderMaterial>(null);
   const intro = useRef<IntroClock>({ value: 0 });
-  const bundle = useParticleBundle(bundleUrl);
+
+  // P6.8 — a cloud built from a dropped photo takes precedence over the file
+  // bundle, and the renderer below cannot tell which one it got. That is the
+  // seam P3 was designed around: same textures, same shader, same effects.
+  const packed = usePhotoStore((state) => state.bundle);
+  const photoBundle = useCloudBundle(packed);
+  const fileBundle = useParticleBundle(packed ? null : bundleUrl);
+  const bundle = photoBundle ?? fileBundle;
   const lut = useLookupTexture(`/luts/${lens.grade}.png`);
 
+  // A new cloud earns a new arrival: swapping 65,536 points in mid-frame with
+  // the intro already finished would just blink the old picture out.
   useEffect(() => {
     intro.current.value = 0;
-  }, [introReplay]);
+  }, [introReplay, bundle]);
 
   // The grid is pure addressing, so it only depends on the texture size the
   // bundle declares — 256² here, one particle per texel.
@@ -199,6 +226,7 @@ export function ParticleField({
             uLut: { value: null },
             uLutIntensity: { value: 0 },
             uProgress: { value: 0 },
+            uDensityBoost: { value: 0 },
             uFocalDepth: { value: 0.5 },
             uFocalRange: { value: 1 },
             uEdgeBokeh: { value: 0 },
@@ -253,6 +281,7 @@ export function ParticleField({
     uniforms.uBreathe!.value = breathe;
     uniforms.uViewportAspect!.value = size2d.width / Math.max(1, size2d.height);
     uniforms.uDebugNoise!.value = debugNoise ? 1 : 0;
+    uniforms.uDensityBoost!.value = densityBoost;
     uniforms.uFocalDepth!.value = lens.focalDepth;
     uniforms.uFocalRange!.value = lens.focalRange;
     uniforms.uEdgeBokeh!.value = lens.edgeBokeh;
@@ -270,6 +299,7 @@ export function ParticleField({
     noiseScatter,
     breathe,
     debugNoise,
+    densityBoost,
     lens,
     lut,
     size2d,

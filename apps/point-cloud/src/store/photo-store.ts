@@ -6,17 +6,44 @@ import { decodePhoto, type PhotoPixels } from "@/photo/decode-image";
 import type { DepthMap, DepthModelId } from "@/photo/depth/depth-map";
 import {
   defaultImportanceWeights,
+  mixImportance,
   type ImportanceComponents,
   type ImportanceWeights,
 } from "@/photo/importance";
+import type { PackedBundle } from "@/photo/pack-bundle";
 import {
   cancelJobs,
+  runBuild,
   runDepth,
   runImportance,
   type JobProgress,
 } from "@/photo/worker-client";
 
 export type PhotoStatus = "empty" | "decoding" | "ready" | "error";
+
+/** Texture sides the cloud can be packed into — one particle per texel. */
+export const CLOUD_SIZES = [128, 192, 256] as const;
+
+export interface BuildParams {
+  /** Side of the square data texture; `size²` points. */
+  size: number;
+  /** World width the cloud spans. Matches the sample bundle's 3 units. */
+  fieldWidth: number;
+  /** Relief as a fraction of the width (6.7). */
+  reliefRatio: number;
+  /** Candidates weighed per placed point (6.5). */
+  candidates: number;
+  /** Same seed, same cloud. */
+  seed: number;
+}
+
+export const defaultBuildParams: BuildParams = {
+  size: 256,
+  fieldWidth: 3,
+  reliefRatio: 0.03,
+  candidates: 8,
+  seed: 1,
+};
 export type StageStatus = "idle" | "running" | "ready" | "error";
 
 /** What we keep about the file itself — enough to label it, nothing more. */
@@ -45,6 +72,13 @@ interface PhotoState {
   importanceStatus: StageStatus;
   importanceError: string | null;
 
+  /** How the cloud is built from the maps (6.5-6.9). */
+  build: BuildParams;
+  bundle: PackedBundle | null;
+  buildStatus: StageStatus;
+  buildProgress: JobProgress | null;
+  buildError: string | null;
+
   load: (file: File) => Promise<void>;
   clear: () => void;
   setDepthModel: (model: DepthModelId) => void;
@@ -52,6 +86,9 @@ interface PhotoState {
   cancelDepth: () => void;
   setWeight: (key: keyof ImportanceWeights, value: number) => void;
   resetWeights: () => void;
+  setBuildParam: <K extends keyof BuildParams>(key: K, value: BuildParams[K]) => void;
+  reseed: () => void;
+  buildCloud: () => Promise<void>;
 }
 
 /**
@@ -76,6 +113,7 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
   let token = 0;
   let depthRun = 0;
   let importanceRun = 0;
+  let buildRun = 0;
 
   const idleDepth = {
     depth: null,
@@ -85,6 +123,10 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     components: null,
     importanceStatus: "idle" as StageStatus,
     importanceError: null,
+    bundle: null,
+    buildStatus: "idle" as StageStatus,
+    buildProgress: null,
+    buildError: null,
   };
 
   /**
@@ -106,6 +148,12 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
       const components = await runImportance(pixels, depth);
       if (mine !== importanceRun) return;
       set({ components, importanceStatus: "ready" });
+
+      // Build once, automatically, as soon as there is a final depth map to
+      // build from: dropping a photo should produce a cloud, not a to-do list.
+      // Still running means the model pass is on its way and will trigger a
+      // better build when it lands.
+      if (get().depthStatus !== "running") void get().buildCloud();
     } catch (cause) {
       if (mine !== importanceRun) return;
       set({
@@ -122,12 +170,14 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     error: null,
     depthModel: "depth-anything-v2-small",
     weights: defaultImportanceWeights,
+    build: defaultBuildParams,
     ...idleDepth,
 
     load: async (file: File) => {
       const mine = ++token;
       depthRun++;
       importanceRun++;
+      buildRun++;
       cancelJobs();
       set({
         status: "decoding",
@@ -156,6 +206,7 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
       token++;
       depthRun++;
       importanceRun++;
+      buildRun++;
       cancelJobs();
       set({ status: "empty", source: null, pixels: null, error: null, ...idleDepth });
     },
@@ -218,11 +269,14 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
     cancelDepth: () => {
       depthRun++;
       importanceRun++;
+      buildRun++;
       cancelJobs();
       set({
         depthStatus: get().depth ? "ready" : "idle",
         depthProgress: null,
         importanceStatus: get().components ? "ready" : "idle",
+        buildStatus: get().bundle ? "ready" : "idle",
+        buildProgress: null,
       });
     },
 
@@ -230,5 +284,56 @@ export const usePhotoStore = create<PhotoState>((set, get) => {
       set((state) => ({ weights: { ...state.weights, [key]: value } })),
 
     resetWeights: () => set({ weights: defaultImportanceWeights }),
+
+    setBuildParam: (key, value) =>
+      set((state) => ({ build: { ...state.build, [key]: value } })),
+
+    // A new seed is a different cloud from the same photo: the sampler, the
+    // shuffle and therefore every per-particle hash downstream all move.
+    reseed: () =>
+      set((state) => ({ build: { ...state.build, seed: state.build.seed + 1 } })),
+
+    /**
+     * Run 6.5 through 6.9 over the current maps.
+     *
+     * The importance map is mixed here rather than in the worker because the
+     * weights live here and the mix is three multiplies per pixel — sending
+     * the four sliders and the three components would be more data and more
+     * coupling for no saving.
+     */
+    buildCloud: async () => {
+      const { pixels, depth, components, weights, build } = get();
+      if (!pixels || !depth || !components) return;
+
+      const mine = ++buildRun;
+      set({ buildStatus: "running", buildError: null, buildProgress: null });
+
+      try {
+        const bundle = await runBuild(
+          {
+            photo: pixels,
+            depth,
+            importance: mixImportance(components, weights),
+            size: build.size,
+            fieldWidth: build.fieldWidth,
+            relief: build.fieldWidth * build.reliefRatio,
+            candidates: build.candidates,
+            seed: build.seed,
+          },
+          (progress) => {
+            if (mine === buildRun) set({ buildProgress: progress });
+          },
+        );
+        if (mine !== buildRun) return;
+        set({ bundle, buildStatus: "ready", buildProgress: null });
+      } catch (cause) {
+        if (mine !== buildRun) return;
+        set({
+          buildStatus: "error",
+          buildProgress: null,
+          buildError: cause instanceof Error ? cause.message : String(cause),
+        });
+      }
+    },
   };
 });

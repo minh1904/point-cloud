@@ -14,8 +14,13 @@
  * worker itself starts in milliseconds and only pays for the library when a
  * photo actually asks for the model.
  */
+import { pointDensity } from "./density";
 import { heuristicDepth } from "./depth/heuristic-depth";
 import { importanceComponents } from "./importance";
+import { liftToCloud } from "./lift";
+import { packCloud, pointsForSize } from "./pack-bundle";
+import { samplePoints } from "./sample-points";
+import { shuffleCloud } from "./shuffle";
 import type { WorkerRequest, WorkerResponse } from "./worker-protocol";
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -89,12 +94,79 @@ function buildImportance(request: Extract<WorkerRequest, { kind: "importance" }>
   );
 }
 
+/**
+ * The whole of 6.5 through 6.9, in order, in one place (P6.8).
+ *
+ * Each stage hands its output to the next and nothing here loops back, which
+ * is why it reads as five lines: place the points, measure how crowded each
+ * one ended up, lift them into space, shuffle the order, pack the result into
+ * the textures the renderer already knows how to read.
+ */
+function buildCloud(request: Extract<WorkerRequest, { kind: "build" }>) {
+  const { id, image, depth, importance, size } = request;
+  const count = pointsForSize(size);
+  const step = (stage: string, value: number) =>
+    post({ kind: "progress", id, stage, value });
+
+  step(`placing ${count.toLocaleString("en-US")} points`, 0.05);
+  const points = samplePoints({
+    width: image.width,
+    height: image.height,
+    importance: new Float32Array(importance.data),
+    count,
+    candidates: request.candidates,
+    seed: request.seed,
+  });
+
+  step("measuring density", 0.5);
+  const density = pointDensity({ points, width: image.width, height: image.height });
+
+  step("lifting into space", 0.7);
+  const cloud = liftToCloud({
+    points,
+    density,
+    width: image.width,
+    height: image.height,
+    depth: new Float32Array(depth.data),
+    pixels: new Uint8ClampedArray(image.data),
+    fieldWidth: request.fieldWidth,
+    relief: request.relief,
+  });
+
+  step("shuffling", 0.9);
+  const packed = packCloud(shuffleCloud(cloud, request.seed), {
+    size,
+    depthKind: request.depthKind,
+    relief: request.relief,
+    aspect: image.width / image.height,
+  });
+
+  const buffers = [
+    packed.color.buffer as ArrayBuffer,
+    packed.positionHigh.buffer as ArrayBuffer,
+    packed.positionLow.buffer as ArrayBuffer,
+  ];
+
+  post(
+    {
+      kind: "bundle",
+      id,
+      metadata: packed.metadata,
+      color: buffers[0]!,
+      positionHigh: buffers[1]!,
+      positionLow: buffers[2]!,
+    },
+    buffers,
+  );
+}
+
 scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
 
   try {
     if (request.kind === "depth") await estimateDepth(request);
     else if (request.kind === "importance") buildImportance(request);
+    else if (request.kind === "build") buildCloud(request);
   } catch (error) {
     post({
       kind: "error",

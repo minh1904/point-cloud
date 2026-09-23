@@ -15,6 +15,7 @@ import type { RenderStats } from "@/scene/render-info";
 import { defaultPostParams, type PostParams } from "@/scene/scene-pass";
 import type { OrbitControlsHandle } from "@/scene/stage";
 
+import { CloudPanel } from "./cloud-panel";
 import { DepthPanel } from "./depth-panel";
 import { DetailPanel } from "./detail-panel";
 import { PhotoPanel } from "./photo-panel";
@@ -29,6 +30,7 @@ const PANELS = [
   "Photo",
   "Depth",
   "Detail",
+  "Cloud",
   "Particles",
   "Motion",
   "Lens",
@@ -175,6 +177,7 @@ export function Studio() {
           <PhotoPanel panel={panelProps("Photo")} />
           <DepthPanel panel={panelProps("Depth")} />
           <DetailPanel panel={panelProps("Detail")} />
+          <CloudPanel panel={panelProps("Cloud")} />
 
           <Panel {...panelProps("Particles")}>
             <Slider
@@ -190,6 +193,17 @@ export function Studio() {
               label="Softness"
               value={params.softness}
               onValueChange={setParticle("softness")}
+              format={{ maximumFractionDigits: 2 }}
+            />
+            {/* P5.1 — grows the points the sampler left on their own. Does
+                nothing to the sample bundle, whose regular grid has no sparse
+                regions to find. */}
+            <Slider
+              label="Fill sparse"
+              value={params.densityBoost}
+              onValueChange={setParticle("densityBoost")}
+              max={1.5}
+              step={0.05}
               format={{ maximumFractionDigits: 2 }}
             />
             <Button

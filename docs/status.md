@@ -1,6 +1,6 @@
 # Status & handoff
 
-_Last updated: 2026-09-23 · last commit on `main`: `f5129b4`_
+_Last updated: 2026-09-23 · last commit on `main`: `eaa6d35`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
@@ -12,17 +12,19 @@ P3.1 replaced the CPU-generated sphere with a data-driven geometry: 256² = 65,5
 
 P3.2 gave that address something to point at, and 3.3-3.4 finished the job: the field renders entirely from a **bundle** under `public/particles/sample/` — `color.png`, `position_h.png`, `position_l.png` and `metadata.json`. Colour and position are both vertex texture fetches; positions are 16-bit values split across the two PNGs and mapped back onto the bundle's `bounds`. `ParticleField` now takes a `bundleUrl` and nothing else about the data: hand it a different bundle and it renders that, which is exactly the seam P6 writes into.
 
-3.5 added the CPU mirror of the shader decode (`src/bundle/position-codec.ts`) plus a dependency-free PNG reader/writer (`scripts/png.ts`) — together these are also the encoder half that P8.2 needs. 43 tests.
+3.5 added the CPU mirror of the shader decode (`src/bundle/position-codec.ts`) plus a dependency-free PNG reader/writer (`scripts/png.ts`) — together these are also the encoder half that P8.2 needs.
 
 P5 dressed it as a photograph. A 16 degree telephoto (5.6) flattens perspective so a relief under 3% of the width reads as compressed rather than flat; fake DOF (5.3) shrinks and fades particles outside a depth slice instead of blurring the frame; edge bokeh (5.4) blows out and pushes apart the left and right margins; a baked 64³ LUT (5.2) carries the colour grade in a 512² PNG; and an intro (5.5) reveals 65,536 particles on their own timelines from a single `uProgress` float while the camera pushes in. **5.1 is not done** — see below.
 
 P4 replaced the placeholder `sin`/`cos` drift with curl noise built on value-noise fBM (`src/shaders/noise.glsl`, shared through a registered `ShaderChunk`). The offset is added in clip space and multiplied by `w`, so particles move the same distance on screen at any depth; a slow depth breathing and a near-camera wobble sit underneath it. All of it is stateless — the whole offset is recomputed from `uTime` every frame, which is why changing any parameter mid-flight needs no reset. Five knobs in a new **Motion** panel, plus a debug button that paints the fBM field onto the particles.
 
+The studio shell around all of it is now responsive. Three layouts share one markup: under `sm` the controls are a bottom sheet capped at 52dvh, from `sm` a 224px rail down the right edge, from `lg` the original 256px column — and the toolbar shortens its labels and gives up the draw-call readout as the screen narrows. `Panel` grew a collapse toggle; it stores nothing itself, so `Studio` owns the flags and a single **Collapse all** button folds the stack. **Hide** dismisses the rail entirely to a **Controls** pill, which is the only way to see the whole frame on a phone.
+
 | Phase | Status |
 |---|---|
 | P0 Scaffold (monorepo, Next.js, Atelier tokens + Button, Storybook) | ✅ done |
 | P1 Particle field (1.1 → 1.6) | ✅ done |
-| P-UI Atelier | Button, Slider, Panel done · Section, PropertyRow, NumberField pending (pulled in by P2) |
+| P-UI Atelier | Button, Slider, Panel (collapsible) done · Section, PropertyRow, NumberField pending (pulled in by P2) |
 | P2 FBO + post-processing | ✅ done (2.1–2.5) |
 | P3 Textures as data | ✅ done (3.1–3.5) |
 | P4 Motion (curl noise) | ✅ done (4.1–4.5) |
@@ -68,7 +70,7 @@ cd point-cloud
 bun install
 bun run dev          # http://localhost:3000
 bun run storybook    # http://localhost:6006
-bun run typecheck && bun run lint && bun run test   # all should pass (43 tests)
+bun run typecheck && bun run lint && bun run test   # all should pass (47 tests)
 ```
 
 Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun@1.3.14` and uses Bun workspaces plus the text `bun.lock` lockfile.
@@ -92,6 +94,8 @@ Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun
 - **Distance constants in shaders are tied to the scene's scale** — the near-camera wobble uses `smoothstep(3.2, 1.2, …)` because this cloud is 3 units wide. The UntilLabs equivalents (50, 20) are for a scene 244 units wide. Copying shader code between projects means converting them.
 - **`react-hooks/immutability` decides where state lives, twice now.** A ref may only be mutated by the component that created it, so passing one down and writing to it in a child is an error. It also rejects mutating uniforms through an extracted local (`const u = material.current.uniforms`) while allowing the same write through `material.current.uniforms` directly.
 - **Navigating to the same URL is not a reload.** Next.js serves a soft navigation and React keeps the existing canvas, so anything applied once at creation — camera position, `fov` — silently keeps its old value. Use `location.reload()` when testing initialisation.
+- **The three studio breakpoints are `base` / `sm` / `lg`**, and the toolbar's `max-w` is hand-tuned against the rail's width (`calc(100% - 15.5rem)` at `sm`, `17.5rem` at `lg`). Changing `sm:w-56` or `lg:w-64` on the rail means changing those two numbers too, or the toolbar slides under the panels.
+- **Windows display scaling lies about viewport width** — at 125% a 980px browser window is a 724px CSS viewport, so resizing to "768" to test the `md` breakpoint actually tests `sm`. Read the real width off the screenshot, not the window size.
 - **Testing Base UI in jsdom** — query Slider inputs by label, not by role (Base UI hides the thumb until it measures layout, which jsdom never does).
 
 ## Local-only material (not in the repo)

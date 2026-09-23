@@ -5,29 +5,17 @@ import { createPortal, useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { HalfFloatType, Scene, type ShaderMaterial } from "three";
 
+import { applyPostUniforms, type Uniforms } from "@/params/apply";
+import { numberValue } from "@/params/schema";
 import postFragmentShader from "@/shaders/post.frag.glsl";
 import postVertexShader from "@/shaders/post.vert.glsl";
+import { readParams, useParamsStore } from "@/store/params-store";
 
 const OFFSCREEN_RENDER_PRIORITY = -1;
 const SCREEN_RENDER_PRIORITY = 1;
 
-export interface PostParams {
-  renderScale: number;
-  vignette: number;
-  chromaticAberration: number;
-  grain: number;
-}
-
-export const defaultPostParams: PostParams = {
-  renderScale: 1,
-  vignette: 0.35,
-  chromaticAberration: 0.002,
-  grain: 0.025,
-};
-
 interface ScenePassProps {
   children: ReactNode;
-  params: PostParams;
   invert?: boolean;
 }
 
@@ -35,12 +23,14 @@ interface ScenePassProps {
  * Renders its children into a floating-point texture, then processes that
  * texture over a fullscreen triangle. Inversion is an opt-in P2.2 sanity check;
  * the production path copies the scene unchanged.
+ *
+ * P7.3 — the post uniforms are written in the frame loop from the store, like
+ * the particle ones. `renderScale` is the exception and has to stay a
+ * subscription: it decides how big the offscreen buffer is, and resizing a
+ * render target means allocating GPU memory, which is a React-shaped event
+ * rather than a per-frame assignment.
  */
-export function ScenePass({
-  children,
-  params,
-  invert = false,
-}: ScenePassProps) {
+export function ScenePass({ children, invert = false }: ScenePassProps) {
   const gl = useThree((state) => state.gl);
   const renderer = useRef(gl);
   const postMaterial = useRef<ShaderMaterial>(null);
@@ -48,7 +38,7 @@ export function ScenePass({
 
   const size = useThree((state) => state.size);
   const dpr = useThree((state) => state.viewport.dpr);
-  const renderScale = params.renderScale ?? 1;
+  const renderScale = useParamsStore((state) => numberValue(state.values, "renderScale"));
 
   const fboWidth = Math.max(1, Math.round(size.width * dpr * renderScale));
   const fboHeight = Math.max(1, Math.round(size.height * dpr * renderScale));
@@ -72,13 +62,8 @@ export function ScenePass({
 
   useLayoutEffect(() => {
     const postUniforms = postMaterial.current?.uniforms;
-    if (!postUniforms) return;
-
-    postUniforms.uInvert!.value = invert ? 1 : 0;
-    postUniforms.uVignette!.value = params.vignette;
-    postUniforms.uChromaticAberration!.value = params.chromaticAberration;
-    postUniforms.uGrain!.value = params.grain;
-  }, [invert, params.vignette, params.chromaticAberration, params.grain]);
+    if (postUniforms) postUniforms.uInvert!.value = invert ? 1 : 0;
+  }, [invert]);
 
   // The pipeline owns both render calls. Keep automatic clearing enabled so
   // each pass clears its own target, but reset renderer stats only once so the
@@ -111,7 +96,9 @@ export function ScenePass({
   // screen render for the frame, so the quad is not drawn a second time.
   useFrame(({ camera, clock, scene }) => {
     if (postMaterial.current) {
-      postMaterial.current.uniforms.uTime!.value = clock.elapsedTime;
+      const uniforms = postMaterial.current.uniforms as Uniforms;
+      applyPostUniforms(uniforms, readParams());
+      uniforms.uTime!.value = clock.elapsedTime;
     }
 
     gl.setRenderTarget(null);

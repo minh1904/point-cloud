@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import type { Vector3 } from "three";
 
 import type { IntroClock } from "./particle-field";
@@ -17,19 +17,13 @@ import type { IntroClock } from "./particle-field";
  *
  * This only ever reads the clock. `ParticleField` owns it and advances it,
  * because the component that mutates a ref has to be the one that created it.
+ *
+ * P7.3 — there is no `replay` prop any more, and none is needed: the frame
+ * where progress reaches 1 clears the remembered distance, so a replay finds
+ * it already cleared and measures the viewer's current framing afresh.
  */
-export function IntroDolly({
-  clock,
-  replay,
-}: {
-  clock: RefObject<IntroClock>;
-  replay: number;
-}) {
+export function IntroDolly({ clock }: { clock: RefObject<IntroClock> }) {
   const endDistance = useRef<number | null>(null);
-
-  useEffect(() => {
-    endDistance.current = null;
-  }, [replay]);
 
   useFrame(({ camera, controls }) => {
     const progress = clock.current.value;

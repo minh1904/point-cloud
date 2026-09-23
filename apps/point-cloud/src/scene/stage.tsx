@@ -2,17 +2,15 @@
 
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef, type ComponentRef, type Ref } from "react";
+import { memo, useRef, type ComponentRef, type Ref } from "react";
 import type { PerspectiveCamera, Vector3 } from "three";
 
-import {
-  defaultLensParams,
-  ParticleField,
-  type LensParams,
-  type ParticleParams,
-} from "./particle-field";
-import { RenderInfo, type RenderStats } from "./render-info";
-import { ScenePass, type PostParams } from "./scene-pass";
+import { defaultNumber, numberValue } from "@/params/schema";
+import { readParams } from "@/store/params-store";
+
+import { ParticleField } from "./particle-field";
+import { RenderInfo } from "./render-info";
+import { ScenePass } from "./scene-pass";
 
 /** Imperative handle of the orbit controls (e.g. `.reset()`). */
 export type OrbitControlsHandle = ComponentRef<typeof OrbitControls>;
@@ -27,16 +25,18 @@ const DEGREES = Math.PI / 180;
  * it with a move along the view axis holds the framing steady and isolates the
  * one thing focal length really controls: how much perspective the picture has.
  * A short lens up close exaggerates depth; a long lens far away flattens it.
- * That flattening is why a relief under 1% of the width still reads as solid.
+ * That flattening is why a relief under 3% of the width still reads as solid.
  *
  * The work happens in the frame loop rather than an effect because the camera
  * belongs to R3F, and mutating what a hook handed back is both a lint error
- * and a good way to fight the renderer.
+ * and a good way to fight the renderer. P7.3 made that convenient rather than
+ * merely correct: the loop can read the store without subscribing to it.
  */
-function Lens({ fov }: { fov: number }) {
+function Lens() {
   const applied = useRef<number | null>(null);
 
   useFrame(({ camera, controls }) => {
+    const fov = numberValue(readParams(), "fov");
     if (applied.current === fov) return;
 
     const lens = camera as PerspectiveCamera;
@@ -59,24 +59,20 @@ function Lens({ fov }: { fov: number }) {
 }
 
 interface StageProps {
-  params: ParticleParams;
-  lens: LensParams;
-  introReplay: number;
-  postParams: PostParams;
-  playing: boolean;
-  onStats: (stats: RenderStats) => void;
   controlsRef?: Ref<OrbitControlsHandle>;
 }
 
-export function Stage({
-  params,
-  lens,
-  introReplay,
-  postParams,
-  playing,
-  onStats,
-  controlsRef,
-}: StageProps) {
+/**
+ * The viewport (P7.1).
+ *
+ * It takes one prop, and that prop is a ref. Everything the scene needs it
+ * reads from a store, in the frame loop, without subscribing — so this element
+ * never has a reason to re-render, and `memo` makes that guarantee explicit:
+ * the inspector can re-render as often as it likes and the canvas will not
+ * notice. That is the whole "tweaking a slider never re-mounts the canvas"
+ * criterion, turned into something the type system can hold up.
+ */
+export const Stage = memo(function Stage({ controlsRef }: StageProps) {
   return (
     // R3F sizes the canvas to its parent and sets its own inline styles on the
     // wrapper, so position this element instead of styling <Canvas> itself.
@@ -87,7 +83,7 @@ export function Stage({
         // units wide, and edge bokeh pushes its sides out by a further 13%, so
         // the distance leaves margin for that rather than fitting the bounds
         // exactly — otherwise the softened edges fall off the screen.
-        camera={{ position: [0, 0, 8], fov: defaultLensParams.fov }}
+        camera={{ position: [0, 0, 8], fov: defaultNumber("fov") }}
         gl={{ antialias: true }}
       >
         {/*
@@ -110,19 +106,13 @@ export function Stage({
           minDistance={1.5}
           maxDistance={40}
         />
-        <Lens fov={lens.fov} />
-        <ScenePass params={postParams}>
+        <Lens />
+        <ScenePass>
           <color attach="background" args={["#000000"]} />
-          <ParticleField
-            {...params}
-            lens={lens}
-            introReplay={introReplay}
-            renderScale={postParams.renderScale}
-            playing={playing}
-          />
+          <ParticleField />
         </ScenePass>
-        <RenderInfo onStats={onStats} />
+        <RenderInfo />
       </Canvas>
     </div>
   );
-}
+});

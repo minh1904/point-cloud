@@ -3,23 +3,20 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 
-export interface RenderStats {
-  fps: number;
-  calls: number;
-  points: number;
-}
+import { useSessionStore } from "@/store/session-store";
 
 /**
  * Reports renderer.info and estimated frame rate a couple of times per second.
  * Priority -2 reads the completed previous frame before ScenePass resets the
  * counters for its two render passes.
+ *
+ * Twice a second is slow enough that writing to the store — and re-rendering
+ * the one status-bar line that reads it — costs nothing. Every hundredth of a
+ * second would be a different conversation.
  */
-export function RenderInfo({
-  onStats,
-}: {
-  onStats: (stats: RenderStats) => void;
-}) {
+export function RenderInfo() {
   const info = useThree((state) => state.gl.info);
+  const setStats = useSessionStore((state) => state.setStats);
   const elapsed = useRef(0);
   const frames = useRef(0);
 
@@ -30,7 +27,7 @@ export function RenderInfo({
     const fps = Math.round(frames.current / elapsed.current);
     elapsed.current = 0;
     frames.current = 0;
-    onStats({ fps, calls: info.render.calls, points: info.render.points });
+    setStats({ fps, calls: info.render.calls, points: info.render.points });
   }, -2);
 
   return null;

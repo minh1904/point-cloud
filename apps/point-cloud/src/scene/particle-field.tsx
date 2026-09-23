@@ -2,12 +2,12 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Color, type Points, type ShaderMaterial } from "three";
+import { Color, type ShaderMaterial } from "three";
 
 import fragmentShader from "@/shaders/points.frag.glsl";
 import vertexShader from "@/shaders/points.vert.glsl";
 
-import { createRandomness, createScales, createSphereField } from "./sphere-field";
+import { createParticleGrid, DEFAULT_TEXTURE_SIZE } from "./particle-grid";
 
 export interface ParticleParams {
   /** World-space point size before the per-point 0.5–1 scale. */
@@ -21,15 +21,19 @@ export interface ParticleParams {
 }
 
 export const defaultParticleParams: ParticleParams = {
-  size: 0.025,
+  // Tuned to the grid spacing (fieldSize / textureSize ≈ 0.0117 world units):
+  // points just touch, so the field reads as a surface rather than a lattice.
+  size: 0.016,
   softness: 0.5,
-  driftAmplitude: 0.06,
+  driftAmplitude: 0.01,
   driftSpeed: 1,
 };
 
 interface ParticleFieldProps extends ParticleParams {
-  count?: number;
-  radius?: number;
+  /** Side of the square data texture; the field holds `textureSize²` points. */
+  textureSize?: number;
+  /** World width and height the grid of texels is spread over. */
+  fieldSize?: number;
   color?: string;
   renderScale?: number;
   playing: boolean;
@@ -40,10 +44,14 @@ interface ParticleFieldProps extends ParticleParams {
  * draws all of them with one GL_POINTS draw call (P1.1). The material is our
  * own shader pair (P1.2): round soft discs (P1.3) sized by perspective, with a
  * per-point scale and sub-pixel dimming (P1.4), drifting on the GPU (P1.5).
+ *
+ * P3.1 — the geometry no longer carries any real data. `position` is a buffer
+ * of zeros and each vertex instead knows which texel of the data texture is
+ * its own; the vertex shader derives everything else from that coordinate.
  */
 export function ParticleField({
-  count = 60_000,
-  radius = 1.3,
+  textureSize = DEFAULT_TEXTURE_SIZE,
+  fieldSize = 3,
   color = "#dfe6ff",
   renderScale = 1,
   size,
@@ -52,11 +60,8 @@ export function ParticleField({
   driftSpeed,
   playing,
 }: ParticleFieldProps) {
-  const points = useRef<Points>(null);
   const material = useRef<ShaderMaterial>(null);
-  const positions = useMemo(() => createSphereField(count, radius), [count, radius]);
-  const scales = useMemo(() => createScales(count), [count]);
-  const randomness = useMemo(() => createRandomness(count), [count]);
+  const grid = useMemo(() => createParticleGrid(textureSize), [textureSize]);
 
   // Built once: R3F would recreate the material if `args` changed identity.
   const materialArgs = useMemo(
@@ -66,6 +71,8 @@ export function ParticleField({
           vertexShader,
           fragmentShader,
           uniforms: {
+            uTextureSize: { value: 1 },
+            uFieldSize: { value: 1 },
             uSize: { value: 0 },
             uScale: { value: 1 },
             uMaxPointSize: { value: 64 },
@@ -99,6 +106,8 @@ export function ParticleField({
   useEffect(() => {
     const uniforms = material.current?.uniforms;
     if (!uniforms) return;
+    uniforms.uTextureSize!.value = grid.size;
+    uniforms.uFieldSize!.value = fieldSize;
     uniforms.uSize!.value = size;
     uniforms.uScale!.value = height * dpr * renderScale * 0.5;
     uniforms.uMaxPointSize!.value = maxPointSize;
@@ -106,6 +115,8 @@ export function ParticleField({
     uniforms.uSoftness!.value = softness;
     uniforms.uDriftAmplitude!.value = driftAmplitude;
   }, [
+    grid,
+    fieldSize,
     size,
     color,
     softness,
@@ -117,8 +128,7 @@ export function ParticleField({
   ]);
 
   useFrame((_, delta) => {
-    if (!playing || !points.current || !material.current) return;
-    points.current.rotation.y += delta * 0.15;
+    if (!playing || !material.current) return;
     // Advance time here instead of multiplying elapsed time by the speed in
     // the shader: changing the speed then bends the motion smoothly rather
     // than jumping every point to a different phase.
@@ -126,11 +136,18 @@ export function ParticleField({
   });
 
   return (
-    <points ref={points}>
+    // The real positions only exist inside the vertex shader, so the bounding
+    // sphere three.js computes from the zeroed `position` attribute has radius
+    // 0 at the origin. Left on, frustum culling would drop the whole draw call
+    // the moment that single point left the view.
+    <points frustumCulled={false}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-aScale" args={[scales, 1]} />
-        <bufferAttribute attach="attributes-aRandomness" args={[randomness, 3]} />
+        {/* Zeros, but required: three.js reads the vertex count from here. */}
+        <bufferAttribute attach="attributes-position" args={[grid.positions, 3]} />
+        <bufferAttribute attach="attributes-aParticleUv" args={[grid.particleUv, 2]} />
+        {/* Identity rather than address. First read by the shader in P4.2
+            (curl-noise seed) and P5.5 (reveal order). */}
+        <bufferAttribute attach="attributes-aIndex" args={[grid.index, 1]} />
       </bufferGeometry>
       <shaderMaterial ref={material} args={materialArgs} />
     </points>

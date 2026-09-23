@@ -115,7 +115,7 @@ Learn the format **before** generating it. Use the decoded UntilLabs sample loca
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| 3.1 | Geometry with no real positions: `aParticleUv` (texel centre) + `aIndex`, `frustumCulled=false` | Vertex shader fetches its own data; why culling must be off | 65 536 vertices, positions all zero on CPU |
+| ✅ 3.1 | Geometry with no real positions: `aParticleUv` (texel centre) + `aIndex`, `frustumCulled=false` | Vertex shader fetches its own data; why culling must be off | 65 536 vertices, positions all zero on CPU |
 | 3.2 | Load `color.png`, sample it in the vertex shader | Texture setup for data: `NearestFilter`, no mipmaps, `flipY=false`, `NoColorSpace` | Colours appear in a flat grid |
 | 3.3 | Decode 16-bit position from `position_h` + `position_l` | Splitting a 16-bit value into two 8-bit channels; the 256² quirk in the original and the correct general formula `(hi*256+lo)/65535` | Photo relief appears, matches the decoded preview |
 | 3.4 | `remapPosition` with bounds from `metadata.json`, rotate to face camera | Normalised storage + bounds = compact and precise | Correct scale and orientation |

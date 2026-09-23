@@ -39,8 +39,11 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P2.4 · Vignette, chromatic aberration và grain](p2-4-post-effects.md)
 - [P2.5 · Render scale FBO](p2-5-render-scale.md)
 
+### P3 — Texture làm dữ liệu
+- [P3.1 · Geometry không có vị trí](p3-1-geometry-without-positions.md)
+
 ### Tiếp theo
-- P3.1 · Geometry không có vị trí (aParticleUv + aIndex) *(sắp tới)*
+- P3.2 · Nạp `color.png` và lấy mẫu trong vertex shader *(sắp tới)*
 
 ## Bức tranh tổng thể
 

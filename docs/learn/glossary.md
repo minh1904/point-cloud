@@ -44,6 +44,13 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Fill-rate** | Tốc độ GPU có thể ghi pixel vào framebuffer (pixels/giây); thường là nút thắt cổ chai trên màn hình DPR cao. | [P2.5](p2-5-render-scale.md) |
 | **Overdraw** | Hiện tượng nhiều fragment/hạt vẽ chồng lên cùng một vị trí pixel, làm lãng phí công suất tính toán của GPU. | [P2.5](p2-5-render-scale.md) |
 | **Render scale** | Tỉ lệ co giảm độ phân giải của FBO (ví dụ 50%–100%) so với canvas để giảm tải fill-rate mà UI vẫn giữ nguyên độ nét. | [P2.5](p2-5-render-scale.md) |
+| **Texel** | Một ô của texture (texture element), tương tự pixel của ảnh. Texture `256²` có 65.536 texel. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Texture as data** | Dùng texture để chứa số liệu (vị trí, màu, mật độ) thay vì chỉ chứa hình ảnh, để vertex shader tự tra cứu. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Tâm texel** (`+ 0.5`) | UV phải trỏ vào giữa ô: `(x + 0.5) / size`. Lấy `x / size` là trỏ vào vạch ngăn hai texel → sai số làm tròn đọc nhầm ô bên cạnh. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Bounding sphere** | Hình cầu nhỏ nhất bao trọn một vật; three.js tính nó **từ attribute `position`**. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Frustum culling** | Bỏ draw call của vật nằm ngoài khối nón cụt camera nhìn thấy. Phải tắt khi vị trí chỉ sinh ra trong shader. | [P3.1](p3-1-geometry-without-positions.md) |
+| **Hash (trong shader)** | Hàm tất định biến một toạ độ thành số "ngẫu nhiên", thay cho attribute random do CPU sinh. Nhạy với độ lớn đầu vào. | [P3.1](p3-1-geometry-without-positions.md) |
+| **ulp** (unit in the last place) | Khoảng cách giữa hai số float liền kề. Càng xa 0 thì ulp càng lớn → số lớn mất độ phân giải phần thập phân. | [P3.1](p3-1-geometry-without-positions.md) |
 
 ## Không gian toạ độ
 

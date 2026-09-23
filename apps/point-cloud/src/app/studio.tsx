@@ -79,8 +79,8 @@ export function Studio() {
             label="Drift"
             value={params.driftAmplitude}
             onValueChange={setParticle("driftAmplitude")}
-            max={0.3}
-            step={0.005}
+            max={0.1}
+            step={0.001}
             format={{ maximumFractionDigits: 3 }}
           />
           <Slider

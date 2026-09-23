@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "width": 256,
+  "height": 256,
+  "particleCount": 65536,
+  "precision": 16,
+  "bounds": {
+    "min": [
+      -1.494140625,
+      -0.99609375,
+      -0.037203118205070496
+    ],
+    "max": [
+      1.494140625,
+      0.99609375,
+      0.044104643166065216
+    ]
+  },
+  "source": {
+    "image": "color.png",
+    "aspect": 1.5
+  },
+  "depth": {
+    "kind": "placeholder-heuristic",
+    "relief": 0.09,
+    "note": "Atmospheric perspective + ground plane, not a depth model. Replaced by P6."
+  }
+}

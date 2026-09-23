@@ -73,6 +73,15 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Sai phân trung tâm** | Ước lượng đạo hàm bằng `(f(p+e) − f(p−e)) / 2e`. Chính xác hơn sai phân tiến, đổi lại một lần lấy mẫu. | [P4.2](p4-2-curl-noise.md) |
 | **Stateless animation** (P4) | Toàn bộ độ dịch tính lại từ `uTime` mỗi frame. Không trạng thái, không sai số tích luỹ, nhưng cũng không tương tác được. | [P4.2](p4-2-curl-noise.md) |
 | **Nhân với `w`** | Cộng độ dịch trong clip space rồi nhân `gl_Position.w` để triệt tiêu perspective divide — chuyển động đều bằng nhau trên màn hình bất kể độ sâu. | [P4.3](p4-3-clip-space-offset.md) |
+| **FOV** (field of view) | Góc nhìn dọc của camera. Hẹp = ống tele, nén chiều sâu; rộng = góc rộng, phóng đại chiều sâu. | [P5.6](p5-6-telephoto.md) |
+| **Dolly zoom** | Đổi FOV và dời camera cùng lúc để chủ thể giữ nguyên cỡ. Cách duy nhất để *thấy* FOV làm gì thay vì chỉ thấy zoom. | [P5.6](p5-6-telephoto.md) |
+| **DOF** (depth of field) | Vùng ảnh còn nét. Ở đây giả lập bằng cách thu nhỏ và làm nhạt hạt ngoài vùng nét, không blur gì cả. | [P5.3](p5-3-fake-dof.md) |
+| **Circle of confusion** | Vòng nhoè mà một điểm ngoài nét tạo ra trên phim. Point cloud làm ngược lại — nhỏ đi — vì không có blur thật. | [P5.3](p5-3-fake-dof.md) |
+| **Bokeh** | Chất lượng của phần nhoè ngoài vùng nét. Ở mép khung: hạt to ra, nhạt đi, bị đẩy ra ngoài. | [P5.4](p5-4-edge-bokeh.md) |
+| **LUT** (lookup table) | Bảng tra màu 64³, cắt thành 64 lát xếp lưới 8×8 trong một ảnh 512×512. Thay file là thay tông màu. | [P5.2](p5-2-lut-color-grade.md) |
+| **Split toning** | Đẩy vùng tối một hướng và vùng sáng hướng ngược lại. Bóng lạnh / sáng ấm là tổ hợp đọc thành "chất phim". | [P5.2](p5-2-lut-color-grade.md) |
+| **Identity LUT** | LUT không đổi màu gì. Vô dụng về thẩm mỹ, nhưng là bài kiểm tra duy nhất đáng tin cho code tra bảng. | [P5.2](p5-2-lut-color-grade.md) |
+| **Ease-out** | Chuyển động đi nhanh lúc đầu rồi lắng dần. Tuyến tính luôn tố cáo bản thân là chuyển động máy móc. | [P5.5](p5-5-intro-reveal.md) |
 
 ## Không gian toạ độ
 

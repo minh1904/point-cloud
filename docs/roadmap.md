@@ -142,11 +142,11 @@ Stateless by design (no simulation). A GPGPU layer for pointer interaction is op
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
 | 5.1 | Density-driven point size | Sparse areas get bigger points so the background never shows holes | Background grass looks continuous |
-| 5.2 | 3D LUT (512², 8×8 tiles) in the particle shader, with intensity | How a 64³ colour cube is packed into 2D and sampled | Swapping LUT PNG changes grade |
-| 5.3 | Fake DOF: focal distance/range → smaller + more transparent points | Cheap DOF inside the point shader instead of post blur | Focus pulls with a slider |
-| 5.4 | Edge bokeh (bigger, dimmer, pushed outward at X edges) | Framing the subject like a lens | Edges soften |
-| 5.5 | Intro: staggered reveal (`random` + `fbm` delay) + expanding organic focal ring + camera dolly | Per-particle timelines from one global progress uniform | Replayable intro |
-| 5.6 | Narrow FOV (≈16°) camera preset | Telephoto flattens perspective so shallow relief looks photographic | Side-by-side vs 50° shows the difference |
+| ✅ 5.2 | 3D LUT (512², 8×8 tiles) in the particle shader, with intensity | How a 64³ colour cube is packed into 2D and sampled | Swapping LUT PNG changes grade |
+| ✅ 5.3 | Fake DOF: focal distance/range → smaller + more transparent points | Cheap DOF inside the point shader instead of post blur | Focus pulls with a slider |
+| ✅ 5.4 | Edge bokeh (bigger, dimmer, pushed outward at X edges) | Framing the subject like a lens | Edges soften |
+| ✅ 5.5 | Intro: staggered reveal (`random` + `fbm` delay) + expanding organic focal ring + camera dolly | Per-particle timelines from one global progress uniform | Replayable intro |
+| ✅ 5.6 | Narrow FOV (≈16°) camera preset | Telephoto flattens perspective so shallow relief looks photographic | Side-by-side vs 50° shows the difference |
 
 ---
 

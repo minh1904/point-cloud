@@ -53,8 +53,18 @@ Cách học hiệu quả nhất: mở song song bài học và file code đượ
 - [P4.4 · Thở và rung gần camera](p4-4-breathing.md)
 - [P4.5 · Biến chuyển động thành núm vặn](p4-5-motion-params.md)
 
+### P5 — Cái nhìn
+- [P5.6 · Ống tele 16°](p5-6-telephoto.md)
+- [P5.3 · DOF giả trong shader hạt](p5-3-fake-dof.md)
+- [P5.4 · Bokeh mép](p5-4-edge-bokeh.md)
+- [P5.2 · LUT màu 3D](p5-2-lut-color-grade.md)
+- [P5.5 · Intro: hạt hiện dần](p5-5-intro-reveal.md)
+
+Thứ tự ở đây là thứ tự đã làm, không phải thứ tự đánh số: 5.6 đặt khung hình mà mọi bước sau phải chỉnh dưới nó, còn 5.5 để cuối vì intro chỉ đáng dựng khi thứ nó trình diễn đã xong.
+
 ### Tiếp theo
-- P5.1 · Kích thước hạt theo mật độ *(sắp tới)*
+- P5.1 · Kích thước hạt theo mật độ — *chờ dữ liệu mật độ từ P6.6*
+- P6.1 · Tải ảnh và thu nhỏ về kích thước làm việc *(sắp tới)*
 
 ## Bức tranh tổng thể
 

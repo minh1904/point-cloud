@@ -1,18 +1,20 @@
 # Status & handoff
 
-_Last updated: 2026-09-23 · last commit on `main`: `5f62871`_
+_Last updated: 2026-09-23 · last commit on `main`: `f5129b4`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 through P4 are complete; P5 is next.** The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
+**P0 through P4 are complete; P5 is done except 5.1, which is blocked on density data. P6 is next.** The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
 
 P3.1 replaced the CPU-generated sphere with a data-driven geometry: 256² = 65,536 particles whose `position` attribute is all zeros, each carrying `aParticleUv` (its texel centre) and `aIndex` instead. The vertex shader derives the position — currently a flat grid — and hashes its own per-point scale and randomness from the texel coordinate, so `aScale` / `aRandomness` are gone. `frustumCulled` is off, because a zeroed `position` gives three.js a bounding sphere of radius 0.
 
 P3.2 gave that address something to point at, and 3.3-3.4 finished the job: the field renders entirely from a **bundle** under `public/particles/sample/` — `color.png`, `position_h.png`, `position_l.png` and `metadata.json`. Colour and position are both vertex texture fetches; positions are 16-bit values split across the two PNGs and mapped back onto the bundle's `bounds`. `ParticleField` now takes a `bundleUrl` and nothing else about the data: hand it a different bundle and it renders that, which is exactly the seam P6 writes into.
 
 3.5 added the CPU mirror of the shader decode (`src/bundle/position-codec.ts`) plus a dependency-free PNG reader/writer (`scripts/png.ts`) — together these are also the encoder half that P8.2 needs. 43 tests.
+
+P5 dressed it as a photograph. A 16 degree telephoto (5.6) flattens perspective so a relief under 3% of the width reads as compressed rather than flat; fake DOF (5.3) shrinks and fades particles outside a depth slice instead of blurring the frame; edge bokeh (5.4) blows out and pushes apart the left and right margins; a baked 64³ LUT (5.2) carries the colour grade in a 512² PNG; and an intro (5.5) reveals 65,536 particles on their own timelines from a single `uProgress` float while the camera pushes in. **5.1 is not done** — see below.
 
 P4 replaced the placeholder `sin`/`cos` drift with curl noise built on value-noise fBM (`src/shaders/noise.glsl`, shared through a registered `ShaderChunk`). The offset is added in clip space and multiplied by `w`, so particles move the same distance on screen at any depth; a slow depth breathing and a near-camera wobble sit underneath it. All of it is stateless — the whole offset is recomputed from `uTime` every frame, which is why changing any parameter mid-flight needs no reset. Five knobs in a new **Motion** panel, plus a debug button that paints the fBM field onto the particles.
 
@@ -24,22 +26,31 @@ P4 replaced the placeholder `sin`/`cos` drift with curl noise built on value-noi
 | P2 FBO + post-processing | ✅ done (2.1–2.5) |
 | P3 Textures as data | ✅ done (3.1–3.5) |
 | P4 Motion (curl noise) | ✅ done (4.1–4.5) |
-| P5 The look | ⏭ **5.1 next** |
-| P6–P9 | not started |
+| P5 The look | 5.2–5.6 ✅ · 5.1 blocked on density |
+| P6 Photo → point cloud | ⏭ **6.1 next** |
+| P7–P9 | not started |
 
-## Next step: P5.1
+## Next step: P6.1
 
-Density-driven point size: sparse areas get bigger points so the background never shows holes. Done when the background grass looks continuous.
+Upload or drop an image, downscale it to a working size (about 1024px on the long side), and show a 2D preview. The concepts are `createImageBitmap`, `OffscreenCanvas`, and the colour space of `getImageData`. Done when the image preview and its pixel buffer are in the store.
 
-**5.1 needs data the bundle does not carry yet.** The original ships a `density.png` (local point density, normalised against a `densityRange` in metadata — see [research §2.2](research/01-untillabs-method.md)), and ours has no density map because the particles sit on a regular grid where density is uniform by construction. Two ways round it: compute a density map in `scripts/build-sample-bundle.ts` and add it to the bundle, or skip 5.1 until P6.6 generates real density from an importance-sampled cloud. The second is more honest; the first is a good rehearsal for it.
+P6 is where this project stops rebuilding the UntilLabs renderer and goes past it: everything from 6.2 onward automates what they did by hand in Houdini. It also closes two things P3 and P5 left open — real depth, and the density map 5.1 needs.
 
-5.2 needs a LUT PNG. 5.3, 5.4, 5.5 and 5.6 need nothing new and can be done in any order.
+**Decision 6.2 has to be made now rather than deferred**: which depth model. Default candidate is Depth Anything V2 Small through transformers.js (WebGPU with a WASM fallback). Note size and first-load latency when choosing.
 
 Per the project rules, every step also needs a Vietnamese learning note and an entry in `docs/learn/README.md`.
 
+### What P5 could not finish
+
+**5.1 (density-driven point size) is blocked and deliberately skipped.** Sparse regions should get larger points so the background never shows holes — but the sample cloud sits on a regular grid, where density is uniform by construction and there is nothing to measure. It only becomes meaningful after **P6.5** places particles by importance sampling and **P6.6** computes per-point density. Do it there, not before.
+
 ### Still outstanding from P3
 
-**The sample bundle's depth is a placeholder, not a measurement.** `scripts/build-sample-bundle.ts` derives it from two painter's cues in the photo itself (atmospheric perspective + ground plane) because decision 6.2 — which depth model — is still open. The decode path, bounds, codec and tests are all real and verified; only the depth numbers are a stand-in. P6.3 replaces them by writing the same format, with no renderer change. Regenerate any time with `bun run build:sample` from `apps/point-cloud`.
+**The sample bundle's depth is a placeholder, not a measurement.** `scripts/build-sample-bundle.ts` derives it from two painter's cues in the photo itself (atmospheric perspective + ground plane) because decision 6.2 is still open. The decode path, bounds, codec and tests are all real and verified; only the depth numbers are a stand-in. Regenerate any time with `bun run build:sample` from `apps/point-cloud`.
+
+### The attribute still waiting for a job
+
+`aIndex` has been uploaded since P3.1 and the vertex shader has never read it. P4.2 and P5.5 both wanted a per-particle seed and both used the texel hash instead, because hashing a five-digit integer exhausts float precision. Its real use needs **P6.9**: once particle order is shuffled before packing, the ordinal stops being spatially meaningful and becomes usable as a seed. Until then it is 256 KB of unread buffer — worth removing if P6.9 slips.
 
 ## Open decisions
 
@@ -79,6 +90,8 @@ Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun
 - **Every data texture needs its colour space chosen deliberately** — `SRGBColorSpace` for `color.png`, `NoColorSpace` for the position maps. Decoding coordinates as colour bends them along a gamma curve and reports no error, which is why `configureDataTexture()` takes it as a required argument.
 - **`THREE.ShaderChunk` is the only way to share GLSL between shaders** — GLSL has no imports and raw-loader yields a plain string. Register under a prefixed name (`pc_noise`); the registry is one global namespace shared with three's own 130-odd chunks, and TypeScript needs a cast to accept a new key.
 - **Distance constants in shaders are tied to the scene's scale** — the near-camera wobble uses `smoothstep(3.2, 1.2, …)` because this cloud is 3 units wide. The UntilLabs equivalents (50, 20) are for a scene 244 units wide. Copying shader code between projects means converting them.
+- **`react-hooks/immutability` decides where state lives, twice now.** A ref may only be mutated by the component that created it, so passing one down and writing to it in a child is an error. It also rejects mutating uniforms through an extracted local (`const u = material.current.uniforms`) while allowing the same write through `material.current.uniforms` directly.
+- **Navigating to the same URL is not a reload.** Next.js serves a soft navigation and React keeps the existing canvas, so anything applied once at creation — camera position, `fov` — silently keeps its old value. Use `location.reload()` when testing initialisation.
 - **Testing Base UI in jsdom** — query Slider inputs by label, not by role (Base UI hides the thumb until it measures layout, which jsdom never does).
 
 ## Local-only material (not in the repo)

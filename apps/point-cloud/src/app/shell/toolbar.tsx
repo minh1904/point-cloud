@@ -23,6 +23,9 @@ export function Toolbar({
   const playing = useSessionStore((state) => state.playing);
   const togglePlaying = useSessionStore((state) => state.togglePlaying);
   const replayIntro = useSessionStore((state) => state.replayIntro);
+  const requestStill = useSessionStore((state) => state.requestStill);
+  const recording = useSessionStore((state) => state.recording);
+  const toggleRecording = useSessionStore((state) => state.toggleRecording);
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const toggleInspector = useUiStore((state) => state.toggleInspector);
   const toggleHelp = useUiStore((state) => state.toggleHelp);
@@ -73,6 +76,27 @@ export function Toolbar({
         onClick={redo}
       >
         Redo
+      </Button>
+
+      <span className="mx-1 hidden h-4 w-px bg-border/20 sm:block" />
+
+      {/* P9.3 — the still is grabbed inside the next frame, not here: the
+          drawing buffer is only valid while the frame is being rendered. */}
+      <Button
+        variant="ghost-muted"
+        className="h-8 sm:h-7"
+        title="Save a PNG of the viewport"
+        onClick={requestStill}
+      >
+        PNG
+      </Button>
+      <Button
+        variant={recording ? "destructive" : "ghost-muted"}
+        className="h-8 sm:h-7"
+        title={recording ? "Stop and save the clip" : "Record the viewport to webm"}
+        onClick={toggleRecording}
+      >
+        {recording ? "Stop" : "Rec"}
       </Button>
 
       <div className="ml-auto flex items-center gap-1">

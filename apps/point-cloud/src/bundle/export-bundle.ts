@@ -88,8 +88,8 @@ export async function exportBundle(options: ExportOptions): Promise<ExportedBund
  * alive for the life of the document, and a few exports of half a megabyte
  * each add up to a leak nobody attributes to a download link.
  */
-export function downloadBytes(bytes: Uint8Array, filename: string): void {
-  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/zip" }));
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
 
   anchor.href = url;
@@ -97,6 +97,10 @@ export function downloadBytes(bytes: Uint8Array, filename: string): void {
   anchor.click();
 
   URL.revokeObjectURL(url);
+}
+
+export function downloadBytes(bytes: Uint8Array, filename: string): void {
+  downloadBlob(new Blob([bytes as BlobPart], { type: "application/zip" }), filename);
 }
 
 /** `my photo.JPG` → `my-photo`, so the download has a name worth keeping. */

@@ -11,6 +11,7 @@ import { useSessionStore } from "@/store/session-store";
 
 import { resolveProfile } from "./quality";
 
+import { Capture } from "./capture";
 import { ParticleField } from "./particle-field";
 import { RenderInfo } from "./render-info";
 import { ScenePass } from "./scene-pass";
@@ -124,6 +125,7 @@ export const Stage = memo(function Stage({ controlsRef }: StageProps) {
           <ParticleField octaves={profile.fbmOctaves} />
         </ScenePass>
         <RenderInfo />
+        <Capture />
       </Canvas>
     </div>
   );

@@ -31,11 +31,16 @@ interface SessionState {
    * hydration.
    */
   tier: QualityTier | null;
+  /** Bumped to ask for a still; the scene compares it against what it saw. */
+  stillRequest: number;
+  recording: boolean;
 
   togglePlaying: () => void;
   replayIntro: () => void;
   setStats: (stats: RenderStats) => void;
   setTier: (tier: QualityTier) => void;
+  requestStill: () => void;
+  toggleRecording: () => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -43,11 +48,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   introRun: 0,
   stats: null,
   tier: null,
+  stillRequest: 0,
+  recording: false,
 
   togglePlaying: () => set((state) => ({ playing: !state.playing })),
   replayIntro: () => set((state) => ({ introRun: state.introRun + 1 })),
   setStats: (stats) => set({ stats }),
   setTier: (tier) => set({ tier }),
+  requestStill: () => set((state) => ({ stillRequest: state.stillRequest + 1 })),
+  toggleRecording: () => set((state) => ({ recording: !state.recording })),
 }));
 
 /** Read without subscribing — for `useFrame`, same reasoning as the params. */

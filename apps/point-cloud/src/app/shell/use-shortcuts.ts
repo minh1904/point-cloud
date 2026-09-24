@@ -79,6 +79,12 @@ export function useShortcuts(): void {
         case "r":
           useSessionStore.getState().replayIntro();
           break;
+        case "p":
+          useSessionStore.getState().requestStill();
+          break;
+        case "v":
+          useSessionStore.getState().toggleRecording();
+          break;
         case "c":
           useUiStore.getState().toggleInspector();
           break;

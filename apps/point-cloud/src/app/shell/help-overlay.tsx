@@ -25,6 +25,8 @@ const SHORTCUTS: readonly { group: string; items: readonly Shortcut[] }[] = [
     items: [
       { keys: ["Space"], action: "Play / pause the drift" },
       { keys: ["R"], action: "Replay the intro" },
+      { keys: ["P"], action: "Save a PNG of the viewport" },
+      { keys: ["V"], action: "Start or stop recording a webm clip" },
       { keys: ["Drag"], action: "Orbit · right-drag or shift to pan · wheel to dolly" },
     ],
   },

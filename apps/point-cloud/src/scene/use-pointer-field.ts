@@ -209,27 +209,43 @@ export function usePointerField(
     };
   }, [targetA, targetB]);
 
-  /** Whether the pointer is over the canvas at all. */
+  /**
+   * Whether the pointer is over the canvas at all.
+   *
+   * Driven by `pointermove` rather than `pointerenter`, which matters more
+   * than it sounds. `pointerenter` fires once, on the way in; anything that
+   * later clears the flag then needs a full exit and re-entry to restore it.
+   * `pointermove` re-asserts the truth continuously, and it is also the only
+   * one that fires when the canvas appears *underneath* a cursor that was
+   * already there.
+   *
+   * `pointerup` only ends the interaction for a finger. Clearing it for a
+   * mouse was a real bug: orbiting the camera ends in a `pointerup`, so one
+   * drag killed the effect until the cursor left the canvas and came back.
+   */
   const over = useRef(false);
   useEffect(() => {
     const element = gl.domElement;
-    const enter = () => {
+    const move = () => {
       over.current = true;
     };
     const leave = () => {
       over.current = false;
     };
+    const release = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") over.current = false;
+    };
 
-    element.addEventListener("pointerenter", enter);
+    element.addEventListener("pointermove", move);
     element.addEventListener("pointerleave", leave);
-    // A touch that ends should stop pushing, even though the finger never
-    // "leaves" the way a mouse does.
-    element.addEventListener("pointerup", leave);
+    element.addEventListener("pointercancel", leave);
+    element.addEventListener("pointerup", release);
 
     return () => {
-      element.removeEventListener("pointerenter", enter);
+      element.removeEventListener("pointermove", move);
       element.removeEventListener("pointerleave", leave);
-      element.removeEventListener("pointerup", leave);
+      element.removeEventListener("pointercancel", leave);
+      element.removeEventListener("pointerup", release);
     };
   }, [gl]);
 

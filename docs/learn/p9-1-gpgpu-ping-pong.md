@@ -146,7 +146,13 @@ Năm núm vặn mới = **năm entry**. Schema mọc thêm một `stage: "pointe
 
 1. **Luật immutability chặn `useMemo` + `useFrame`.** Đã mô tả ở trên. Cách sửa (rig trong ref, dựng trong effect) tốt hơn bản gốc.
 2. **`sampler2D` để `null` KHÔNG đọc ra 0.** three.js thay bằng một texture **trắng** mặc định, nên mọi hạt sẽ bị đẩy nguyên một đơn vị thế giới ở frame đầu tiên. Phải có một texture 1×1 toàn 0 làm giá trị khởi tạo — `ZERO_DISPLACEMENT`, một singleton 4 byte.
-3. **Không kiểm được bằng mắt trong suốt quá trình viết**, vì cửa sổ Chrome bị thu nhỏ (xem [P9.2](p9-2-quality-tiers.md)). Thay vào đó: **biên dịch và link shader trong một WebGL2 context dựng riêng** ngay trong tab — nó bắt được lỗi cú pháp, biến chưa khai, và cho biết uniform nào sống sót qua trình tối ưu. Cả 13 uniform đều còn, nghĩa là không có cái nào gõ sai tên.
+3. **Một cú click giết hiệu ứng.** Bản đầu cho `pointerup` tắt cờ "con trỏ đang ở trên canvas", với lý do "ngón tay nhấc lên thì ngừng đẩy". Với **chuột** thì mọi thao tác xoay camera đều kết thúc bằng `pointerup`, nên chỉ cần kéo camera một lần là hiệu ứng chết hẳn — cho tới khi đưa chuột ra khỏi canvas rồi vào lại, vì cờ chỉ được bật lại bởi `pointerenter`.
+
+   Kịch bản test của mình chỉ hover chứ không click nên không lộ ra; người dùng thật click ngay lập tức. Bản sửa: lấy `pointermove` làm nguồn sự thật (nó **tự khẳng định lại liên tục**, thay vì bật một lần rồi thôi), và `pointerup` chỉ tắt cờ khi `event.pointerType !== "mouse"`.
+
+   Bài học rộng hơn: **một cờ trạng thái được bật bởi một sự kiện xảy ra một lần là một cái bẫy.** Nếu có bất kỳ đường nào tắt nó sai, nó không tự phục hồi.
+
+4. **Không kiểm được bằng mắt trong suốt quá trình viết**, vì cửa sổ Chrome bị thu nhỏ (xem [P9.2](p9-2-quality-tiers.md)). Thay vào đó: **biên dịch và link shader trong một WebGL2 context dựng riêng** ngay trong tab — nó bắt được lỗi cú pháp, biến chưa khai, và cho biết uniform nào sống sót qua trình tối ưu. Cả 13 uniform đều còn, nghĩa là không có cái nào gõ sai tên.
 
 ## Tự thử
 

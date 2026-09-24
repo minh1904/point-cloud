@@ -5,7 +5,9 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 
 import type { OrbitControlsHandle } from "@/scene/stage";
+import { detectTier } from "@/scene/quality";
 import { usePresetsStore } from "@/store/presets-store";
+import { useSessionStore } from "@/store/session-store";
 import { useUiStore } from "@/store/ui-store";
 
 import { Inspector } from "../inspector/inspector";
@@ -58,6 +60,11 @@ export function AppShell() {
   // which is late enough to be safe and early enough not to be seen.
   const hydrate = usePresetsStore((state) => state.hydrate);
   useEffect(() => hydrate(), [hydrate]);
+
+  // P9.2 — in an effect for the same reason: the server has no `navigator`,
+  // and a tier guessed during render would not survive hydration.
+  const setTier = useSessionStore((state) => state.setTier);
+  useEffect(() => setTier(detectTier()), [setTier]);
 
   return (
     <main className="flex h-dvh w-full flex-col overflow-hidden bg-background">

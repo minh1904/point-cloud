@@ -386,6 +386,18 @@ export const PARAMS: readonly Param[] = [
 
   // ── Post effects ─────────────────────────────────────────────────────────
   {
+    key: "quality",
+    label: "Quality",
+    group: "post",
+    stage: "scene",
+    kind: "enum",
+    // `auto` reads the device rather than the person. Every other value is the
+    // person overruling it, which is the point of having it in the inspector.
+    default: "auto",
+    options: ["auto", "low", "medium", "high"],
+    hint: "Caps the pixel ratio and the number of noise octaves. Auto guesses from the device",
+  },
+  {
     key: "renderScale",
     label: "Scale",
     group: "post",

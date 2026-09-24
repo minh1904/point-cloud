@@ -34,6 +34,8 @@ export interface IntroClock {
 interface ParticleFieldProps {
   /** Bundle to render, as a URL under `public/`. Overridden by a built cloud. */
   bundleUrl?: string;
+  /** fBM octaves in the motion field, from the quality tier (P9.2). */
+  octaves?: number;
 }
 
 /**
@@ -60,7 +62,10 @@ interface ParticleFieldProps {
  * React state is only what genuinely changes the *tree*: which bundle is
  * loaded, and which colour grade texture.
  */
-export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps) {
+export function ParticleField({
+  bundleUrl = SAMPLE_BUNDLE,
+  octaves = 4,
+}: ParticleFieldProps) {
   const material = useRef<ShaderMaterial>(null);
   const intro = useRef<IntroClock>({ value: 0 });
   const introSeen = useRef(0);
@@ -96,13 +101,18 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
     [textureSize],
   );
 
-  // Built once: R3F would recreate the material if `args` changed identity.
+  // Rebuilt only when the octave count changes, which is a shader recompile
+  // and therefore a real event — not something to do per frame. R3F recreates
+  // the material when `args` changes identity, which is exactly right here.
   const materialArgs = useMemo(
     () =>
       [
         {
           vertexShader,
           fragmentShader,
+          // three injects these as `#define` lines above every include, so
+          // `noise.glsl` picks the number up through its `#ifndef` guard.
+          defines: { PC_FBM_OCTAVES: octaves },
           uniforms: {
             uColorMap: { value: null },
             uPositionHigh: { value: null },
@@ -140,7 +150,7 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
           depthWrite: false,
         },
       ] as const,
-    [],
+    [octaves],
   );
 
   // The largest point this GPU can rasterise (commonly 64–8192 px).
@@ -151,27 +161,29 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
     return range[1] ?? 64;
   }, [gl]);
 
-  // The bundle's own numbers are not parameters — they arrive with the data
-  // and change only when the data does, so an effect is the right home.
-  useEffect(() => {
-    const uniforms = material.current?.uniforms;
-    if (!uniforms || !bundle) return;
-
-    uniforms.uColorMap!.value = bundle.color;
-    uniforms.uPositionHigh!.value = bundle.positionHigh;
-    uniforms.uPositionLow!.value = bundle.positionLow;
-    (uniforms.uBoundsMin!.value as Vector3).fromArray(bundle.metadata.bounds.min);
-    (uniforms.uBoundsMax!.value as Vector3).fromArray(bundle.metadata.bounds.max);
-    uniforms.uTextureSize!.value = bundle.metadata.width;
-  }, [bundle]);
-
   useFrame(({ size, viewport }, delta) => {
     const current = material.current;
-    if (!current) return;
+    if (!current || !bundle) return;
 
     const values = readParams();
     const session = readSession();
 
+    // The bundle's own numbers are written here rather than in an effect, and
+    // that is a scar. They *are* effect-shaped — they arrive with the data and
+    // change only when the data does — but the material is recreated whenever
+    // the quality tier changes its shader defines (P9.2), and an effect keyed
+    // on `bundle` does not re-run for that. The new material got fresh
+    // `Vector3()` bounds of (0,0,0), so every particle decoded to the centre
+    // of the cloud and 65,536 of them stacked into one disc.
+    //
+    // The frame loop is the one place that cannot fall out of step with which
+    // material is current.
+    current.uniforms.uColorMap!.value = bundle.color;
+    current.uniforms.uPositionHigh!.value = bundle.positionHigh;
+    current.uniforms.uPositionLow!.value = bundle.positionLow;
+    (current.uniforms.uBoundsMin!.value as Vector3).fromArray(bundle.metadata.bounds.min);
+    (current.uniforms.uBoundsMax!.value as Vector3).fromArray(bundle.metadata.bounds.max);
+    current.uniforms.uTextureSize!.value = bundle.metadata.width;
     current.uniforms.uDisplacement!.value = displacement.current;
 
     applyPointUniforms(current.uniforms as Uniforms, values, {

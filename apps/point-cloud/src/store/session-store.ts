@@ -11,6 +11,8 @@
  */
 import { create } from "zustand";
 
+import type { QualityTier } from "@/scene/quality";
+
 export interface RenderStats {
   fps: number;
   calls: number;
@@ -23,20 +25,29 @@ interface SessionState {
   /** Bumped to run the intro again; the scene compares it against what it saw. */
   introRun: number;
   stats: RenderStats | null;
+  /**
+   * What the device looks capable of (P9.2). Null until an effect has run:
+   * the server cannot know, and guessing during render would not survive
+   * hydration.
+   */
+  tier: QualityTier | null;
 
   togglePlaying: () => void;
   replayIntro: () => void;
   setStats: (stats: RenderStats) => void;
+  setTier: (tier: QualityTier) => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
   playing: true,
   introRun: 0,
   stats: null,
+  tier: null,
 
   togglePlaying: () => set((state) => ({ playing: !state.playing })),
   replayIntro: () => set((state) => ({ introRun: state.introRun + 1 })),
   setStats: (stats) => set({ stats }),
+  setTier: (tier) => set({ tier }),
 }));
 
 /** Read without subscribing — for `useFrame`, same reasoning as the params. */

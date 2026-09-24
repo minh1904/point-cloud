@@ -1,7 +1,9 @@
 "use client";
 
-import { useSessionStore } from "@/store/session-store";
+import { stringValue } from "@/params/schema";
+import { useParamsStore } from "@/store/params-store";
 import { usePhotoStore } from "@/store/photo-store";
+import { useSessionStore } from "@/store/session-store";
 
 /**
  * The bottom line (P7.1, P7.7).
@@ -20,6 +22,8 @@ export function StatusBar() {
   const bundle = usePhotoStore((state) => state.bundle);
   const depth = usePhotoStore((state) => state.depth);
   const importedName = usePhotoStore((state) => state.importedName);
+  const tier = useSessionStore((state) => state.tier);
+  const quality = useParamsStore((state) => stringValue(state.values, "quality"));
 
   return (
     <div className="flex shrink-0 items-center gap-3 overflow-x-auto border-t border-border/10 bg-popover/60 px-3 py-1 font-mono text-2xs text-muted-foreground tabular-nums backdrop-blur-md">
@@ -38,6 +42,13 @@ export function StatusBar() {
       )}
 
       <span className="ml-auto flex items-center gap-3">
+        {/* Null until the effect in AppShell has run, which is also what keeps
+            this line out of the server-rendered markup (P9.2). */}
+        {tier && (
+          <span className="hidden whitespace-nowrap sm:inline">
+            {quality === "auto" ? `auto: ${tier}` : quality}
+          </span>
+        )}
         {depth && (
           <span className="hidden whitespace-nowrap lg:inline">depth: {depth.kind}</span>
         )}

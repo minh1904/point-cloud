@@ -5,8 +5,11 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { memo, useRef, type ComponentRef, type Ref } from "react";
 import type { PerspectiveCamera, Vector3 } from "three";
 
-import { defaultNumber, numberValue } from "@/params/schema";
-import { readParams } from "@/store/params-store";
+import { defaultNumber, numberValue, stringValue } from "@/params/schema";
+import { readParams, useParamsStore } from "@/store/params-store";
+import { useSessionStore } from "@/store/session-store";
+
+import { resolveProfile } from "./quality";
 
 import { ParticleField } from "./particle-field";
 import { RenderInfo } from "./render-info";
@@ -73,12 +76,21 @@ interface StageProps {
  * criterion, turned into something the type system can hold up.
  */
 export const Stage = memo(function Stage({ controlsRef }: StageProps) {
+  // P9.2 — the two subscriptions this component is allowed. Both change only
+  // when somebody chooses something, never while a slider moves, so the
+  // canvas still does not re-render during a drag.
+  const setting = useParamsStore((state) => stringValue(state.values, "quality"));
+  const tier = useSessionStore((state) => state.tier);
+  const profile = resolveProfile(setting, tier);
+
   return (
     // R3F sizes the canvas to its parent and sets its own inline styles on the
     // wrapper, so position this element instead of styling <Canvas> itself.
     <div className="absolute inset-0">
       <Canvas
-        dpr={[1, 2]}
+        // The single biggest lever on a phone: a sprite's cost is its area,
+        // and dpr 3 covers nine times the pixels of dpr 1 (P9.2).
+        dpr={[1, profile.maxDpr]}
         // Framed for the default 16 degree lens. The cloud is three world
         // units wide, and edge bokeh pushes its sides out by a further 13%, so
         // the distance leaves margin for that rather than fitting the bounds
@@ -109,7 +121,7 @@ export const Stage = memo(function Stage({ controlsRef }: StageProps) {
         <Lens />
         <ScenePass>
           <color attach="background" args={["#000000"]} />
-          <ParticleField />
+          <ParticleField octaves={profile.fbmOctaves} />
         </ScenePass>
         <RenderInfo />
       </Canvas>

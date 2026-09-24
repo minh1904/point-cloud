@@ -42,7 +42,13 @@ float pcValueNoise(vec2 p) {
 // Each octave is also rotated. Skip that and every octave shares the same
 // lattice directions, so their sum shows a faint grid aligned to the axes: the
 // noise looks subtly square. Half a radian per octave is enough to break it.
+// P9.2 — overridable. three.js injects a material's `defines` above every
+// include, so a quality tier can hand this shader a different number and the
+// only cost is one recompile. Guarded, because the drop-in component of P8.6
+// ships the chunk with no defines at all.
+#ifndef PC_FBM_OCTAVES
 #define PC_FBM_OCTAVES 4
+#endif
 
 float pcFbm(vec2 p) {
   // cos(0.5), sin(0.5) — mat2 takes its arguments column by column.

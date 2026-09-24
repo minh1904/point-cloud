@@ -1,12 +1,12 @@
 # Status & handoff
 
-_Last updated: 2026-09-24 · last commit on `main`: `ed10d26`_
+_Last updated: 2026-09-24 · last commit on `main`: `dad6de2`_
 
 Read this first when picking the project up on a new machine or in a new session. Plan: [roadmap.md](roadmap.md) · conventions: [`CLAUDE.md`](../CLAUDE.md) · learning notes (Vietnamese): [learn/](learn/README.md).
 
 ## Where we are
 
-**P0 through P8 are complete. P9 is optional.** A photo dropped into the app is decoded, given a depth map by Depth Anything V2 running in a worker, measured for detail, sampled into 65,536 blue-noise points, lifted into shallow relief and packed into the same three data textures the renderer has read since P3 — so it arrives with every P4 and P5 effect already on it. The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales and the HUD reports two stable draw calls.
+**P0 through P9 are complete. The roadmap is finished.** A photo dropped into the app is decoded, given a depth map by Depth Anything V2 running in a worker, measured for detail, sampled into 65,536 blue-noise points, lifted into shallow relief and packed into the same three data textures the renderer has read since P3 — so it arrives with every P4 and P5 effect already on it. The post pipeline routes the scene through a HalfFloat FBO into a fullscreen quad with live controls for render scale (0.5–1×), vignette, chromatic aberration and animated film grain; point size stays invariant on screen across render scales, and the HUD reports two stable draw calls — three while the pointer simulation is live (9.1).
 
 P3.1 replaced the CPU-generated sphere with a data-driven geometry: 256² = 65,536 particles whose `position` attribute is all zeros, each carrying `aParticleUv` (its texel centre) and `aIndex` instead. The vertex shader derives the position — currently a flat grid — and hashes its own per-point scale and randomness from the texel coordinate, so `aScale` / `aRandomness` are gone. `frustumCulled` is off, because a zeroed `position` gives three.js a bounding sphere of radius 0.
 
@@ -26,6 +26,8 @@ P7 turned it into a tool. A parameter is now **one entry in `src/params/schema.t
 
 P8 got the cloud out of the tool. A bundle is **a `.zip` of exactly the folder the renderer already reads** — `metadata.json`, `color.png` with crowding in its alpha, the two position maps, and an optional `params.json` carrying the look (8.1, spec in [bundle-format.md](bundle-format.md)). Writing it needed PNG in the browser, so the P3.5 codec was split: structure in `src/bundle/png-codec.ts`, compression supplied by `node:zlib` in the script and `CompressionStream` in the page (8.2). Zip is written by hand, stored entries, no timestamps — so exporting the same cloud twice gives byte-identical files. The Export panel measures the real size rather than guessing it (8.3, 679 KB for 65,536 points), `metadata.json` is validated with zod and versioned (8.4), and a bundle can be dropped back in: export → import → the points stage hashes the same both times (8.5). Finally `@atelier/particle-image` renders a bundle in somebody else's project with no dependency on the studio, its shaders generated into template literals because a stranger's bundler will not import `.glsl` (8.6, docs in [particle-image.md](particle-image.md)).
 
+P9 was the optional phase and it is done. **Pointer interaction** (9.1) is the one thing the original does not have, and the one stateful thing in the renderer: two half-float render targets take turns holding a per-particle *displacement*, so the P3 decode path is untouched and switching it off is adding zero. **Quality tiers** (9.2) cap `devicePixelRatio` — the lever that dominates, because a sprite's cost is its area — and inject the fBM octave count as a shader define. The viewport can be **saved as a PNG or recorded to webm** (9.3), grabbed inside the frame so no frame pays for `preserveDrawingBuffer`. And the **deploy is prepared** (9.4): cache headers plus [deploy.md](deploy.md), with the run itself left to the owner.
+
 The three breakpoints survived the move: under `sm` the inspector is a sheet over the bottom of the viewport, from `sm` it docks as a 224px column and the canvas gives up the width, from `lg` it is 256px. The toolbar and status bar shorten their labels as the screen narrows. `studio.tsx` is gone; `src/app/shell/` replaced it.
 
 | Phase | Status |
@@ -40,20 +42,43 @@ The three breakpoints survived the move: under `sm` the inspector is a sheet ove
 | P6 Photo → point cloud | ✅ done (6.1–6.9) |
 | P7 Design-tool UX | ✅ done (7.1–7.7) |
 | P8 Export & import | ✅ done (8.1–8.6) |
-| P9 Polish | ⏭ optional, nothing started |
+| P9 Polish | ✅ done (9.1–9.4) · the deploy itself is unrun |
 
-## Next step: P9, or stop
+## Next step: whatever you want it to be
 
-P8.6 was the last thing the project set out to do. A photograph goes in, a
-cloud comes out, and the cloud renders in somebody else's project. **P9 is
-explicitly optional** — read `docs/roadmap.md` and pick what is worth the time
-rather than working through it.
+The roadmap is finished. A photograph goes in, a cloud comes out, it can be
+pushed around with a pointer, exported, reopened, and dropped into somebody
+else's project.
 
-The one thing that is genuinely unfinished rather than merely unstarted is
-**decision 0.4, the visual style**: `packages/tokens/src/theme.css` still holds
+Two things are genuinely outstanding rather than merely unstarted:
+
+**Decision 0.4, the visual style.** `packages/tokens/src/theme.css` still holds
 Toolcraft's values. P7 built a real inspector to hang them on, so this is the
-moment they would pay off. The known issue to fix alongside it: Button's `link`
+moment they would pay off. Known issue to fix alongside it: Button's `link`
 variant fails WCAG AA contrast in dark theme (4.06 : 1).
+
+**The deploy has not been run.** Everything it needs is in
+[deploy.md](deploy.md) — the Vercel settings a Bun monorepo does not imply,
+the two cross-origin hosts the model comes from, and why COOP/COEP must stay
+off. Running `vercel` needs the owner's account.
+
+### What P9 left behind
+
+**The pointer force is 2D.** It pushes in x and y; the z of the displacement
+is never written. On a cloud with 3% relief that is very nearly the whole
+story, and making it 3D would mean deciding what "toward the camera" means for
+a force measured on a plane.
+
+**Nothing reads the displacement back.** The simulation writes a texture the
+vertex shader reads, and the CPU never sees it — which is why it is fast and
+also why an export cannot capture "the cloud as it looks right now, pushed
+aside". `gl.readRenderTargetPixels` would do it at the cost of a pipeline
+stall.
+
+**Quality tiers are a guess made once.** They do not adapt, on purpose (a
+picture that changes under you is worse than one that is slightly too
+expensive), but that means a device that thermally throttles after two minutes
+gets no help.
 
 ### What P8 left behind
 
@@ -110,7 +135,7 @@ cd point-cloud
 bun install
 bun run dev          # http://localhost:3000
 bun run storybook    # http://localhost:6006
-bun run typecheck && bun run lint && bun run test   # all should pass (188 tests)
+bun run typecheck && bun run lint && bun run test   # all should pass (201 tests)
 ```
 
 Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun@1.3.14` and uses Bun workspaces plus the text `bun.lock` lockfile.
@@ -138,6 +163,10 @@ Requirements: Node.js ≥ 22 and Bun 1.3.14+. The repo pins `packageManager: bun
 - **A `React.lazy` boundary inside `<Canvas>` suspends the whole subtree.** `next/dynamic` is built on it, so loading anything with `dynamic()` from inside the R3F tree stops everything under it from mounting. Put the lazy boundary outside the canvas, as `app-shell.tsx` does.
 - **An API that takes a callback must tolerate an inline arrow.** Listing `onLoad` in an effect's dependency array turned `<ParticleImage>` into a fetch loop — 36 requests for 4 files. Hold callbacks in a ref.
 - **Re-run `bun run build:particle-image` after changing a shader**, or the drop-in component keeps rendering the previous one.
+- **An effect keyed on the data falls out of step when the thing that *receives* the data is replaced.** Changing a shader define recreates the material; an effect keyed on `bundle` did not re-run, so the new material kept bounds of (0,0,0) and all 65,536 particles decoded to one point. Bundle uniforms are written in the frame loop for that reason.
+- **A `sampler2D` left at `null` reads as WHITE, not as zero.** three.js substitutes a default texture. Anything that samples an optional texture needs a 1×1 zero texture as its initial value, or the first frame is wrong in a spectacular way.
+- **`toBlob()` on a WebGL canvas returns a blank image** unless it is called inside the frame that drew it, because `preserveDrawingBuffer` is off. Capture at a `useFrame` priority after the screen render.
+- **COOP/COEP would break the depth model.** `require-corp` rejects cross-origin resources without CORP, and both the weights and the wasm are cross-origin. See `docs/deploy.md`.
 - **Parameters do not go through React.** `readParams()` in a `useFrame` reads the store without subscribing; a slider re-renders itself and nothing else. Adding `useParamsStore((s) => s.values)` anywhere in the shell would quietly undo P7.3 — if the canvas starts re-rendering, look there first.
 - **`min-h-0` is what makes the shell scroll.** A flex item defaults to `min-height: auto` and refuses to shrink below its content, so without it the inspector's content pushes the status bar off screen and `overflow-y-auto` never engages.
 - **`react-hooks/immutability` rejects writing uniforms through an extracted local** but allows the same write through `material.current.uniforms` directly. Known since P4; the better escape is usually to move the write into the frame loop rather than to work around the rule.

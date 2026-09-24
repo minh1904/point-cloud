@@ -195,12 +195,12 @@ Built from Atelier components (P-UI); look follows decision 0.4.
 
 ---
 
-## P9 — Polish (optional / later)
+## P9 — Polish
 
-- 9.1 GPGPU ping-pong layer for pointer interaction (push / attract / scatter) — the one thing the original doesn't have.
-- 9.2 Mobile: quality tiers (HalfFloat FBO, fewer octaves, lower render scale, fewer points).
-- 9.3 Screenshot / video capture of the viewport.
-- 9.4 Deploy demo to Vercel.
+- ✅ 9.1 GPGPU ping-pong layer for pointer interaction (push / attract / swirl) — the one thing the original doesn't have. Stores a *displacement*, so the P3 decode path is untouched and switching it off is adding zero.
+- ✅ 9.2 Quality tiers: a cap on `devicePixelRatio` (the lever that dominates, since a sprite's cost is its area) and fBM octaves injected as a shader define. `renderScale` stays the user's knob.
+- ✅ 9.3 Screenshot and webm capture of the viewport, grabbed inside the frame rather than paying `preserveDrawingBuffer` forever.
+- ✅ 9.4 Vercel deploy **prepared** — cache headers and `docs/deploy.md`. Running it needs the owner's account.
 
 ---
 

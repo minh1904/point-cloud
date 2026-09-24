@@ -96,8 +96,17 @@ P6 là chỗ dự án ngừng dựng lại renderer của UntilLabs và đi qua 
 
 Tham khảo kèm theo: [đặc tả bundle format](../bundle-format.md) và [tài liệu `<ParticleImage>`](../particle-image.md).
 
-### Tiếp theo
-- P9 · Đánh bóng (tuỳ chọn) *(sắp tới)*
+### P9 — Đánh bóng
+- [P9.1 · GPGPU ping-pong: thứ duy nhất trong renderer có trí nhớ](p9-1-gpgpu-ping-pong.md)
+- [P9.2 · Chia tầng chất lượng, và một con bug dạy nhiều hơn cả bước này](p9-2-quality-tiers.md)
+- [P9.3 · Chụp ảnh và quay video chính cái canvas](p9-3-chup-anh-va-quay.md)
+- [P9.4 · Đưa lên mạng: ba thứ chỉ vỡ khi rời máy mình](p9-4-deploy.md)
+
+## Hết roadmap
+
+P0 → P9 đã xong. Một tấm ảnh đi vào, một đám mây điểm đi ra, và đám mây đó chạy được trong dự án của người khác.
+
+Thứ duy nhất còn dở là **quyết định 0.4**: bộ token màu trong `packages/tokens/src/theme.css` vẫn mang giá trị của Toolcraft. Xem [`docs/status.md`](../status.md).
 
 ## Bức tranh tổng thể
 

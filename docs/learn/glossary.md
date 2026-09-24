@@ -177,6 +177,23 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **Latest-callback ref** | Giữ callback trong ref để nó không nằm trong dependency của effect. | [P8.6](p8-6-component-drop-in.md) |
 | **Codegen** | Sinh code lúc build (ở đây: nhúng GLSL thành chuỗi) và commit kết quả. | [P8.6](p8-6-component-drop-in.md) |
 
+## Mô phỏng, thiết bị & triển khai (P9)
+
+| Thuật ngữ | Nghĩa | Gặp lần đầu |
+|---|---|---|
+| **GPGPU** | Dùng đường ống đồ hoạ để tính toán tổng quát: render target là mảng, fragment shader là thân vòng lặp. | [P9.1](p9-1-gpgpu-ping-pong.md) |
+| **Ping-pong buffer** | Hai render target đổi vai đọc/ghi mỗi frame, vì một shader không thể vừa đọc vừa ghi cùng texture. | [P9.1](p9-1-gpgpu-ping-pong.md) |
+| **Exponential decay** | `exp(-k·dt)` — tiến dần về 0 mà không phụ thuộc frame rate, khác `1 - k·dt`. | [P9.1](p9-1-gpgpu-ping-pong.md) |
+| **Half float (RGBA16F)** | Kiểu render target chứa được số âm; cần thiết vì độ dịch có hướng. | [P9.1](p9-1-gpgpu-ping-pong.md) |
+| **Raycast lên mặt phẳng** | Bắn tia từ camera qua con trỏ và cắt mặt `z = 0` — rẻ hơn raycast 65.536 điểm. | [P9.1](p9-1-gpgpu-ping-pong.md) |
+| **`devicePixelRatio`** | Số pixel thiết bị trên một pixel CSS; chi phí sprite là diện tích nên dpr 3 tốn gấp 9 lần dpr 1. | [P9.2](p9-2-quality-tiers.md) |
+| **Shader `defines`** | Hằng số chèn lúc biên dịch; đổi thì phải biên dịch lại shader, nên là sự kiện chứ không phải mỗi frame. | [P9.2](p9-2-quality-tiers.md) |
+| **Feature detection** | Đoán năng lực máy từ `hardwareConcurrency`, `deviceMemory`, `pointer: coarse` — không bao giờ từ user agent. | [P9.2](p9-2-quality-tiers.md) |
+| **`preserveDrawingBuffer`** | Cờ giữ lại pixel sau khi frame được giao cho compositor; tắt mặc định, nên `toBlob` phải gọi trong frame. | [P9.3](p9-3-chup-anh-va-quay.md) |
+| **`captureStream` / `MediaRecorder`** | Lấy luồng frame thẳng từ canvas và ghi thành webm. | [P9.3](p9-3-chup-anh-va-quay.md) |
+| **`Cache-Control: immutable`** | Trình duyệt không cần gửi cả request kiểm tra; an toàn khi tên file chính là phiên bản. | [P9.4](p9-4-deploy.md) |
+| **COOP / COEP** | Cặp header bật `SharedArrayBuffer`; `require-corp` từ chối mọi tài nguyên cross-origin không khai báo CORP. | [P9.4](p9-4-deploy.md) |
+
 ## React Three Fiber & Next.js
 
 | Thuật ngữ | Nghĩa | Gặp lần đầu |

@@ -100,7 +100,7 @@ separate ~500 KB. `<ParticleImage>` takes a `lut` prop for it.
 |---|---|---|
 | Visual style (token values) | nothing | Tokens currently hold Toolcraft's values; the owner will customise them in `packages/tokens/src/theme.css`. Known issue to fix then: Button `link` variant fails WCAG AA contrast in dark theme (4.06 : 1). |
 | ~~Depth model (6.2)~~ | — | **Decided**: Depth Anything V2 Small via transformers.js, WebGPU/fp16 (49.6 MB) falling back to WASM/q8 (27.3 MB), with `heuristicDepth` underneath it. Reasoning in `src/photo/depth/model-depth.ts`. |
-| Export bundle format (8.1) | P8 | Default: zip of `metadata.json` + data PNGs; alternative single JSON with base64 PNGs. |
+| ~~Export bundle format (8.1)~~ | — | **Decided**: a `.zip` of the folder the renderer already reads. Spec in [bundle-format.md](bundle-format.md). |
 
 ## Setting up a new machine
 

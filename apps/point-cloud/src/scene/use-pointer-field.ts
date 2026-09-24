@@ -224,10 +224,26 @@ export function usePointerField(
    * drag killed the effect until the cursor left the canvas and came back.
    */
   const over = useRef(false);
+  /**
+   * The pointer in normalised device coordinates, measured here rather than
+   * read from R3F.
+   *
+   * `state.pointer` looks like the obvious source and is a trap: R3F only
+   * raycasts — and therefore only updates it — when something in the scene has
+   * a pointer handler registered. This scene has none (OrbitControls listens to
+   * the DOM itself), so `state.pointer` stays at its initial (0, 0) forever,
+   * and (0, 0) is the middle of the screen. The symptom is a hole that opens
+   * in the centre of the canvas no matter where the cursor is, which reads as
+   * "hovering does nothing" unless you happen to hover near the middle.
+   */
+  const ndc = useRef({ x: 0, y: 0 });
   useEffect(() => {
     const element = gl.domElement;
-    const move = () => {
+    const move = (event: PointerEvent) => {
       over.current = true;
+      const rect = element.getBoundingClientRect();
+      ndc.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
     const leave = () => {
       over.current = false;
@@ -251,7 +267,7 @@ export function usePointerField(
 
   const current = useRef<Texture>(ZERO_DISPLACEMENT);
 
-  useFrame(({ camera, pointer }, delta) => {
+  useFrame(({ camera }, delta) => {
     if (!rig.current || !bundle) {
       current.current = ZERO_DISPLACEMENT;
       return;
@@ -271,7 +287,7 @@ export function usePointerField(
       return;
     }
 
-    rig.current.ndc.set(pointer.x, pointer.y);
+    rig.current.ndc.set(ndc.current.x, ndc.current.y);
     rig.current.raycaster.setFromCamera(rig.current.ndc, camera);
     const reached =
       rig.current.raycaster.ray.intersectPlane(rig.current.plane, rig.current.hit) !==

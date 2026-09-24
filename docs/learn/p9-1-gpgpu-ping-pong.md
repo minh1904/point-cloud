@@ -136,6 +136,14 @@ const reached = rig.current.raycaster.ray.intersectPlane(rig.current.plane, rig.
 
 Đám mây là một lớp nổi mỏng quanh z = 0, nên đó là câu trả lời đủ tốt cho "hạt nào đang dưới con trỏ" — và rẻ hơn rất nhiều so với raycast 65.536 điểm.
 
+Còn toạ độ NDC thì **tự đo**, không lấy từ R3F — xem lỗi số 4 bên dưới:
+
+```ts
+const rect = element.getBoundingClientRect();
+ndc.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+ndc.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+```
+
 ### `apps/point-cloud/src/params/schema.ts`
 
 Năm núm vặn mới = **năm entry**. Schema mọc thêm một `stage: "pointer"`, `UNIFORM_PARAMS` mọc thêm một danh sách, và `applyPointerUniforms` là một dòng đọc nó. Panel "Pointer" tự xuất hiện trong inspector mà không viết một dòng JSX nào.
@@ -152,7 +160,17 @@ Năm núm vặn mới = **năm entry**. Schema mọc thêm một `stage: "pointe
 
    Bài học rộng hơn: **một cờ trạng thái được bật bởi một sự kiện xảy ra một lần là một cái bẫy.** Nếu có bất kỳ đường nào tắt nó sai, nó không tự phục hồi.
 
-4. **Không kiểm được bằng mắt trong suốt quá trình viết**, vì cửa sổ Chrome bị thu nhỏ (xem [P9.2](p9-2-quality-tiers.md)). Thay vào đó: **biên dịch và link shader trong một WebGL2 context dựng riêng** ngay trong tab — nó bắt được lỗi cú pháp, biến chưa khai, và cho biết uniform nào sống sót qua trình tối ưu. Cả 13 uniform đều còn, nghĩa là không có cái nào gõ sai tên.
+4. **`state.pointer` của R3F đứng yên ở (0, 0).** Bản đầu đọc vị trí con trỏ từ `useFrame(({ pointer }) => …)` — cách mọi ví dụ R3F đều làm. Nó luôn trả về (0, 0), tức **chính giữa màn hình**.
+
+   Lý do: R3F chỉ raycast — và do đó chỉ cập nhật `state.pointer` — khi trong scene **có object đăng ký handler chuột**. Scene này không có cái nào (OrbitControls tự nghe DOM), nên R3F tối ưu bằng cách bỏ qua hẳn, và `pointer` giữ nguyên giá trị khởi tạo mãi mãi.
+
+   Triệu chứng độc ác ở chỗ nó **trông như đang chạy**: một cái lỗ mở ra ở giữa canvas dù con trỏ ở đâu. Mọi lần kiểm đầu tiên của mình đều tình cờ hover gần giữa, nên nó "đúng". Chỉ khi hover xuống góc dưới trái và thấy lỗ vẫn nằm giữa thì mới lộ.
+
+   Bản sửa: tự đo NDC từ `getBoundingClientRect()` trong đúng listener `pointermove` đã có sẵn. Ít phụ thuộc hơn, và không lệ thuộc vào một tối ưu hoá của thư viện.
+
+   Bài học: **một tối ưu hoá "chỉ làm khi có ai cần" sẽ im lặng đưa cho bạn giá trị mặc định** nếu bạn là người cần mà không đăng ký.
+
+5. **Không kiểm được bằng mắt trong suốt quá trình viết**, vì cửa sổ Chrome bị thu nhỏ (xem [P9.2](p9-2-quality-tiers.md)). Thay vào đó: **biên dịch và link shader trong một WebGL2 context dựng riêng** ngay trong tab — nó bắt được lỗi cú pháp, biến chưa khai, và cho biết uniform nào sống sót qua trình tối ưu. Cả 13 uniform đều còn, nghĩa là không có cái nào gõ sai tên.
 
 ## Tự thử
 

@@ -1,5 +1,9 @@
 # point-cloud
 
+![A photo dropped into the tool, walked through depth, importance and points, then pushed around with the cursor](docs/media/hero.gif)
+
+<sup>Recorded live in the browser. Nothing here is pre-rendered: the depth map, the importance map and all 65,536 points are computed on the machine playing it.</sup>
+
 **Drop a photograph in. Get a living point cloud out.** Everything happens in the browser — the depth estimation, the sampling, the rendering — and the result exports as a ~680 KB bundle you can drop into another project with one component.
 
 Inspired by the particle hero of [UntilLabs](https://www.untillabs.com/) ([Codrops write-up](https://tympanus.net/codrops/2025/12/10/simulating-life-in-the-browser-creating-a-living-particle-system-for-the-untillabs-website/)), rebuilt from first principles — and then taken past it: the original was assembled by hand in Houdini, this does the whole pipeline live and adds pointer interaction the original does not have.

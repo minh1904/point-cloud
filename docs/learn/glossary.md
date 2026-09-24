@@ -189,8 +189,7 @@ Thuật ngữ giữ nguyên tiếng Anh (vì code và tài liệu gốc đều d
 | **`devicePixelRatio`** | Số pixel thiết bị trên một pixel CSS; chi phí sprite là diện tích nên dpr 3 tốn gấp 9 lần dpr 1. | [P9.2](p9-2-quality-tiers.md) |
 | **Shader `defines`** | Hằng số chèn lúc biên dịch; đổi thì phải biên dịch lại shader, nên là sự kiện chứ không phải mỗi frame. | [P9.2](p9-2-quality-tiers.md) |
 | **Feature detection** | Đoán năng lực máy từ `hardwareConcurrency`, `deviceMemory`, `pointer: coarse` — không bao giờ từ user agent. | [P9.2](p9-2-quality-tiers.md) |
-| **`preserveDrawingBuffer`** | Cờ giữ lại pixel sau khi frame được giao cho compositor; tắt mặc định, nên `toBlob` phải gọi trong frame. | [P9.3](p9-3-chup-anh-va-quay.md) |
-| **`captureStream` / `MediaRecorder`** | Lấy luồng frame thẳng từ canvas và ghi thành webm. | [P9.3](p9-3-chup-anh-va-quay.md) |
+| **`preserveDrawingBuffer`** | Cờ giữ lại pixel sau khi frame được giao cho compositor; tắt mặc định, nên `toBlob` phải gọi **trong** frame. | [P9.3](p9-3-chup-anh-viewport.md) |
 | **`Cache-Control: immutable`** | Trình duyệt không cần gửi cả request kiểm tra; an toàn khi tên file chính là phiên bản. | [P9.4](p9-4-deploy.md) |
 | **COOP / COEP** | Cặp header bật `SharedArrayBuffer`; `require-corp` từ chối mọi tài nguyên cross-origin không khai báo CORP. | [P9.4](p9-4-deploy.md) |
 

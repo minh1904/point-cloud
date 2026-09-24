@@ -99,7 +99,7 @@ Tham khảo kèm theo: [đặc tả bundle format](../bundle-format.md) và [tà
 ### P9 — Đánh bóng
 - [P9.1 · GPGPU ping-pong: thứ duy nhất trong renderer có trí nhớ](p9-1-gpgpu-ping-pong.md)
 - [P9.2 · Chia tầng chất lượng, và một con bug dạy nhiều hơn cả bước này](p9-2-quality-tiers.md)
-- [P9.3 · Chụp ảnh và quay video chính cái canvas](p9-3-chup-anh-va-quay.md)
+- [P9.3 · Chụp ảnh chính cái canvas](p9-3-chup-anh-viewport.md)
 - [P9.4 · Đưa lên mạng: ba thứ chỉ vỡ khi rời máy mình](p9-4-deploy.md)
 
 ## Hết roadmap

@@ -26,7 +26,7 @@ P7 turned it into a tool. A parameter is now **one entry in `src/params/schema.t
 
 P8 got the cloud out of the tool. A bundle is **a `.zip` of exactly the folder the renderer already reads** — `metadata.json`, `color.png` with crowding in its alpha, the two position maps, and an optional `params.json` carrying the look (8.1, spec in [bundle-format.md](bundle-format.md)). Writing it needed PNG in the browser, so the P3.5 codec was split: structure in `src/bundle/png-codec.ts`, compression supplied by `node:zlib` in the script and `CompressionStream` in the page (8.2). Zip is written by hand, stored entries, no timestamps — so exporting the same cloud twice gives byte-identical files. The Export panel measures the real size rather than guessing it (8.3, 679 KB for 65,536 points), `metadata.json` is validated with zod and versioned (8.4), and a bundle can be dropped back in: export → import → the points stage hashes the same both times (8.5). Finally `@atelier/particle-image` renders a bundle in somebody else's project with no dependency on the studio, its shaders generated into template literals because a stranger's bundler will not import `.glsl` (8.6, docs in [particle-image.md](particle-image.md)).
 
-P9 was the optional phase and it is done. **Pointer interaction** (9.1) is the one thing the original does not have, and the one stateful thing in the renderer: two half-float render targets take turns holding a per-particle *displacement*, so the P3 decode path is untouched and switching it off is adding zero. **Quality tiers** (9.2) cap `devicePixelRatio` — the lever that dominates, because a sprite's cost is its area — and inject the fBM octave count as a shader define. The viewport can be **saved as a PNG or recorded to webm** (9.3), grabbed inside the frame so no frame pays for `preserveDrawingBuffer`. And the **deploy is prepared** (9.4): cache headers plus [deploy.md](deploy.md), with the run itself left to the owner.
+P9 was the optional phase and it is done. **Pointer interaction** (9.1) is the one thing the original does not have, and the one stateful thing in the renderer: two half-float render targets take turns holding a per-particle *displacement*, so the P3 decode path is untouched and switching it off is adding zero. **Quality tiers** (9.2) cap `devicePixelRatio` — the lever that dominates, because a sprite's cost is its area — and inject the fBM octave count as a shader define. The viewport can be **saved as a PNG** (9.3), grabbed inside the frame so no frame pays for `preserveDrawingBuffer`. A webm recorder was built alongside it and removed at the owner's request: a screen recorder does that job without this app owning codec choice and a recording state. And the **deploy is prepared** (9.4): cache headers plus [deploy.md](deploy.md), with the run itself left to the owner.
 
 The three breakpoints survived the move: under `sm` the inspector is a sheet over the bottom of the viewport, from `sm` it docks as a 224px column and the canvas gives up the width, from `lg` it is 256px. The toolbar and status bar shorten their labels as the screen narrows. `studio.tsx` is gone; `src/app/shell/` replaced it.
 
@@ -74,6 +74,11 @@ vertex shader reads, and the CPU never sees it — which is why it is fast and
 also why an export cannot capture "the cloud as it looks right now, pushed
 aside". `gl.readRenderTargetPixels` would do it at the cost of a pipeline
 stall.
+
+**The toolbar scrolls sideways rather than hiding buttons.** Every action has
+a keyboard shortcut and a phone has no keyboard, so a hidden button on a phone
+is a lost feature. The left group scrolls inside whatever space is left; the
+two controls for getting *out* of a state stay pinned. Verified down to 360px.
 
 **Quality tiers are a guess made once.** They do not adapt, on purpose (a
 picture that changes under you is worse than one that is slightly too

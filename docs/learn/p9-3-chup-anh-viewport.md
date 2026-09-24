@@ -1,10 +1,12 @@
-# P9.3 · Chụp ảnh và quay video chính cái canvas
+# P9.3 · Chụp ảnh chính cái canvas
 
 ## Mục tiêu
 
-Một nút lưu PNG, một nút quay webm. Xong khi bấm ra file.
+Một nút lưu PNG. Xong khi bấm ra file.
 
 Bài này ngắn, và xoay quanh **một** chi tiết mà ai cũng vấp đúng một lần.
+
+> Bản đầu có thêm nút quay webm bằng `MediaRecorder`. Nó chạy được và **đã bị gỡ** theo yêu cầu của chủ dự án: một phần mềm quay màn hình làm đúng việc đó mà app không phải tự lo chọn codec, bitrate, và một trạng thái "đang ghi" có thể sống lâu hơn component. Mục 3 dưới đây giữ lại phần đối chiếu, vì chính nó làm rõ vì sao chụp ảnh tĩnh lại khó hơn tưởng.
 
 ## Khái niệm
 
@@ -95,18 +97,18 @@ Nằm **bên trong** `<Canvas>` vì nó cần `gl.domElement` và cần một `u
 
 1. **Chưa gặp — vì đã đọc trước.** Cái bẫy `preserveDrawingBuffer` nổi tiếng tới mức đáng tra trước khi viết. Bài học ngược: có những lỗi rẻ hơn khi đọc về chúng trước.
 2. **Kiểm bằng cách bọc `URL.createObjectURL`.** Không mở được file để xem, nhưng một blob `image/png` nặng 3,2 MB thì không thể là canvas trắng (ảnh trắng cùng kích thước chỉ vài KB). Đôi khi kích thước là bằng chứng đủ tốt.
+3. **Viết xong rồi gỡ đi.** Phần quay webm chạy đúng, có test bằng tay, và vẫn bị gỡ vì nó không thuộc về công cụ này. Đáng ghi lại: "nó chạy được" không phải lý do đủ để một tính năng ở lại.
 
 ## Tự thử
 
 1. **Bấm `PNG`** rồi mở file. Có đúng những gì trên màn hình không — kể cả vignette và hạt nhiễu?
 2. **Tắt mẹo frame.** Đổi `useFrame(..., 2)` thành một `useEffect` gọi `toBlob` ngay. Ảnh ra sao?
 3. **Bật `preserveDrawingBuffer: true`** trong `<Canvas gl={{...}}>` rồi thử lại cách sai ở trên. Giờ nó chạy — đo fps trước và sau.
-4. **Quay 10 giây rồi mở file.** Bao nhiêu MB? Hạ `videoBitsPerSecond` xuống 2 triệu và so chất lượng ở vùng nền trời.
-5. **Bấm `Rec` rồi reload trang giữa chừng.** Có file nào không, và vì sao?
+4. **So kích thước ảnh với kích thước canvas.** Ảnh PNG rộng bao nhiêu pixel? Nó khớp với `canvas.width` chứ không phải với bề rộng CSS — và đó là lý do chụp bằng công cụ chụp màn hình cho ảnh nhỏ hơn.
+5. **Đổi `Quality` sang `low` rồi chụp lại.** Ảnh nhỏ đi bao nhiêu, và vì sao (gợi ý: [P9.2](p9-2-quality-tiers.md), dpr)?
 
 ## Đọc thêm
 
 - [MDN — `HTMLCanvasElement.toBlob()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
-- [MDN — `HTMLCanvasElement.captureStream()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream)
-- [MDN — `MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
+- [MDN — `HTMLCanvasElement.captureStream()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream) — phần đối chiếu ở mục 3
 - [three.js — `WebGLRenderer` parameters](https://threejs.org/docs/#api/en/renderers/WebGLRenderer) — mục `preserveDrawingBuffer`

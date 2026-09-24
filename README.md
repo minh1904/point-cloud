@@ -8,8 +8,6 @@
 
 Inspired by the particle hero of [UntilLabs](https://www.untillabs.com/) ([Codrops write-up](https://tympanus.net/codrops/2025/12/10/simulating-life-in-the-browser-creating-a-living-particle-system-for-the-untillabs-website/)), rebuilt from first principles — and then taken past it: the original was assembled by hand in Houdini, this does the whole pipeline live and adds pointer interaction the original does not have.
 
-> **Status: complete.** All ten phases of the [roadmap](docs/roadmap.md) are done, 201 tests pass, and the only thing left unrun is the deploy. Start at [`docs/status.md`](docs/status.md).
-
 ## What it does
 
 ```
@@ -124,6 +122,8 @@ From `apps/point-cloud`:
 | `bun run build:particle-image` | Embed the shaders into the drop-in component |
 
 ## Documentation
+
+All ten phases of the roadmap are done and 201 tests pass; the only thing left unrun is the deploy.
 
 - **[Status & handoff](docs/status.md)** — where things stand, what is outstanding, and a long list of things that will bite. **Start here.**
 - **[Roadmap](docs/roadmap.md)** — P0–P9, each split into steps with what they teach and how to verify them.

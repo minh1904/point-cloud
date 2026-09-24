@@ -16,6 +16,7 @@ import "./shader-chunks";
 import { IntroDolly } from "./intro-dolly";
 import { createParticleGrid } from "./particle-grid";
 import { useCloudBundle } from "./use-cloud-bundle";
+import { usePointerField, ZERO_DISPLACEMENT } from "./use-pointer-field";
 import {
   SAMPLE_BUNDLE,
   useLookupTexture,
@@ -77,6 +78,10 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
   const grade = useParamsStore((state) => stringValue(state.values, "grade"));
   const lut = useLookupTexture(`/luts/${grade}.png`);
 
+  // P9.1 — the pointer simulation runs at priority -3, before this callback,
+  // and hands back a ref because its two render targets swap every frame.
+  const displacement = usePointerField(bundle);
+
   // A new cloud earns a new arrival: swapping 65,536 points in mid-frame with
   // the intro already finished would just blink the old picture out.
   useEffect(() => {
@@ -123,6 +128,10 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
             uFocalDepth: { value: 0.5 },
             uFocalRange: { value: 1 },
             uEdgeBokeh: { value: 0 },
+            // Not null: an unbound sampler reads as three.js's default white
+            // texture, which would shove every particle a world unit on the
+            // first frame (P9.1).
+            uDisplacement: { value: ZERO_DISPLACEMENT },
           },
           // Soft rims need alpha blending. Not writing depth keeps a faded rim
           // from hiding the points behind it; with thousands of small
@@ -162,6 +171,8 @@ export function ParticleField({ bundleUrl = SAMPLE_BUNDLE }: ParticleFieldProps)
 
     const values = readParams();
     const session = readSession();
+
+    current.uniforms.uDisplacement!.value = displacement.current;
 
     applyPointUniforms(current.uniforms as Uniforms, values, {
       heightScale: size.height * viewport.dpr * 0.5,

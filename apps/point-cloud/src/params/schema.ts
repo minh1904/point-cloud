@@ -23,10 +23,12 @@ export type ParamStage =
   | "points"
   /** A uniform on the post-processing material. */
   | "post"
+  /** A uniform on the pointer simulation material (P9.1). */
+  | "pointer"
   /** Not a uniform at all — the camera, the render target, a texture URL. */
   | "scene";
 
-export type GroupId = "particles" | "motion" | "lens" | "post";
+export type GroupId = "particles" | "motion" | "pointer" | "lens" | "post";
 
 export interface ParamGroup {
   id: GroupId;
@@ -37,6 +39,7 @@ export interface ParamGroup {
 export const PARAM_GROUPS: readonly ParamGroup[] = [
   { id: "particles", label: "Particles" },
   { id: "motion", label: "Motion" },
+  { id: "pointer", label: "Pointer" },
   { id: "lens", label: "Lens" },
   { id: "post", label: "Post effects" },
 ];
@@ -220,6 +223,78 @@ export const PARAMS: readonly Param[] = [
     hint: "Paint the fBM field the motion is driven by onto the particles",
   },
 
+  // ── Pointer (P9.1) ───────────────────────────────────────────────────────
+  {
+    key: "pointerStrength",
+    label: "Force",
+    group: "pointer",
+    stage: "pointer",
+    uniform: "uStrength",
+    kind: "number",
+    // Off by default. It is the one effect that is *about* the viewer rather
+    // than about the photograph, so it should be something you reach for.
+    default: 0,
+    min: 0,
+    max: 3,
+    step: 0.05,
+    format: { maximumFractionDigits: 2 },
+    hint: "How hard the pointer shoves nearby particles. 0 switches the simulation off entirely",
+  },
+  {
+    key: "pointerRadius",
+    label: "Reach",
+    group: "pointer",
+    stage: "pointer",
+    uniform: "uRadius",
+    kind: "number",
+    // The cloud is three world units wide, so this is a fifth of it.
+    default: 0.6,
+    min: 0.05,
+    max: 2,
+    step: 0.05,
+    format: { maximumFractionDigits: 2 },
+    hint: "How far the force reaches, in world units. Also caps how far a particle can be pushed",
+  },
+  {
+    key: "pointerRelax",
+    label: "Return",
+    group: "pointer",
+    stage: "pointer",
+    uniform: "uRelax",
+    kind: "number",
+    default: 3,
+    min: 0.2,
+    max: 10,
+    step: 0.1,
+    format: { maximumFractionDigits: 1 },
+    hint: "How fast particles come home, per second. Low values leave a trail that lingers",
+  },
+  {
+    key: "pointerSwirl",
+    label: "Swirl",
+    group: "pointer",
+    stage: "pointer",
+    uniform: "uSwirl",
+    kind: "number",
+    default: 0.25,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    format: { maximumFractionDigits: 2 },
+    hint: "0 pushes straight out, 1 pushes sideways so particles circle the pointer",
+  },
+  {
+    key: "pointerAttract",
+    label: "Push",
+    group: "pointer",
+    stage: "pointer",
+    uniform: "uAttract",
+    kind: "toggle",
+    default: false,
+    onLabel: "Pull",
+    hint: "Flip the force: gather particles toward the pointer instead of away from it",
+  },
+
   // ── Lens ─────────────────────────────────────────────────────────────────
   {
     key: "fov",
@@ -374,9 +449,12 @@ export function paramsInGroup(group: GroupId): readonly Param[] {
 }
 
 /** Uniform-writing parameters for one stage, resolved once at module load. */
-export const UNIFORM_PARAMS: Readonly<Record<"points" | "post", readonly Param[]>> = {
+export const UNIFORM_PARAMS: Readonly<
+  Record<"points" | "post" | "pointer", readonly Param[]>
+> = {
   points: PARAMS.filter((p) => p.stage === "points" && p.uniform),
   post: PARAMS.filter((p) => p.stage === "post" && p.uniform),
+  pointer: PARAMS.filter((p) => p.stage === "pointer" && p.uniform),
 };
 
 export function defaultValues(): ParamValues {

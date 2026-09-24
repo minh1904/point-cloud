@@ -1,5 +1,6 @@
 import { ShaderChunk } from "three";
 
+import decode from "@/shaders/decode.glsl";
 import lut from "@/shaders/lut.glsl";
 import noise from "@/shaders/noise.glsl";
 
@@ -21,3 +22,4 @@ import noise from "@/shaders/noise.glsl";
 const registry = ShaderChunk as unknown as Record<string, string>;
 registry.pc_noise = noise;
 registry.pc_lut = lut;
+registry.pc_decode = decode;

@@ -2,11 +2,14 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ClampToEdgeWrapping,
+  DataTexture,
   LinearFilter,
   NearestFilter,
   NoColorSpace,
+  RGBAFormat,
   SRGBColorSpace,
   TextureLoader,
+  UnsignedByteType,
   Vector3,
   type ColorSpace,
   type ShaderMaterial,
@@ -132,6 +135,27 @@ function configure(texture: Texture, colorSpace: ColorSpace): Texture {
   texture.needsUpdate = true;
   return texture;
 }
+
+/**
+ * What the shader reads where the studio would put pointer displacement.
+ *
+ * The vertex shader is shared with the tool, which has an interactive
+ * simulation writing into a texture here (P9.1). This component has no such
+ * thing — but the uniform cannot be left `null`, because three.js substitutes
+ * a default **white** texture for an unbound sampler, and white would shove
+ * every particle a full world unit.
+ */
+const zeroDisplacement = (() => {
+  const texture = new DataTexture(
+    new Uint8Array([0, 0, 0, 255]),
+    1,
+    1,
+    RGBAFormat,
+    UnsignedByteType,
+  );
+  texture.needsUpdate = true;
+  return texture;
+})();
 
 /** One particle per texel: the address each vertex looks its data up with. */
 function createGrid(size: number) {
@@ -306,6 +330,7 @@ export function ParticleImage({
             uFocalDepth: { value: 0.5 },
             uFocalRange: { value: 1 },
             uEdgeBokeh: { value: 0 },
+            uDisplacement: { value: zeroDisplacement },
           },
           transparent: true,
           depthWrite: false,

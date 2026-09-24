@@ -38,7 +38,7 @@ export interface PointContext {
 function writeDeclared(
   uniforms: Uniforms,
   values: ParamValues,
-  stage: "points" | "post",
+  stage: "points" | "post" | "pointer",
 ): void {
   for (const param of UNIFORM_PARAMS[stage]) {
     const uniform = uniforms[param.uniform!];
@@ -83,4 +83,16 @@ export function applyPointUniforms(
 
 export function applyPostUniforms(uniforms: Uniforms, values: ParamValues): void {
   writeDeclared(uniforms, values, "post");
+}
+
+/**
+ * The pointer simulation's knobs (P9.1).
+ *
+ * Nothing new was needed to support a whole extra material: the schema grew a
+ * `"pointer"` stage, `UNIFORM_PARAMS` grew a list, and this is the one line
+ * that reads it. That is the return on P7.2 — a third shader cost three lines
+ * rather than a third copy of the wiring.
+ */
+export function applyPointerUniforms(uniforms: Uniforms, values: ParamValues): void {
+  writeDeclared(uniforms, values, "pointer");
 }

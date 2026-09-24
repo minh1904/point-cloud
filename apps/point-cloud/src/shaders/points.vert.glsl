@@ -22,6 +22,7 @@
 
 #include <pc_noise>
 #include <pc_lut>
+#include <pc_decode>
 
 attribute vec2 aParticleUv;  // centre of this particle's texel, in (0, 1)
 
@@ -48,6 +49,7 @@ uniform sampler2D uLut;        // colour grade, a 64^3 cube flattened to 512x512
 uniform float uLutIntensity;   // 0 = ungraded, 1 = the grade in full
 uniform float uProgress;       // intro progress, 0 -> 1 (P5.5)
 uniform float uDensityBoost;   // how much the loneliest points grow (P5.1)
+uniform sampler2D uDisplacement; // per-particle shove from the pointer (P9.1)
 
 varying float vCoverage; // how much of the 1px minimum the point really fills
 varying vec3 vColor;     // this particle's colour, fetched from uColorMap
@@ -74,17 +76,25 @@ void main() {
 
   // P3.3 — one coordinate, two bytes. A PNG channel holds 256 levels, which
   // over this field is a step the size of a whole grid cell; two channels give
-  // 65,536 levels and a step 250x finer. The divisor is 65535, not the 65536
-  // the original UntilLabs shader uses: two bytes span 0..65535 inclusive, so
-  // 65535 is the value that has to land on 1.0. See src/bundle/position-codec.ts.
-  vec3 high = texture2D(uPositionHigh, aParticleUv).rgb * 255.0;
-  vec3 low = texture2D(uPositionLow, aParticleUv).rgb * 255.0;
-  vec3 normalised = (high * 256.0 + low) / 65535.0;
-
+  // 65,536 levels and a step 250x finer. P9.1 moved the arithmetic into the
+  // `pc_decode` chunk, because the pointer simulation needs the same answer.
+  //
   // P3.4 — the PNGs only ever hold 0..1. metadata.json says what range that
   // stands for, which is how the format stays both small and precise: every
   // one of the 65,536 levels is spent on ground the cloud actually covers.
-  vec3 home = mix(uBoundsMin, uBoundsMax, normalised);
+  vec3 home = pcDecodePosition(
+    uPositionHigh, uPositionLow, aParticleUv, uBoundsMin, uBoundsMax
+  );
+
+  // Still needed further down: P5.3 measures the focal slice along the cloud's
+  // own depth rather than distance from the camera.
+  vec3 normalised = (home - uBoundsMin) / max(uBoundsMax - uBoundsMin, vec3(0.0001));
+
+  // P9.1 — and the one piece of state in the whole shader. Everything else is
+  // recomputed from uTime; this is read back from a texture the simulation
+  // pass wrote last frame. Zero when nothing is pushing, so it costs one fetch
+  // and an add when the feature is off.
+  home += texture2D(uDisplacement, aParticleUv).xyz;
 
   // Three vertex texture fetches, 65,536 particles, all in parallel. These are
   // the lines the whole P3 phase exists to make possible.

@@ -27,6 +27,7 @@ const out = `${here}../../../packages/particle-image/src/shaders.gen.ts`;
 const chunks: Record<string, string> = {
   pc_noise: readFileSync(`${shaders}/noise.glsl`, "utf8"),
   pc_lut: readFileSync(`${shaders}/lut.glsl`, "utf8"),
+  pc_decode: readFileSync(`${shaders}/decode.glsl`, "utf8"),
 };
 
 /** Resolve `#include <name>` against the chunks, the way three.js would. */

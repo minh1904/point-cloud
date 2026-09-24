@@ -59,11 +59,18 @@ describe("the schema itself", () => {
     expect(counted).toBe(PARAMS.length);
   });
 
-  it("splits the uniform-writing parameters by stage", () => {
-    const listed = UNIFORM_PARAMS.points.length + UNIFORM_PARAMS.post.length;
+  it("splits the uniform-writing parameters by stage, losing none", () => {
+    const stages = Object.keys(UNIFORM_PARAMS) as (keyof typeof UNIFORM_PARAMS)[];
+
+    let listed = 0;
+    for (const stage of stages) {
+      for (const param of UNIFORM_PARAMS[stage]) expect(param.stage).toBe(stage);
+      listed += UNIFORM_PARAMS[stage].length;
+    }
+
+    // Every uniform-writing parameter belongs to exactly one stage's list, so
+    // adding a stage without listing it here would be caught right away.
     expect(listed).toBe(PARAMS.filter((param) => param.uniform).length);
-    for (const param of UNIFORM_PARAMS.points) expect(param.stage).toBe("points");
-    for (const param of UNIFORM_PARAMS.post) expect(param.stage).toBe("post");
   });
 });
 

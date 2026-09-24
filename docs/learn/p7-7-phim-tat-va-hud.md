@@ -1,4 +1,4 @@
-# P7.7 · Phím tắt, status bar, và bảng liệt kê phím tắt
+# P7.7 · Phím tắt, HUD hiệu năng, và bảng liệt kê phím tắt
 
 ## Mục tiêu
 
@@ -61,9 +61,11 @@ Lớp thứ hai đáng nói. Sau khi xử lý xong Ctrl+Z và Ctrl+Y, mọi th�
 
 `onClick` ở lớp ngoài đóng bảng; `stopPropagation` ở lớp trong ngăn việc bấm vào nội dung cũng đóng nó. Đó là mẫu "click outside" viết bằng hai dòng thay vì một listener toàn cục.
 
-### 5. Status bar: nơi cho những con số luôn đúng
+### 5. Nơi đặt những con số luôn đúng
 
-fps, draw call và số điểm từng nằm ở góc trên bên trái, đè lên bầu trời trong ảnh. Một status bar là chỗ mà công cụ đặt những con số **luôn đúng và không bao giờ khẩn cấp**.
+fps, draw call và số điểm từng nằm ở góc trên bên trái, đè lên bầu trời trong ảnh. P7.7 đưa chúng xuống một **status bar** — chỗ mà công cụ đặt những con số luôn đúng và không bao giờ khẩn cấp.
+
+> **Cập nhật ở P9:** status bar đã bị gỡ và các con số chuyển vào chính bảng trợ giúp này. Lý do: chúng là **những con số bạn đi tìm**, không phải những con số bạn nhìn cả ngày — và một dải chữ chạy ngang đáy màn hình lấy mất một hàng của thứ mà app thật sự nói về. Lập luận ở mục này vẫn là lập luận đúng cho *nhịp cập nhật*, chỉ là chỗ đặt thì đổi.
 
 Và nó cập nhật hai lần mỗi giây — đó là nhịp `RenderInfo` ghi stats:
 
@@ -101,16 +103,11 @@ it("renders a real kbd element, not a styled span", () => {
 
 Thứ tự trong handler là có chủ ý: tổ hợp có modifier trước, rồi cổng chặn modifier, rồi phím trần. Đọc từ trên xuống là đọc được quy tắc.
 
-### `apps/point-cloud/src/app/shell/status-bar.tsx` (mới)
+### `apps/point-cloud/src/app/shell/status-bar.tsx` (mới ở P7.7, **đã gỡ ở P9**)
 
-Ẩn dần theo bề rộng, cùng kiểu với toolbar:
+Nó ẩn dần theo bề rộng, cùng kiểu với toolbar, để trên điện thoại còn lại fps và số điểm — hai con số trả lời "nó có chạy không" và "nó đang vẽ cái gì".
 
-```tsx
-<span className="hidden md:inline">{stats.calls} draw call…</span>
-<span className="hidden lg:inline">depth: {depth.kind}</span>
-```
-
-Trên điện thoại còn lại fps và số điểm — hai con số trả lời "nó có chạy không" và "nó đang vẽ cái gì".
+Ở P9 cả file biến mất và mấy con số đó chuyển xuống cuối `help-overlay.tsx`. Nhịp cập nhật thì không đổi: vẫn là hai lần mỗi giây do `RenderInfo` quyết định.
 
 ## Lỗi đã gặp
 
@@ -123,7 +120,7 @@ Trên điện thoại còn lại fps và số điểm — hai con số trả l�
 1. **Mở bảng bằng `?`**, đóng bằng `Esc`, rồi bằng cách bấm ra ngoài. Cả ba đường đều hoạt động chứ?
 2. **Bấm Ctrl+R.** Trang tải lại chứ? Rồi bỏ dòng `if (meta || event.altKey) return;` và thử lại.
 3. **Thêm một phím tắt.** Cho `p` chuyển preset kế tiếp. Nhớ thêm nó vào `SHORTCUTS` — và để ý cảm giác khi phải sửa hai chỗ.
-4. **Đo fps bằng một frame.** Đổi `RenderInfo` thành `Math.round(1 / delta)` và nhìn status bar vài giây. Con số nhảy bao nhiêu?
+4. **Đo fps bằng một frame.** Đổi `RenderInfo` thành `Math.round(1 / delta)`, mở bảng trợ giúp bằng `?` và nhìn vài giây. Con số nhảy bao nhiêu?
 5. **Kiểm `<kbd>`.** Bật trình đọc màn hình (Narrator trên Windows) và nghe bảng trợ giúp. Rồi đổi `<kbd>` thành `<span>` và nghe lại.
 
 ## Đọc thêm

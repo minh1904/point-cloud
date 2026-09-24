@@ -6,6 +6,8 @@ Từ P1 tới P6, giao diện là những tấm thẻ nổi trên một canvas t
 
 Bước này đưa nó về hình dạng của một công cụ thật: một thanh toolbar, một viewport có hình chữ nhật của riêng nó, một inspector gắn cạnh, một status bar. Xong khi **kéo một slider không bao giờ khiến canvas render lại** — mà điều đó thì phụ thuộc vào [P7.3](p7-3-store-to-uniform.md) nhiều hơn là vào CSS.
 
+> **Cập nhật ở P9.** Bố cục này về sau đổi một lần nữa: thanh toolbar trên và status bar dưới đều bị gỡ, các nút thành một pill nổi ở đáy viewport kiểu Figma, và mấy con số fps chuyển vào bảng trợ giúp. Lý do được ghi trong JSDoc của `app-shell.tsx` và `toolbar.tsx`. Những gì viết dưới đây về `min-h-0`, về ai đăng ký cái gì, và về việc `Stage` không được render lại thì vẫn đúng nguyên.
+
 ## Khái niệm
 
 ### 1. Vì sao panel nổi hỏng ở quy mô lớn

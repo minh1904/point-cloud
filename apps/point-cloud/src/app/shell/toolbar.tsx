@@ -9,24 +9,29 @@ import { useUiStore } from "@/store/ui-store";
 import type { OrbitControlsHandle } from "@/scene/stage";
 
 /**
- * The actions, in a bar of their own (P7.1).
+ * The actions, floating over the bottom of the viewport.
+ *
+ * ## Why it moved off the top
+ *
+ * A bar across the top is a *document* pattern — it belongs to a page you read
+ * downward. A tool whose subject is a picture wants the opposite: the picture
+ * gets the whole rectangle, and the controls float over the edge of it, near
+ * where the hands already are. Figma, Figjam and every canvas editor since
+ * have converged on the same place for the same reason.
+ *
+ * It also buys back a row of vertical space for the thing the app is actually
+ * about, which on a laptop is worth more than it sounds.
+ *
+ * ## What it is careful about
  *
  * Nothing here reads a parameter, so nothing here re-renders while a slider
  * moves. The only subscriptions are `playing`, `inspectorOpen` and whether
- * undo is possible — all things that change when someone presses something.
+ * undo is possible — all things that change when somebody presses something.
  *
- * ## How it narrows
- *
- * The actions **scroll sideways** rather than disappearing. Hiding buttons
- * below a breakpoint is the usual move and it is the wrong one here: every
- * action has a keyboard shortcut, and a phone has no keyboard, so a hidden
- * button on a phone is a lost feature rather than a tidier bar.
- *
- * So the left group takes whatever space is left (`min-w-0 flex-1`) and
- * scrolls inside it, while the right group — the two ways *out* of wherever
- * you are — stays pinned where it can always be reached. The scrollbar itself
- * is hidden, because a scrollbar inside a 28px bar is a smear rather than an
- * affordance.
+ * The row **scrolls sideways** when it runs out of room rather than hiding
+ * buttons. Hiding below a breakpoint is the usual move and the wrong one here:
+ * every action has a keyboard shortcut, and a phone has no keyboard, so a
+ * hidden button on a phone is a lost feature rather than a tidier bar.
  */
 export function Toolbar({
   controls,
@@ -40,7 +45,7 @@ export function Toolbar({
   const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const toggleInspector = useUiStore((state) => state.toggleInspector);
   const toggleHelp = useUiStore((state) => state.toggleHelp);
-  // A boolean selector, not the arrays themselves: the toolbar should re-render
+  // A boolean selector, not the arrays themselves: the bar should re-render
   // when undo becomes possible, not every time a step is pushed.
   const canUndo = useParamsStore((state) => state.past.length > 0);
   const canRedo = useParamsStore((state) => state.future.length > 0);
@@ -48,40 +53,42 @@ export function Toolbar({
   const redo = useParamsStore((state) => state.redo);
 
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-border/10 bg-popover/60 px-2 py-1.5 backdrop-blur-md">
+    // The wrapper is only there to centre the pill: a pointer-events-none
+    // strip, so the half of the viewport either side of the bar still orbits
+    // the camera instead of hitting an invisible box.
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center p-2 sm:p-3">
       <div
         className={[
-          "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto",
-          // No scrollbar: it would be a grey smear across a 28px bar.
+          "pointer-events-auto flex items-center gap-0.5 overflow-x-auto",
+          "max-w-full rounded-xl border border-border/12 bg-popover/90 p-1",
+          "shadow-lg shadow-black/20 backdrop-blur-md",
+          // No scrollbar: inside a 36px pill it is a smear, not an affordance.
           "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          // Every child keeps its width; the row scrolls instead of squashing.
+          // Children keep their width; the row scrolls instead of squashing.
           "[&>*]:shrink-0",
         ].join(" ")}
       >
-        <span className="mr-1 hidden px-1 text-2xs font-medium tracking-wide text-muted-foreground uppercase lg:inline">
-          Point Cloud
-        </span>
-
-        <Button variant="outline" className="h-8 sm:h-7" onClick={togglePlaying}>
+        <Button variant="outline" size="sm" title="Play / pause the drift (Space)" onClick={togglePlaying}>
           {playing ? "Pause" : "Play"}
         </Button>
         {/* Restores the camera state the controls saved when they mounted. */}
         <Button
           variant="ghost-muted"
-          className="h-8 sm:h-7"
+          size="sm"
+          title="Reset the camera"
           onClick={() => controls.current?.reset()}
         >
-          Reset<span className="hidden sm:inline">&nbsp;view</span>
+          Reset
         </Button>
-        <Button variant="ghost-muted" className="h-8 sm:h-7" onClick={replayIntro}>
-          <span className="hidden sm:inline">Replay&nbsp;</span>Intro
+        <Button variant="ghost-muted" size="sm" title="Replay the intro (R)" onClick={replayIntro}>
+          Intro
         </Button>
 
-        <span className="mx-1 hidden h-4 w-px bg-border/20 sm:block" />
+        <span className="mx-0.5 h-4 w-px bg-border/20" />
 
         <Button
           variant="ghost-muted"
-          className="h-8 sm:h-7"
+          size="sm"
           disabled={!canUndo}
           title="Undo (Ctrl+Z)"
           onClick={undo}
@@ -90,7 +97,7 @@ export function Toolbar({
         </Button>
         <Button
           variant="ghost-muted"
-          className="h-8 sm:h-7"
+          size="sm"
           disabled={!canRedo}
           title="Redo (Ctrl+Shift+Z)"
           onClick={redo}
@@ -98,31 +105,22 @@ export function Toolbar({
           Redo
         </Button>
 
-        <span className="mx-1 hidden h-4 w-px bg-border/20 sm:block" />
+        <span className="mx-0.5 h-4 w-px bg-border/20" />
 
         {/* P9.3 — the still is grabbed inside the next frame, not here: the
             drawing buffer is only valid while the frame is being rendered. */}
-        <Button
-          variant="ghost-muted"
-          className="h-8 sm:h-7"
-          title="Save a PNG of the viewport (P)"
-          onClick={requestStill}
-        >
+        <Button variant="ghost-muted" size="sm" title="Save a PNG of the viewport (P)" onClick={requestStill}>
           PNG
         </Button>
-      </div>
-
-      {/* Pinned: the two ways out of wherever you are. */}
-      <div className="flex shrink-0 items-center gap-1 border-l border-border/10 pl-1">
-        <Button
-          variant="ghost-muted"
-          className="h-8 sm:h-7"
-          title="Keyboard shortcuts (?)"
-          onClick={toggleHelp}
-        >
+        <Button variant="ghost-muted" size="sm" title="Keyboard shortcuts (?)" onClick={toggleHelp}>
           ?
         </Button>
-        <Button variant="ghost-muted" className="h-8 sm:h-7" onClick={toggleInspector}>
+        <Button
+          variant={inspectorOpen ? "ghost-muted" : "outline"}
+          size="sm"
+          title="Show or hide the inspector (C)"
+          onClick={toggleInspector}
+        >
           {inspectorOpen ? "Hide" : "Controls"}
         </Button>
       </div>

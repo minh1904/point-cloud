@@ -82,7 +82,7 @@ P6 là chỗ dự án ngừng dựng lại renderer của UntilLabs và đi qua 
 - [P7.4 · Undo / redo, và vì sao một cú kéo là **một** bước](p7-4-undo-redo.md)
 - [P7.5 · Preset, và cái bẫy hydration của `localStorage`](p7-5-presets.md)
 - [P7.6 · Nhìn vào khúc giữa của pipeline](p7-6-stage-view.md)
-- [P7.7 · Phím tắt, status bar, và bảng liệt kê phím tắt](p7-7-phim-tat-va-hud.md)
+- [P7.7 · Phím tắt, HUD hiệu năng, và bảng liệt kê phím tắt](p7-7-phim-tat-va-hud.md)
 
 Đọc theo thứ tự 7.2 → 7.3 → 7.1 thì hợp lý hơn thứ tự đánh số: schema có trước, cách đọc schema mà không qua React có sau, và bố cục là thứ hưởng lợi từ cả hai.
 

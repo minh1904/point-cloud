@@ -2,6 +2,10 @@
 
 import { Button, Kbd } from "@atelier/ui";
 
+import { stringValue } from "@/params/schema";
+import { useParamsStore } from "@/store/params-store";
+import { usePhotoStore } from "@/store/photo-store";
+import { useSessionStore } from "@/store/session-store";
 import { useUiStore } from "@/store/ui-store";
 
 interface Shortcut {
@@ -60,6 +64,14 @@ const SHORTCUTS: readonly { group: string; items: readonly Shortcut[] }[] = [
 export function HelpOverlay() {
   const open = useUiStore((state) => state.helpOpen);
   const toggleHelp = useUiStore((state) => state.toggleHelp);
+  // P9 — the perf readout used to be a status bar across the bottom. It is
+  // here now: numbers you go looking for, rather than numbers you stare at
+  // all day. Subscribing only matters while the sheet is open, and the sheet
+  // is the only thing that renders them.
+  const stats = useSessionStore((state) => state.stats);
+  const tier = useSessionStore((state) => state.tier);
+  const quality = useParamsStore((state) => stringValue(state.values, "quality"));
+  const depth = usePhotoStore((state) => state.depth);
 
   if (!open) return null;
 
@@ -69,7 +81,7 @@ export function HelpOverlay() {
     <div
       role="presentation"
       onClick={toggleHelp}
-      className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
+      className="absolute inset-0 z-30 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
     >
       <div
         role="dialog"
@@ -116,6 +128,20 @@ export function HelpOverlay() {
           Shortcuts are ignored while a text field has focus, so Ctrl+Z still means
           what it usually does there.
         </p>
+
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-border/10 pt-3 font-mono text-2xs text-muted-foreground tabular-nums">
+          <span>{stats ? `${stats.fps} fps` : "measuring…"}</span>
+          {stats && (
+            <>
+              <span>
+                {stats.calls} draw call{stats.calls === 1 ? "" : "s"}
+              </span>
+              <span>{stats.points.toLocaleString("en-US")} points</span>
+            </>
+          )}
+          <span>quality: {quality === "auto" ? `auto (${tier ?? "…"})` : quality}</span>
+          {depth && <span>depth: {depth.kind}</span>}
+        </div>
       </div>
     </div>
   );

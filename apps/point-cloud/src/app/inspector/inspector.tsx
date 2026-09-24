@@ -110,7 +110,10 @@ export function Inspector() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2">
+      {/* The extra bottom padding below `sm` is for the floating toolbar,
+          which overlaps this sheet's last few pixels — so the final panel can
+          still be scrolled clear of it. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2 pb-16 sm:pb-2">
         <PhotoPanel panel={photoPanel} />
         <DepthPanel panel={depthPanel} />
         <DetailPanel panel={detailPanel} />

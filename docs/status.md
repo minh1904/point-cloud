@@ -22,7 +22,7 @@ P6 is where the project stopped rebuilding the UntilLabs renderer and went past 
 
 `decode-image.ts` decodes a dropped file off the main thread and caps it at 1024px (6.1) · a **pipeline worker** runs Depth Anything V2 Small through transformers.js on WebGPU with a WASM fallback, reporting progress and cancellable by termination (6.2, 6.3) — with `heuristicDepth`, the painter's-cue estimator shared with `build-sample-bundle.ts`, running first so nothing waits on a 50 MB download · `importance.ts` measures detail three ways, luminance gradient, local contrast and depth gradient, each normalised alone and mixed on the main thread so four sliders stay live (6.4) · `sample-points.ts` places the points by Mitchell's best-candidate scored `d²·w`, which holds the density the map asked for instead of flattening it (6.5) · `density.ts` measures how crowded each point ended up, on an absolute log scale (6.6), and the shader grows the lonely ones — **that is 5.1, finally unblocked** · `lift.ts` gives them z from the depth map at 3% relief, bilinear for depth and nearest for colour (6.7) · `shuffle.ts` breaks the link between texel and place (6.9) · and `pack-bundle.ts` writes the three maps, with crowding riding in the colour map's alpha (6.8).
 
-P7 turned it into a tool. A parameter is now **one entry in `src/params/schema.ts`** — the inspector builds its panels from the groups, the shader writes uniforms by walking the same list, presets serialise by key, and P8's export will read it too (7.2). Those values live outside React and the frame loop reads them with `getState()`, so dragging a slider re-renders that slider and nothing else; `Stage` takes one prop, a ref, and is memoised (7.3). Around them sit a toolbar, a docked inspector, a status bar (7.1), undo/redo that folds a whole drag into one step via Base UI's `onValueCommitted` (7.4), four built-in looks plus user presets in localStorage (7.5), a full-viewport view of every pipeline stage including where the points landed (7.6), and keyboard shortcuts with a sheet that lists them (7.7).
+P7 turned it into a tool. A parameter is now **one entry in `src/params/schema.ts`** — the inspector builds its panels from the groups, the shader writes uniforms by walking the same list, presets serialise by key, and P8's export will read it too (7.2). Those values live outside React and the frame loop reads them with `getState()`, so dragging a slider re-renders that slider and nothing else; `Stage` takes one prop, a ref, and is memoised (7.3). Around them sit a docked inspector and a toolbar (7.1 — rearranged at P9 into a pill floating over the bottom of the viewport, with no top bar and no status bar; the perf readout moved into the help sheet), undo/redo that folds a whole drag into one step via Base UI's `onValueCommitted` (7.4), four built-in looks plus user presets in localStorage (7.5), a full-viewport view of every pipeline stage including where the points landed (7.6), and keyboard shortcuts with a sheet that lists them (7.7).
 
 P8 got the cloud out of the tool. A bundle is **a `.zip` of exactly the folder the renderer already reads** — `metadata.json`, `color.png` with crowding in its alpha, the two position maps, and an optional `params.json` carrying the look (8.1, spec in [bundle-format.md](bundle-format.md)). Writing it needed PNG in the browser, so the P3.5 codec was split: structure in `src/bundle/png-codec.ts`, compression supplied by `node:zlib` in the script and `CompressionStream` in the page (8.2). Zip is written by hand, stored entries, no timestamps — so exporting the same cloud twice gives byte-identical files. The Export panel measures the real size rather than guessing it (8.3, 679 KB for 65,536 points), `metadata.json` is validated with zod and versioned (8.4), and a bundle can be dropped back in: export → import → the points stage hashes the same both times (8.5). Finally `@atelier/particle-image` renders a bundle in somebody else's project with no dependency on the studio, its shaders generated into template literals because a stranger's bundler will not import `.glsl` (8.6, docs in [particle-image.md](particle-image.md)).
 
@@ -75,10 +75,15 @@ also why an export cannot capture "the cloud as it looks right now, pushed
 aside". `gl.readRenderTargetPixels` would do it at the cost of a pipeline
 stall.
 
-**The toolbar scrolls sideways rather than hiding buttons.** Every action has
-a keyboard shortcut and a phone has no keyboard, so a hidden button on a phone
-is a lost feature. The left group scrolls inside whatever space is left; the
-two controls for getting *out* of a state stay pinned. Verified down to 360px.
+**The toolbar floats over the bottom of the viewport and scrolls sideways
+rather than hiding buttons.** A bar across the top is a document pattern; a
+tool whose subject is a picture floats its controls over the edge of it. And
+every action has a keyboard shortcut while a phone has no keyboard, so a
+hidden button on a phone is a lost feature — the pill scrolls instead.
+
+**There is no status bar.** fps, draw calls, point count, the quality tier and
+the depth model are at the bottom of the help sheet (`?`), on the grounds that
+they are numbers you go looking for rather than numbers you stare at all day.
 
 **Quality tiers are a guess made once.** They do not adapt, on purpose (a
 picture that changes under you is worse than one that is slightly too

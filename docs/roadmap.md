@@ -172,13 +172,13 @@ Built from Atelier components (P-UI); look follows decision 0.4.
 
 | # | Build | Behind the scenes | Done when |
 |---|---|---|---|
-| ✅ 7.1 | Layout: viewport + inspector + toolbar + status bar | Keeping R3F canvas isolated from React re-renders | Tweaking a slider never re-mounts the canvas |
+| ✅ 7.1 | Layout: viewport + inspector + toolbar + status bar · **rearranged at P9** to a floating bottom toolbar with no top bar and no status bar | Keeping R3F canvas isolated from React re-renders | Tweaking a slider never re-mounts the canvas |
 | ✅ 7.2 | Param schema (single source of truth: label, range, default, group, uniform key) | One schema drives UI, uniforms, presets and export | Adding a param = one schema entry |
 | ✅ 7.3 | Store → uniforms without React renders (Zustand `subscribe` in `useFrame`) | Transient updates for 60 fps sliders | Slider drag keeps 60 fps |
 | ✅ 7.4 | Undo/redo (history of param snapshots, drag coalescing) | Command history in a design tool | Ctrl+Z / Ctrl+Shift+Z work, one step per drag |
 | ✅ 7.5 | Presets: save / load / reset, built-ins | Serialising params | Presets survive reload |
 | ✅ 7.6 | Pipeline stages view: original / depth / importance / points | Making the invisible steps visible | Toggle between stage previews |
-| ✅ 7.7 | Keyboard shortcuts, perf HUD (fps, points, draw calls) | Tool ergonomics | Shortcuts listed in a help overlay |
+| ✅ 7.7 | Keyboard shortcuts, perf HUD (fps, points, draw calls) — the HUD now lives inside the help overlay rather than a status bar | Tool ergonomics | Shortcuts listed in a help overlay |
 
 ---
 
